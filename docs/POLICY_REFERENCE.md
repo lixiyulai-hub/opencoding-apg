@@ -1346,3 +1346,65 @@ Host acceptance MUST be exactly `ACCEPT` or `BLOCK` from a reviewer distinct
 from the executor. `ACCEPT` is scoped only to the exact approved APG build and
 host transaction. `CursorVIP_Dev` remains an excluded historical test carrier
 and MUST NOT be treated as a P4 host, target, pilot, or dependency.
+
+## P6-A continuity, progress, and loop-harness contract
+
+P6-A adds independent projection records. It MUST NOT change the closed
+schemas or authority semantics of P3-F, P3-G, P3-H, P3-I, P3-J, historical
+receipts, or feedback-loop decisions. The projection derives a Status Snapshot
+only from explicitly declared, bounded, source-bound inputs.
+
+A `ProgressDefinition` MUST be a canonical JSON object at a contained,
+configured project-relative path. It MUST declare a schema version, a stable
+definition ID, the exact lifecycle source path and run ID, plan ID and SHA-256,
+one target delivery phase, declared out-of-scope boundaries, and a non-empty
+canonical list of work packages. Every work package MUST have a stable ID,
+positive integer weight, source-bound task or evidence identifiers, and one
+delivery stage. IDs and source bindings MUST be unique. Definitions with a
+missing, drifted, malformed, or incomplete source are not progress authority.
+
+A `ProgressSnapshot` MUST be pure, recomputable, bounded, and canonical. It
+MUST report scope status, source binding, separate execution and independently
+verified totals, current-stage totals, task counts, delivery state, Gate
+health, stable reasons, no more than five ordered next actions, remaining human
+gate, independent-review state, and later phase boundaries. Its percentages use
+integer basis points. Progress is `not-computable` when the definition is
+absent, invalid, or has no valid denominator; a controller MUST NOT infer a
+percentage from elapsed time, tokens, file count, receipt count, Gate count,
+or unplanned delivery phases. Blocked work remains in the denominator and
+retains any already achieved work state.
+
+The canonical `progress` command is read-only. It MUST emit a receipt whose
+read-only proof has no changed paths and either canonical JSON or the fixed
+human Status Snapshot. Absence of the optional definition is a valid diagnostic
+result, not a Doctor failure. Doctor MUST validate a present definition's
+contained lifecycle source, run ID, plan ID, plan digest, and computable task
+scope when those source fields are declared, but MUST not generate, repair,
+normalize, or update it.
+
+The continuous-delivery harness MUST only plan: `INSPECT -> PROGRESS ->
+PLAN_GATE -> DISPATCH -> VALIDATE -> INDEPENDENT_VERIFY -> REPORT -> REQUEUE`.
+It MAY recommend `HUMAN_GATE`, `FREEZE`, or `COMPLETE` as the primary state.
+`DISPATCH`, `VALIDATE`, `INDEPENDENT_VERIFY`, and `REQUEUE` require preexisting
+transaction authority and remain non-executing recommendations. A planner MUST
+freeze dispatch on `BLOCK`, scope drift, missing evidence, no progress, budget
+exhaustion, failure threshold, or other unsafe loop state. `RECOMMEND` and
+`CONFIRM` MAY pause only for the actual decision or transaction gate; routine
+planning and reporting do not create approval churn.
+
+Every material checkpoint, successful or failed terminal result, `BLOCK`, or
+`CONFIRM` MUST end with exactly one Status Snapshot. It is the final section of
+the response; no conclusion, classification, or extra next-step prose may
+follow it. It MUST render a Status Snapshot with completed work, measured
+progress or its precise absence,
+current-stage state, next automatic work, at most one human gate, blocking and
+review state, and separately listed unperformed delivery boundaries. A status
+projection is not execution, target acceptance, runtime acceptance,
+deployment, publication, pilot, release, host action, provider/network use,
+or global promotion.
+
+P6-B's APG self-roadmap is one explicit consumer of this contract. Its active
+definition may measure only the declared current repository work packages up
+to `repository-validated`; it cannot infer historical project completion or
+represent host, runtime, deployment, publication, pilot, or release work as
+part of that denominator.

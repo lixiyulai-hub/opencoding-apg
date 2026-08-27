@@ -720,3 +720,43 @@ The generated package allows implicit invocation so a beginner's non-trivial
 project request can reach APG. That metadata changes invocation only; it never
 grants write authority or bypasses exact scope, evidence, CAS, rollback, phase,
 host, target, runtime, deployment, publication, pilot, or release boundaries.
+
+## P6-A continuity, progress, and loop harness
+
+P6-A adds a separate, read-only status projection for the point where a terse
+classification would otherwise leave an owner without a usable next step. A
+project may declare `.governance/progress/active.json` as a canonical
+`ProgressDefinition`. It lists the exact in-scope work packages, positive
+integer weights, source digests, delivery boundary, and declared out-of-scope
+work. The `progress` command validates and recomputes that definition against
+its bound lifecycle evidence; it never updates it.
+
+The Status Snapshot reports total and current-stage execution and verified
+progress in integer basis points, completed and remaining task counts, delivery
+and Gate health, a bounded ordered next-action list, any genuine human gate,
+independent-review state, blockers, and later delivery boundaries. Execution
+progress and verified progress are intentionally separate. No definition,
+invalid binding, or zero denominator produces `not-computable`, not a guessed
+percentage based on work time, receipts, changed paths, tests, or tokens.
+
+The continuous-delivery harness is a pure planner. Its normal recommendation
+sequence is `INSPECT -> PROGRESS -> PLAN_GATE -> DISPATCH -> VALIDATE ->
+INDEPENDENT_VERIFY -> REPORT -> REQUEUE`. Dispatch means only that a separately
+authorized executor may be queued after rechecking its exact transaction;
+the harness neither creates authority nor executes the work. `RECOMMEND` and
+`CONFIRM` pause only for a real decision or transaction gate. Scope drift,
+missing evidence, `BLOCK`, no-progress, a budget limit, or a failure threshold
+freeze dispatch and retain the evidence needed for a later bounded restart.
+
+See [CONTINUITY_PROGRESS_AND_LOOP_HARNESS.md](CONTINUITY_PROGRESS_AND_LOOP_HARNESS.md)
+for the canonical P6-A contract. P6-A remains repository-local: it does not
+authorize global promotion, host action, target execution, provider/network
+use, runtime, deployment, publication, pilot, or release.
+
+P6-B makes APG itself an explicit consumer of that contract through one active
+self-roadmap. Its total and current-stage percentages apply only to the named
+current repository lifecycle and its `repository-validated` target. They do
+not guess a whole-product percentage or include host, runtime, deployment,
+publication, pilot, or release work. Every terminal user-facing response must
+end with the fixed Status Snapshot, including next automatic work, the one real
+human gate, blocker/review state, later boundaries, and continuation.

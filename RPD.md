@@ -7,13 +7,13 @@
 | Document ID | `APG-RPD-001` |
 | Canonical name | Requirements Planning, Orchestration, and Delivery (RPD) |
 | Familiar alias | Product Requirements Document (PRD); RPD is canonical because it also binds orchestration, evidence, and delivery traceability. |
-| Version | `0.4.0` |
-| Effective date | `2026-08-16` |
-| Change ID | `adaptive-project-governance-p5-a-spec-driven-beginner-autonomy-v1-20260816` |
-| Approved write scope | The P5-A ChangeRecord scope: the specification convergence controller and tests, package version and builder, skill-package contract, `RPD.md`, project-governance documentation, and the new `0.5.0-dev.20260816` candidate only. |
-| Pre-state | The accepted `0.4.0-dev.20260814` candidate, all historical receipts and dirty state, and the P4-2B0/P4-2B1 routing and disk evidence are preserved. Exact P5-A preimages and approval are recorded in the applied ChangeRecord and receipt. |
-| Approval state | Owner approval `OWNER-DIRECT-P5-A-SPEC-DRIVEN-BEGINNER-AUTONOMY-20260816` authorizes only the named repository paths and bounded candidate build. Global promotion, host reload or invocation, target execution, deployment, pilot, publication, and release require separate transactions. |
-| Product state | P3-A through P3-J remain repository-validated and closed. P4-1 through P4-2B1 remain historical host and disk boundaries. P5-A adds deterministic specification convergence and beginner prompt autonomy while retaining consequence confirmations and phase isolation. |
+| Version | `0.5.1` |
+| Effective date | `2026-08-18` |
+| Change ID | `adaptive-project-governance-p6-b-self-progress-baseline-and-terminal-status-contract-v1-20260818` |
+| Approved write scope | The P6-B ChangeRecord scope: one canonical APG self-roadmap and active progress definition, terminal Status Snapshot contracts, read-only source diagnostics, documentation/tests, and one local repository candidate only. |
+| Pre-state | The P6-A candidate, all historical receipts and dirty state, and S29-S33 host evidence are preserved. Exact P6-B preimages and approval are recorded in the applied ChangeRecord and receipt. |
+| Approval state | Owner approval `OWNER-DIRECT-APG-P6-B-SELF-PROGRESS-20260818-001` authorizes only the named repository paths and bounded candidate build. Global promotion, host reload or invocation, target execution, deployment, pilot, publication, and release require separate transactions. |
+| Product state | P3-A through P3-J remain repository-validated and closed. P5-A retains deterministic specification convergence and beginner prompt autonomy. P6-A supplies source-bound progress and a bounded non-executing continuation planner. P6-B gives APG itself an explicit current repository roadmap and requires every final response to expose its continuation. |
 | Normative language | ASCII identifiers and field values are preferred. The product promise below is retained verbatim. |
 
 ## Product Promise
@@ -47,6 +47,12 @@ This RPD defines:
 - automatic planning and bounded local implementation without redundant routine
   approval, while retaining confirmation for consequential work and blocking
   incomplete or unsafe work;
+- source-bound total and current-stage progress that distinguishes execution
+  from independent verification and never fabricates a percentage;
+- Status Snapshots that state completed work, next automatic work, real human
+  gates, blockers, review state, and later delivery boundaries;
+- a bounded loop-harness planner for inspection, planning, dispatch,
+  validation, independent review, reporting, and safe requeueing;
 - separate acceptance states for repository-local validation, runtime,
   deployment, publication, pilot, and release.
 
@@ -64,6 +70,11 @@ This RPD does not:
   production data;
 - convert a recommendation, a generated artifact, a passing local check, or a
   dashboard into owner approval or product acceptance;
+- infer total, stage, or verified progress from elapsed time, token use,
+  changed files, receipts, Gate count, or an unplanned delivery boundary;
+- create an unbounded autonomous execution loop or use a status projection to
+  bypass transaction authority, budget, rollback, independent review, scope
+  drift, or first-failure-stop controls;
 - authorize a concrete P3-D/P3-E target transaction, plugin or host action,
   runtime, deployment, publication, promotion, downstream pilot, release,
   source-control action, or external irreversible action.
@@ -132,6 +143,9 @@ Each requirement has these required fields:
 | `REQ-011` | acceptance | Require observable acceptance evidence and independent review; reject self-assertion as final proof. | GUIDED, ENGINEERING | `RPD-EVIDENCE` | AUTO | P0 | An independent reviewer can return `ACCEPT` or `BLOCK` against the requirement and cited evidence. | P3-F, P3-G, P3-H, P3-J; configured Gates. | Independent-review contracts, plan-bound Gate receipt, and independent read-only review. | repository-validated |
 | `REQ-012` | specification | Provide one deterministic offline specification-convergence controller for clarification, requirements-quality checks, cross-artifact planning analysis, and bounded iterative convergence. | GUIDED, ENGINEERING | `RPD-SPEC-DRIVEN-CONVERGENCE` | AUTO | P0 | The controller emits bounded canonical records, at most five prioritized clarification questions, explicit planning findings, and `COMPLETE`, `CONTINUE`, `CONFIRM`, or `BLOCK` without executing work or widening authority. | P5-A. | `project_governance/spec_driven_convergence.py`, focused tests, and the P5-A candidate manifest. | repository-validated |
 | `REQ-013` | interaction | Let beginners use explicit `/plan`, `/clarify`, `/checklist`, `/analyze`, `/converge`, and `/implement` prompts without becoming routine approval operators. | GUIDED, ENGINEERING | `RPD-BEGINNER-AUTONOMY` | AUTO | P0 | Planning aliases are automatic; `/implement` is automatic only for an exact-root, bounded, reversible, gated, rollback-bound, secret-safe local route; consequential work is `CONFIRM` and incomplete or unsafe work is `BLOCK`. | P5-A; later host and target phases remain independent. | Route tests, generated skill contract, package manifest, and Doctor evidence. | repository-validated |
+| `REQ-014` | interaction | At every material checkpoint or stop, expose completed work, source-bound total and current-stage progress, next automatic work, the remaining human gate, blocker and review state, and later delivery boundaries. | GUIDED, ENGINEERING | `RPD-CONTINUITY-STATUS` | AUTO | P0 | A read-only Status Snapshot is recomputable from declared sources and either gives integer basis points or explicitly states `not-computable`; it never hides the continuation arrangement behind a terse classification. | P6-A; delivery phases remain independent. | Progress projection, CLI, generated-skill contract, independent review, and candidate evidence. | repository-validated |
+| `REQ-015` | orchestration | Plan continuous bounded progression without turning the owner into a routine approval relay or granting autonomous execution authority. | GUIDED, ENGINEERING | `RPD-CONTINUITY-HARNESS` | AUTO | P0 | A pure harness maps lifecycle and feedback-loop facts to inspection, plan gating, dispatch, validation, independent verification, reporting, requeueing, human gate, freeze, or complete; dispatch is only possible with separately existing authority. | P6-A; P3-F/P3-G and feedback-loop boundaries remain authoritative. | Harness projection/tests, policy reference, independent review, and candidate evidence. | repository-validated |
+| `REQ-016` | progress | An adopted APG project can declare one exact current roadmap so its total and current-stage percentages remain source-bound, while historical unbound work and later delivery boundaries stay excluded. | GUIDED, ENGINEERING | `RPD-SELF-ROADMAP` | AUTO | P0 | A valid active ProgressDefinition binds one canonical lifecycle, task weights, target phase, and later phase boundaries; the final Status Snapshot identifies that scope and its continuation. | P6-B; host and external delivery remain independent. | APG self-roadmap, read-only projection, Doctor source validation, independent review, and candidate evidence. | needs-evidence |
 
 `repository-validated` in this registry means that the APG contract and its
 repository tests passed their bounded acceptance. It does not mean that a
@@ -459,6 +473,8 @@ Later actions have no transaction-specific approval. Their state is therefore
 
 | Version | Date | Change | Scope |
 | --- | --- | --- | --- |
+| `0.5.1` | `2026-08-18` | Add the P6-B APG self-roadmap baseline, active source-bound progress definition, final-response Status Snapshot contract, and Doctor lifecycle-source validation. | P6-B repository-only roadmap, tests, documentation, and one local candidate; no global, host, target, runtime, or external action. |
+| `0.5.0` | `2026-08-18` | Add P6-A source-bound progress definitions and snapshots, mandatory Status Snapshot reporting, read-only progress diagnostics, and a bounded non-executing loop-harness planner, with the `0.6.0-dev.20260818` repository candidate. | P6-A controller, tests, package contract, documentation, and one new candidate; no global, host, target, runtime, or external action. |
 | `0.4.0` | `2026-08-16` | Add P5-A deterministic specification convergence, beginner prompt aliases, bounded automatic local implementation, consequential confirmation, incomplete-work blocking, generated implicit-invocation metadata, and the `0.5.0-dev.20260816` repository candidate. | P5-A controller, tests, package contract, documentation, and one new candidate; no global or external action. |
 | `0.3.3` | `2026-08-15` | Correct the source and packaged CLI version to `0.4.0-dev.20260814`, record P4-2B1 disk promotion and the blocked pre-push P4-2B2 attempt, add a package-runtime regression assertion, and rebuild the candidate without claiming host or publication acceptance. | Five repository files, one bounded evidence directory, and the canonical candidate plus retained preimage. |
 | `0.3.2` | `2026-08-14` | Add P4-2B0 adaptive routing with five severity levels, adopted-project Doctor entry, unadopted-project audit entry, disabled implicit invocation, a deterministic `0.4.0-dev.20260814` candidate, and zero global or host action. | Five approved repository paths. |
@@ -537,3 +553,69 @@ P5-A repository acceptance is limited to focused tests, affected package and
 version tests, required project validation, deterministic candidate checks, and
 Doctor. No global promotion, host reload or invocation, target execution,
 deployment, pilot, publication, or formal release is implied.
+
+## P6-A continuity, progress, and loop harness
+
+P6-A makes the user-facing continuation explicit without treating a status
+report as product acceptance or execution authority. Its source-bound
+`ProgressDefinition` declares the in-scope work denominator, positive integer
+weights, lifecycle source binding, exact plan identity and digest, target
+delivery phase, and boundaries that are intentionally out of scope. An absent,
+incomplete, malformed, or drifted definition produces `not-computable`; it
+never becomes a fabricated percentage.
+
+The derived `ProgressSnapshot` separates execution from independently verified
+progress and reports total and current-stage integer basis points, task counts,
+delivery and Gate state, a bounded action list, real human gate, independent
+review state, stable blocker reasons, and later delivery boundaries. Blocked
+work remains in the declared denominator and retains already achieved progress.
+Time spent, tokens, file counts, receipt count, and Gate count are never work
+weights.
+
+The read-only `progress` command renders canonical JSON or the fixed Status
+Snapshot. Every material checkpoint, terminal result, `BLOCK`, or `CONFIRM`
+must report: completed work; measured progress or why it cannot be measured;
+the current stage; next automatic work; one genuine human decision or
+transaction gate when present; blockers; independent review; and unperformed
+delivery phases. A short classification alone is not an adequate user-facing
+continuation report.
+
+The continuity harness is only a planner. Its normal route is:
+
+```text
+INSPECT -> PROGRESS -> PLAN_GATE -> DISPATCH -> VALIDATE
+-> INDEPENDENT_VERIFY -> REPORT -> REQUEUE
+```
+
+`DISPATCH` does not execute or create authority. It can name only work whose
+separate transaction already proves root, scope, Gates, rollback, budget, and
+required review. `RECOMMEND` and `CONFIRM` pause only for their real decision
+or transaction boundary. `BLOCK`, no progress, budget exhaustion, a failure
+threshold, scope drift, or missing evidence produces `FREEZE`, preserves
+evidence, and reports the exact resume condition. Runtime, deployment,
+publication, pilot, release, host, provider/network, Git, and target actions
+remain separate later transactions.
+
+P6-A repository acceptance is limited to projection and harness tests, CLI and
+Doctor diagnostics, package tests, the project Gates, deterministic candidate
+verification, and Doctor. It performs no global promotion, host action, target
+execution, provider/network access, runtime, deployment, publication, pilot,
+or release.
+
+## P6-B APG self-roadmap and final reporting
+
+P6-B declares APG's current repository roadmap in
+`.governance/progress/active.json`. Its percentages have a deliberately narrow
+denominator: the seven source-bound work packages in the named lifecycle, with
+`repository-validated` as the target. It does not rewrite the past, infer
+completion from receipt volume, or collapse the P5-H host boundary into this
+roadmap. Runtime, deployment, publication, pilot, and release remain explicit
+later boundaries; host ownership/reload remains a separate external boundary.
+
+Every material checkpoint, successful or failed final result, `BLOCK`, or
+`CONFIRM` must end with exactly one `Status Snapshot` section. The snapshot is
+the final section of the response, with no trailing conclusion. It must name
+the current phase, completed work, total/current-stage execution and verified
+progress (or the precise reason it is not computable), delivery/Gate state,
+next automatic work, any real human gate, blockers/review, later boundaries,
+and the exact continuation/resume condition.

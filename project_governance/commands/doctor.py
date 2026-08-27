@@ -166,6 +166,129 @@ def _current_state_diagnostic(
         summary,
     )
 
+
+def _progress_definition_diagnostic(guard: WorkspaceGuard, governance: Path):
+    relative_path = ".governance/progress/active.json"
+    active = guard.root / relative_path
+    summary: dict[str, object] = {
+        "status": "absent",
+        "definition_path": relative_path,
+        "definition_sha256": "",
+        "definition_id": "",
+        "target_delivery_phase": "",
+        "lifecycle_ref": "",
+        "lifecycle_sha256": "",
+        "source_status": "absent",
+    }
+    if not active.exists() and not active.is_symlink():
+        return (
+            _check(
+                "progress-definition",
+                "pass",
+                "optional progress definition is absent",
+            ),
+            summary,
+        )
+    try:
+        progress_directory = governance / "progress"
+        if progress_directory.is_symlink():
+            raise OSError("progress definition directory is not contained")
+        resolved = active.resolve(strict=True)
+        if active.is_symlink() or not resolved.is_relative_to(guard.root):
+            raise OSError("progress definition is not contained")
+        if not resolved.is_file():
+            raise OSError("progress definition is not a regular file")
+        from ..progress_projection import (
+            MAX_PROGRESS_DEFINITION_BYTES,
+            parse_progress_definition,
+        )
+
+        if resolved.stat().st_size > MAX_PROGRESS_DEFINITION_BYTES:
+            raise OSError("progress definition exceeds the fixed byte limit")
+        payload = resolved.read_bytes()
+        definition = parse_progress_definition(payload)
+        summary["lifecycle_ref"] = str(getattr(definition, "lifecycle_ref", "") or "")
+        lifecycle_ref = getattr(definition, "lifecycle_ref", None)
+        source_fields = (
+            lifecycle_ref,
+            getattr(definition, "lifecycle_run_id", None),
+            getattr(definition, "plan_id", None),
+            getattr(definition, "plan_sha256", None),
+        )
+        if lifecycle_ref is None:
+            summary["source_status"] = "not-computable"
+        elif all(item is not None for item in source_fields):
+            lifecycle_path = guard.root / lifecycle_ref
+            if not lifecycle_path.exists() or lifecycle_path.is_symlink():
+                raise OSError("progress lifecycle source is missing or not contained")
+            lifecycle_resolved = lifecycle_path.resolve(strict=True)
+            if not lifecycle_resolved.is_relative_to(guard.root) or not lifecycle_resolved.is_file():
+                raise OSError("progress lifecycle source is not contained")
+            from ..goal_delivery_lifecycle import (
+                MAX_GOAL_DELIVERY_LIFECYCLE_BYTES,
+                parse_goal_delivery_lifecycle,
+            )
+            from ..progress_projection import (
+                ProgressScopeStatus,
+                recompute_progress_snapshot,
+            )
+
+            if lifecycle_resolved.stat().st_size > MAX_GOAL_DELIVERY_LIFECYCLE_BYTES:
+                raise OSError("progress lifecycle source exceeds the fixed byte limit")
+            lifecycle_payload = lifecycle_resolved.read_bytes()
+            lifecycle = parse_goal_delivery_lifecycle(lifecycle_payload)
+            if (
+                lifecycle.lifecycle_run_id != definition.lifecycle_run_id
+                or lifecycle.plan_id != definition.plan_id
+                or lifecycle.plan_sha256 != definition.plan_sha256
+            ):
+                raise OSError("progress definition does not bind its lifecycle source")
+            snapshot = recompute_progress_snapshot(definition, lifecycle)
+            if snapshot.scope_status is not ProgressScopeStatus.COMPUTABLE:
+                raise OSError("progress definition does not provide a computable source scope")
+            summary["lifecycle_sha256"] = digest(lifecycle_payload)
+            summary["source_status"] = "current"
+        else:
+            summary["source_status"] = "not-computable"
+    except (ImportError, OSError, TypeError, ValueError) as error:
+        summary["status"] = "invalid"
+        return (
+            _check(
+                "progress-definition",
+                "fail",
+                f"progress definition is invalid: {type(error).__name__}",
+                "repair the canonical definition through an approved plan-change; doctor is read-only",
+            ),
+            summary,
+        )
+    summary.update(
+        {
+            "status": "current",
+            "definition_sha256": digest(payload),
+            "definition_id": str(getattr(definition, "definition_id", "")),
+            "target_delivery_phase": str(
+                getattr(getattr(definition, "target_delivery_phase", ""), "value", "")
+            ),
+        }
+    )
+    return (
+        _check(
+            "progress-definition",
+            "pass",
+            "progress definition is canonical: "
+            f"{summary['definition_sha256']}"
+            + (
+                f" (id={summary['definition_id']}, "
+                f"target={summary['target_delivery_phase']}, "
+                f"source={summary['source_status']})"
+                if summary["definition_id"]
+                else ""
+            ),
+        ),
+        summary,
+    )
+
+
 def run_doctor(target: str | Path) -> DoctorResult:
     try:
         guard = WorkspaceGuard(Path(target))
@@ -387,6 +510,10 @@ def run_doctor(target: str | Path) -> DoctorResult:
         guard, governance, canonical_receipts
     )
     checks.append(current_state_check)
+    progress_definition_check, progress_definition_summary = (
+        _progress_definition_diagnostic(guard, governance)
+    )
+    checks.append(progress_definition_check)
     regression_diagnostics = diagnose_regressions(guard.root)
     regression_issues = regression_diagnostics.errors + regression_diagnostics.warnings
     regression_status = "fail" if regression_diagnostics.errors else "warn" if regression_diagnostics.warnings else "pass"
@@ -399,7 +526,7 @@ def run_doctor(target: str | Path) -> DoctorResult:
     recovery = governance / ".recovery"
     interrupted = recovery.exists() and any(recovery.iterdir())
     checks.append(_check("interrupted-recovery", "fail" if interrupted else "pass", "interrupted transaction evidence exists" if interrupted else "no interrupted transaction evidence", "resolve recovery before changes" if interrupted else ""))
-    allowed_governance = {"project.toml", "policy.toml", "baseline.json", "audit-receipt.json", "adoption.json", "tools.json", "receipts", "changes", "regressions", ".recovery", "current-state.md", Path(ARCHITECTURE_GRAPH_RELATIVE_PATH).name, Path(CONSISTENCY_MANIFEST_RELATIVE_PATH).name}
+    allowed_governance = {"project.toml", "policy.toml", "baseline.json", "audit-receipt.json", "adoption.json", "tools.json", "receipts", "changes", "regressions", ".recovery", "current-state.md", "progress", Path(ARCHITECTURE_GRAPH_RELATIVE_PATH).name, Path(CONSISTENCY_MANIFEST_RELATIVE_PATH).name}
     generated = [path.relative_to(guard.root).as_posix() for path in governance.iterdir() if path.name not in allowed_governance] if governance.is_dir() else []
     checks.append(_check("generated-files", "warn" if generated else "pass", "unexpected generated files: " + ", ".join(generated) if generated else "no unexpected generated files", "remove or approve generated files" if generated else ""))
     documents_match = not policy or all(_document_exists(guard.root, document) for document in policy.required_documents)
@@ -416,7 +543,7 @@ def run_doctor(target: str | Path) -> DoctorResult:
         exit_code = 5
     elif any(item["status"] == "inconclusive" for item in checks) and not failures:
         exit_code = 3
-    receipt = build_receipt(command="doctor", policy_digest=digest(dump_policy_toml(policy).encode()) if policy else "", target_fingerprint=digest(before), authorized_scope=(".",), outputs={"checks": tuple(checks), "receipt_state": {**receipt_summary, "current_state": current_state_summary}, "read_only_proof": {"passed": not changed, "changed_paths": changed}}, classification="pass" if exit_code == 0 else "diagnostic")
+    receipt = build_receipt(command="doctor", policy_digest=digest(dump_policy_toml(policy).encode()) if policy else "", target_fingerprint=digest(before), authorized_scope=(".",), outputs={"checks": tuple(checks), "receipt_state": {**receipt_summary, "current_state": current_state_summary, "progress_definition": progress_definition_summary}, "read_only_proof": {"passed": not changed, "changed_paths": changed}}, classification="pass" if exit_code == 0 else "diagnostic")
     return DoctorResult(exit_code == 0, tuple(checks), "doctor completed", exit_code, receipt)
 
 __all__ = ["DoctorResult", "run_doctor"]

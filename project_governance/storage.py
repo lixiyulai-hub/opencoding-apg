@@ -102,7 +102,7 @@ _CHECK_FIELDS = (
     "duration_ms",
 )
 _RECEIPT_COMMANDS = frozenset(
-    {"audit", "init", "adopt", "plan-change", "check", "doctor"}
+    {"audit", "init", "adopt", "plan-change", "check", "doctor", "progress"}
 )
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _UTC_TIMESTAMP = re.compile(

@@ -7,3 +7,17 @@ This project is governed by the canonical policy at `.governance/policy.toml`.
 - Run the commands in `QUALITY_GATES.md` before handoff.
 - Record durable decisions in `docs/decisions/`.
 - Do not claim checks passed without evidence.
+
+## Final Status Snapshot
+
+For every material checkpoint, successful or failed terminal result, `BLOCK`,
+or `CONFIRM`, the final user-facing response MUST end with exactly one
+`Status Snapshot` section. It is the final section: no trailing classification,
+conclusion, or additional next-step text may appear after it.
+
+The snapshot MUST state the current phase, completed work, source-bound total
+progress and current-stage progress (or `not-computable` with the missing
+source), current delivery and Gate state, next automatic work, at most one
+real human gate, blockers and independent-review state, later delivery
+boundaries, and the exact Continuation/resume condition. Never infer a
+percentage from time, tokens, changed files, receipts, or Gate counts.

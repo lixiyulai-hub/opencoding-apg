@@ -14,7 +14,16 @@ from .storage import (
 from .version import VERSION
 
 
-COMMANDS = ("audit", "init", "adopt", "plan-change", "check", "doctor", "git-safety")
+COMMANDS = (
+    "audit",
+    "init",
+    "adopt",
+    "plan-change",
+    "check",
+    "doctor",
+    "progress",
+    "git-safety",
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -71,6 +80,16 @@ def build_parser() -> argparse.ArgumentParser:
     doctor = subparsers.add_parser("doctor")
     doctor.add_argument("target", help="project root to diagnose")
 
+    progress = subparsers.add_parser(
+        "progress",
+        help="render a read-only source-bound project status snapshot",
+    )
+    progress.add_argument("target", help="project root to inspect")
+    progress.add_argument(
+        "--definition",
+        help="project-relative ProgressDefinition JSON; defaults to .governance/progress/active.json",
+    )
+
     git_safety = subparsers.add_parser(
         "git-safety",
         help="inspect Git boundaries and preview a local baseline without Git writes",
@@ -88,7 +107,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="report files at or above this byte size",
     )
 
-    for command_parser in (audit, init, adopt, plan, check, doctor, git_safety):
+    for command_parser in (
+        audit,
+        init,
+        adopt,
+        plan,
+        check,
+        doctor,
+        progress,
+        git_safety,
+    ):
         command_parser.add_argument(
             "--json",
             dest="json_output",
@@ -221,6 +249,16 @@ def main(argv: list[str] | None = None) -> int:
 
             outcome = run_doctor(args.target)
             _emit(outcome.receipt, json_output=args.json_output, label="doctor")
+            return outcome.exit_code
+
+        if args.command == "progress":
+            from .commands.progress import run_progress
+
+            outcome = run_progress(args.target, definition=args.definition)
+            if args.json_output:
+                _emit(outcome.receipt, json_output=True, label="progress")
+            else:
+                print(outcome.status_snapshot)
             return outcome.exit_code
 
         if args.command == "git-safety":

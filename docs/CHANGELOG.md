@@ -1,5 +1,73 @@
 # Changelog
 
+## 0.6.2-dev.20260818
+
+### Added
+
+- P6-B S2 makes lifecycle advancement fail closed on hash-bound task evidence,
+  a post-evidence independent review, and current Gate/candidate bindings.
+- A completed repository target now reports the next separate delivery phase
+  instead of ending with an opaque terminal classification.
+
+### Compatibility
+
+- Retained legacy task evidence remains audit-only and cannot contribute to
+  progress. Host, runtime, deployment, publication, pilot, and release remain
+  separate boundaries.
+
+## 0.6.1-dev.20260818
+
+### Added
+
+- P6-B gives APG a canonical active self-roadmap and lifecycle source. The
+  read-only progress report now has a declared repository denominator rather
+  than forcing APG itself to return `not-computable`.
+- The local managed AGENTS contract, default project template, and generated
+  skill require exactly one final Status Snapshot after every material success,
+  failure, `BLOCK`, or `CONFIRM`, with no trailing conclusion.
+- Doctor validates a present active definition's lifecycle source and exact
+  run/plan bindings. Missing or invalid scope does not claim that later
+  boundaries are absent.
+
+### Compatibility
+
+- P6-B does not convert P5-H host ownership/reload, runtime, deployment,
+  publication, pilot, release, provider/network, Git, or target execution into
+  APG repository progress. The active denominator is explicitly limited to the
+  current self-roadmap.
+
+## 0.6.0-dev.20260818
+
+### Added
+
+- P6-A adds a source-bound `ProgressDefinition` and read-only
+  `ProgressSnapshot` that report separate execution and independently verified
+  progress with integer basis points. A percentage is unavailable rather than
+  inferred when the declared denominator or source binding is absent.
+- The `progress` CLI renders canonical JSON or a fixed human Status Snapshot
+  with total/current-stage progress, completed work, delivery and Gate state,
+  next actions, the remaining human gate when one exists, blockers, review
+  state, and later delivery boundaries.
+- The pure continuous-delivery harness maps lifecycle and feedback-loop stop
+  facts to bounded inspection, planning, dispatch, validation, independent
+  review, reporting, and requeue recommendations without executing work or
+  widening authority.
+- Generated APG skill guidance now requires a Status Snapshot at every
+  material checkpoint, terminal result, `BLOCK`, or `CONFIRM`.
+
+### Compatibility
+
+- P3-F through P3-J compact user-result schemas and the existing feedback-loop
+  decision schema remain closed and unchanged. P6-A projects independent,
+  read-only data from their source records.
+- `DISPATCH` remains a recommendation that requires existing transaction
+  authority. The harness does not create approval, execute a task, call a
+  provider, access a network, control a host, or cross runtime, deployment,
+  publication, pilot, or release boundaries.
+- This repository candidate does not promote global APG bytes, reload or
+  invoke a host, mutate a target project, access providers or networks, deploy,
+  publish, pilot, or release.
+
 ## 0.5.0-dev.20260816
 
 ### Added
