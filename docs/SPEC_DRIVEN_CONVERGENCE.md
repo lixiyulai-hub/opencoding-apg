@@ -91,8 +91,16 @@ are bound:
 
 A safe P3-E `RECOMMEND` is selected automatically for this explicit bounded
 route, so the user is not interrupted for a redundant preference. A
-consequential route is `CONFIRM`, and missing root, scope, readiness, Gates,
-rollback, or secret safety is `BLOCK`.
+consequential route is one grouped `CONFIRM` route with the complete canonical
+reason set, even when several consequential reasons apply. Missing root, scope,
+readiness, Gates, rollback, or secret safety is `BLOCK`.
+
+The grouped route is a request for one exact bounded transaction, not generic
+consent. A later authorization session may reuse that one owner Gate only while
+the pre-bound transaction IDs, one exact source digest, required preimage,
+scope, reason set, policy, owner, and UTC expiry all still match. A P3-G reuse
+also binds one lifecycle run, plan, wave, and `CONFIRM` task set. New or drifted
+facts remain a fresh `CONFIRM` or `BLOCK` condition.
 
 `allow_implicit_invocation: true` in the generated package only allows the
 global router to invoke APG for a non-trivial project request. It never grants

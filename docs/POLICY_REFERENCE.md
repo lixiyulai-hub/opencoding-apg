@@ -759,6 +759,15 @@ P2-derived route is rejected unless a later schema carries enough canonical P2
 source context to recompute it. P3-A does not treat an unbound P2 projection as
 verified evidence.
 
+When more than one `CONFIRM` candidate applies to the same routed intent, P3-A
+MUST emit exactly one `decision.confirmation.bundle` and one
+`question.confirmation.bundle`. The bundle MUST retain the canonical union of
+every trigger code and evidence reference; it is not permitted to drop a risk
+reason or silently choose one reason over another. A single `CONFIRM` candidate
+MUST retain its existing compatible decision and question identity. Bundling is
+only one human-facing Gate; it creates no execution authority, approval record,
+or exception to downstream transaction binding.
+
 ### Closed route output
 
 The route output separates these field groups:
@@ -1039,7 +1048,11 @@ The controller MUST classify every request as exactly one of `AUTO`,
   deployment, irreversible change, security or privacy posture change, or
   materially ambiguous direction. A valid confirmation MUST be fresh and bind
   an owner actor, transaction ID, P3-D digest, physical-root fingerprint, and
-  every allowed path.
+  every allowed path. A canonical expiring `AuthorizationSession` MAY replace
+  repeated approvals only when it also binds the exact policy digest, P3-D
+  digest, physical-root preimage, complete reason set, and named child
+  transaction; a scope or source subset is never enough to bypass any other
+  binding.
 - `BLOCK` MUST be returned for missing action context, policy drift, unbounded
   scope, missing reversibility evidence, secret-shaped content, non-ready or
   tampered preview, content or manifest mismatch, unsafe physical root, link or
@@ -1145,6 +1158,21 @@ run ID, plan ID, plan digest, task ID, and exact task scope. `CONFIRM` MUST paus
 until an approval binds those same fields plus a caller-supplied transaction ID.
 Missing identifiers MUST remain `PENDING_USER_INPUT`; the controller MUST NOT
 invent identifiers or treat silence as consent.
+
+For one current dependency-closed `CONFIRM` wave, P3-G MAY expand one canonical
+expiring `AuthorizationSession` into task-bound approval records. The session
+MUST bind exactly one transaction ID, the exact P3-F plan digest and policy,
+`preimage_sha256 = null`, lifecycle run ID, plan ID, wave index, exact
+`CONFIRM` task IDs, the exact union of current-wave scopes and reason codes,
+owner identity, and UTC expiry. It MUST fail closed after expiry for a new
+checkpoint or on a different run, plan, policy, scope, reason, transaction, or
+wave. The derived approvals and filled authorization references remain ordinary
+existing P3-G checkpoint fields, so the closed lifecycle schema and compact user
+result do not change; each derived approval ID commits to the complete canonical
+session hash. An exact session-backed checkpoint replay MUST be checked against
+the lifecycle state immediately before that checkpoint. It MAY match the
+original expired session only when the rebuilt event digest is identical; it
+cannot reuse the session for a later wave or a changed event.
 
 Task evidence MUST be accepted only for the current dependency-closed wave and
 only once. Executor, artifact/output, Gate, acceptance, rollback, reviewer, and
@@ -1403,8 +1431,32 @@ projection is not execution, target acceptance, runtime acceptance,
 deployment, publication, pilot, release, host action, provider/network use,
 or global promotion.
 
-P6-B's APG self-roadmap is one explicit consumer of this contract. Its active
-definition may measure only the declared current repository work packages up
+P6-B's APG self-roadmap is one historical consumer of this contract. Its
+immutable definition is preserved at
+`.governance/progress/history/progress.apg.self-roadmap.v1.definition-57b785db849d93abfdca5a9fb0123317ce12e059c5b917541b3e9a05f76b698f.json`.
+The current active definition is P6-C at `.governance/progress/active.json`.
+The historical definition measured only the declared repository work packages up
 to `repository-validated`; it cannot infer historical project completion or
 represent host, runtime, deployment, publication, pilot, or release work as
 part of that denominator.
+
+P6-D may bind `ProgressDefinition.program_roadmap_ref` to one canonical
+`ProgramRoadmapDefinition`. This is a separate denominator: completed lifecycle
+work contributes only through explicitly weighted program packages, while
+historical blocked packages remain evidence-only and must identify a fresh
+successor transaction. The renderer MUST expose program total progress, current
+program-stage progress, the immediate program transaction, the following
+program stage, and ordered successor transactions. The immediate transaction
+is the user's next actionable work; a later confirmation boundary must not be
+presented as if it were the immediate step.
+Missing or drifted program evidence MUST produce `not-computable` and withhold
+successor recommendations. A valid successor recommendation is still a plan
+projection and MUST NOT be treated as authority for any later delivery boundary.
+
+The additive presentation facade (`project_governance.presentation`) wraps
+closed lifecycle, idea/session, requirement-trace, target, guided-intake, P3-F,
+and loop-completion results without changing their compact schemas. Each
+presentation has exactly one final Status Snapshot and a final `Continuation:`
+line. When no source-bound progress outcome is supplied, it must state
+`not-computable`; it must never infer a percentage or claim runtime, deployment,
+publication, pilot, release, host, provider, network, or promotion acceptance.

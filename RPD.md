@@ -7,13 +7,13 @@
 | Document ID | `APG-RPD-001` |
 | Canonical name | Requirements Planning, Orchestration, and Delivery (RPD) |
 | Familiar alias | Product Requirements Document (PRD); RPD is canonical because it also binds orchestration, evidence, and delivery traceability. |
-| Version | `0.5.1` |
-| Effective date | `2026-08-18` |
-| Change ID | `adaptive-project-governance-p6-b-self-progress-baseline-and-terminal-status-contract-v1-20260818` |
-| Approved write scope | The P6-B ChangeRecord scope: one canonical APG self-roadmap and active progress definition, terminal Status Snapshot contracts, read-only source diagnostics, documentation/tests, and one local repository candidate only. |
-| Pre-state | The P6-A candidate, all historical receipts and dirty state, and S29-S33 host evidence are preserved. Exact P6-B preimages and approval are recorded in the applied ChangeRecord and receipt. |
-| Approval state | Owner approval `OWNER-DIRECT-APG-P6-B-SELF-PROGRESS-20260818-001` authorizes only the named repository paths and bounded candidate build. Global promotion, host reload or invocation, target execution, deployment, pilot, publication, and release require separate transactions. |
-| Product state | P3-A through P3-J remain repository-validated and closed. P5-A retains deterministic specification convergence and beginner prompt autonomy. P6-A supplies source-bound progress and a bounded non-executing continuation planner. P6-B gives APG itself an explicit current repository roadmap and requires every final response to expose its continuation. |
+| Version | `0.6.5` |
+| Effective date | `2026-08-19` |
+| Change ID | `adaptive-project-governance-beginner-autonomy-single-gate-v1-20260819` |
+| Approved write scope | The P6-F ChangeRecord scope: one grouped P3-A/P5-A confirmation route, exact expiring delegated authorization sessions for P3-E/P3-G, version-consistent local candidate packaging, documentation/tests, and additive evidence. Global promotion, host lifecycle, runtime, deployment, publication, pilot, and release remain separate transactions. |
+| Pre-state | The P6-E accepted candidate/evidence, immutable receipts, P6-C lifecycle and P6-D roadmap, P5-H S29-S33 host evidence, and dirty state are preserved. The former P6-B definition remains at its immutable history path. |
+| Approval state | Owner approval `OWNER-DIRECT-APG-BEGINNER-AUTONOMY-SINGLE-GATE-20260819-001` authorizes only the exact local P6-F source, test, documentation, candidate, and additive evidence paths. Earlier approvals remain bound to their exact sources. Global promotion, host reload or invocation, target execution, deployment, pilot, publication, and release require separate transactions. |
+| Product state | P3-A through P3-J remain repository-validated and closed. P5-A retains deterministic specification convergence and beginner prompt autonomy. P6-A supplies source-bound progress and a bounded non-executing continuation planner. P6-B is historical. P6-C is the completed lifecycle denominator. P6-D is accepted local validation and program-roadmap continuation. P6-E adds an additive facade for ordinary user-result, guided-intake, P3-F, and loop-completion routes. P6-F adds one exact grouped confirmation Gate and fail-closed session reuse for already-bound local child work; arbitrary host/model prose remains a later host/adapter boundary. |
 | Normative language | ASCII identifiers and field values are preferred. The product promise below is retained verbatim. |
 
 ## Product Promise
@@ -47,6 +47,10 @@ This RPD defines:
 - automatic planning and bounded local implementation without redundant routine
   approval, while retaining confirmation for consequential work and blocking
   incomplete or unsafe work;
+- at most one real owner Gate for simultaneous consequential reasons within one
+  exact bounded transaction, followed by automatic routine orchestration;
+- exact, owner-bound, UTC-expiring authorization sessions that can reuse that
+  Gate only for pre-bound child transactions and reject every drift;
 - source-bound total and current-stage progress that distinguishes execution
   from independent verification and never fabricates a percentage;
 - Status Snapshots that state completed work, next automatic work, real human
@@ -142,10 +146,10 @@ Each requirement has these required fields:
 | `REQ-010` | delivery | Keep runtime, deployment, publication, promotion, downstream pilot, and release as separate evidence and approval boundaries. | GUIDED, ENGINEERING | `RPD-DELIVERY-BOUNDARIES` | CONFIRM | P0 | Each boundary has its own authority, execution record, rollback, and acceptance evidence. | P3-G, P3-H, P3-I, P3-J. | Repository-validated phase-isolation contracts; later execution phases are not performed or accepted. | repository-validated |
 | `REQ-011` | acceptance | Require observable acceptance evidence and independent review; reject self-assertion as final proof. | GUIDED, ENGINEERING | `RPD-EVIDENCE` | AUTO | P0 | An independent reviewer can return `ACCEPT` or `BLOCK` against the requirement and cited evidence. | P3-F, P3-G, P3-H, P3-J; configured Gates. | Independent-review contracts, plan-bound Gate receipt, and independent read-only review. | repository-validated |
 | `REQ-012` | specification | Provide one deterministic offline specification-convergence controller for clarification, requirements-quality checks, cross-artifact planning analysis, and bounded iterative convergence. | GUIDED, ENGINEERING | `RPD-SPEC-DRIVEN-CONVERGENCE` | AUTO | P0 | The controller emits bounded canonical records, at most five prioritized clarification questions, explicit planning findings, and `COMPLETE`, `CONTINUE`, `CONFIRM`, or `BLOCK` without executing work or widening authority. | P5-A. | `project_governance/spec_driven_convergence.py`, focused tests, and the P5-A candidate manifest. | repository-validated |
-| `REQ-013` | interaction | Let beginners use explicit `/plan`, `/clarify`, `/checklist`, `/analyze`, `/converge`, and `/implement` prompts without becoming routine approval operators. | GUIDED, ENGINEERING | `RPD-BEGINNER-AUTONOMY` | AUTO | P0 | Planning aliases are automatic; `/implement` is automatic only for an exact-root, bounded, reversible, gated, rollback-bound, secret-safe local route; consequential work is `CONFIRM` and incomplete or unsafe work is `BLOCK`. | P5-A; later host and target phases remain independent. | Route tests, generated skill contract, package manifest, and Doctor evidence. | repository-validated |
-| `REQ-014` | interaction | At every material checkpoint or stop, expose completed work, source-bound total and current-stage progress, next automatic work, the remaining human gate, blocker and review state, and later delivery boundaries. | GUIDED, ENGINEERING | `RPD-CONTINUITY-STATUS` | AUTO | P0 | A read-only Status Snapshot is recomputable from declared sources and either gives integer basis points or explicitly states `not-computable`; it never hides the continuation arrangement behind a terse classification. | P6-A; delivery phases remain independent. | Progress projection, CLI, generated-skill contract, independent review, and candidate evidence. | repository-validated |
+| `REQ-013` | interaction | Let beginners use explicit `/plan`, `/clarify`, `/checklist`, `/analyze`, `/converge`, and `/implement` prompts without becoming routine approval operators. | GUIDED, ENGINEERING | `RPD-BEGINNER-AUTONOMY` | AUTO | P0 | Planning aliases are automatic; a bounded safe `/implement` route is automatic; simultaneous consequential triggers produce at most one grouped `CONFIRM`; one owner session can continue only exact pre-bound child work and expires or blocks on any drift. | P3-A, P3-E, P3-G, P5-A; later host and target phases remain independent. | Route/session regressions, generated skill contract, package manifest, and Doctor evidence. | repository-validated |
+| `REQ-014` | interaction | At every material checkpoint or stop, expose completed work, source-bound total and current-stage progress, next automatic work, the remaining human gate, blocker and review state, and later delivery boundaries. | GUIDED, ENGINEERING | `RPD-CONTINUITY-STATUS` | AUTO | P0 | A read-only Status Snapshot is recomputable from declared sources and either gives integer basis points or explicitly states `not-computable`; it never hides the continuation arrangement behind a terse classification. | P6-A, P6-D, P6-E; delivery phases remain independent. | Progress projection, CLI, additive presentation facade, Sol/Terra completion contract, independent review, and candidate evidence. | repository-validated |
 | `REQ-015` | orchestration | Plan continuous bounded progression without turning the owner into a routine approval relay or granting autonomous execution authority. | GUIDED, ENGINEERING | `RPD-CONTINUITY-HARNESS` | AUTO | P0 | A pure harness maps lifecycle and feedback-loop facts to inspection, plan gating, dispatch, validation, independent verification, reporting, requeueing, human gate, freeze, or complete; dispatch is only possible with separately existing authority. | P6-A; P3-F/P3-G and feedback-loop boundaries remain authoritative. | Harness projection/tests, policy reference, independent review, and candidate evidence. | repository-validated |
-| `REQ-016` | progress | An adopted APG project can declare one exact current roadmap so its total and current-stage percentages remain source-bound, while historical unbound work and later delivery boundaries stay excluded. | GUIDED, ENGINEERING | `RPD-SELF-ROADMAP` | AUTO | P0 | A valid active ProgressDefinition binds one canonical lifecycle, task weights, target phase, and later phase boundaries; the final Status Snapshot identifies that scope and its continuation. | P6-B; host and external delivery remain independent. | APG self-roadmap, read-only projection, Doctor source validation, independent review, and candidate evidence. | needs-evidence |
+| `REQ-016` | progress | An adopted APG project can declare one exact current roadmap so its total and current-stage percentages remain source-bound, while historical unbound work and later delivery boundaries stay excluded. | GUIDED, ENGINEERING | `RPD-SELF-ROADMAP` | AUTO | P0 | A valid active ProgressDefinition binds one canonical lifecycle, task weights, target phase, and later phase boundaries; the final Status Snapshot identifies that scope and its continuation. | P6-B historical; P6-C lifecycle; P6-D/P6-E program roadmap; host and external delivery remain independent. | APG lifecycle and program roadmap, read-only projection, Doctor source validation, P6-D Gate/review evidence, and candidate evidence. | repository-validated |
 
 `repository-validated` in this registry means that the APG contract and its
 repository tests passed their bounded acceptance. It does not mean that a
@@ -241,7 +245,7 @@ requirements. They do not authorize execution.
 | --- | --- | --- |
 | `AUTO` | Normalize bounded inputs, detect missing evidence, render traceability, and route a non-consequential next step. | Approve, spend, call a provider, access a network, mutate data, deploy, publish, or release. |
 | `RECOMMEND` | Present a default, option, or bounded tradeoff with its assumptions and evidence needs. | Convert a recommendation into an owner decision or a final acceptance result. |
-| `CONFIRM` | Pause for an explicit owner decision with scope, consequence, evidence need, and rollback expectation. | Infer consent from silence, a prior unrelated approval, a token, or a local success. |
+| `CONFIRM` | Pause once for an explicit owner decision with scope, complete consequence set, evidence need, and rollback expectation; a later exact expiring session may reuse only that bounded decision. | Infer consent from silence, a prior unrelated approval, a token, a local success, or a session with drifted source, preimage, scope, reason, expiry, or transaction. |
 
 ### Mandatory CONFIRM Boundaries
 
@@ -278,8 +282,8 @@ does not satisfy a later row.
 | Boundary | Required transaction | Minimum binding | Current state |
 | --- | --- | --- | --- |
 | P3-D materialization-preview capability | Completed P3-D repository ChangeRecord. Preview remains distinct from apply. | Exact P3-C result and blueprint digests, logical root, manifest, baseline, changed paths, approvals, Gates, rollback, and acceptance. | `repository-validated` |
-| P3-E bounded apply-controller capability | Completed P3-E repository ChangeRecord. | Exact P3-D preview, manifest bytes, physical-root fingerprint, pre-state, authorization class, snapshot, post-state, and rollback. | `repository-validated`; no concrete target transaction was run in this completion audit. |
-| P3-F through P3-J orchestration capability | Completed independent repository ChangeRecords. | Canonical source chain, task ownership, lifecycle evidence, consolidation, session state, capability preservation, and independent review. | `repository-validated` |
+| P3-E bounded apply-controller capability | Completed P3-E repository ChangeRecord plus P6-F session contract. | Exact P3-D preview, manifest bytes, physical-root fingerprint, pre-state, authorization class, exact expiring session or owner approval, snapshot, post-state, and rollback. | `repository-validated`; no concrete target transaction was run in this completion audit. |
+| P3-F through P3-J orchestration capability | Completed independent repository ChangeRecords plus P6-F session contract. | Canonical source chain, task ownership, one-wave lifecycle session evidence, consolidation, capability preservation, and independent review. | `repository-validated` |
 | P4-1 host-integration contract | Approved five-path documentation ChangeRecord. | Exact host identity, source and installed-byte evidence, reload state, bounded invocation, optional provider/network authority, rollback, and independent review. | `planned`; contract only, with zero host action. |
 | P4-2A first-host selection | Approved two-path host-selection ChangeRecord. | `OpenAI.Codex` package `26.803.10989.0`, current process observation, installed APG `0.3.0` manifest, candidate `0.4.0-dev.20260813` manifest, exclusions, and zero-action evidence. | `planned`; Codex App selected, with zero global or host action. |
 | P4-2B0 adaptive routing | Approved five-path repository ChangeRecord. | Canonical skill routing table, Doctor-versus-audit entry, five severity levels, initial disabled implicit invocation, deterministic candidate package, focused tests, and zero global action. | `repository-validated`; routing candidate built, with zero Codex global or host action. P5-A is the successor repository contract for beginner prompt aliases and bounded implicit invocation. |
@@ -473,7 +477,11 @@ Later actions have no transaction-specific approval. Their state is therefore
 
 | Version | Date | Change | Scope |
 | --- | --- | --- | --- |
-| `0.5.1` | `2026-08-18` | Add the P6-B APG self-roadmap baseline, active source-bound progress definition, final-response Status Snapshot contract, and Doctor lifecycle-source validation. | P6-B repository-only roadmap, tests, documentation, and one local candidate; no global, host, target, runtime, or external action. |
+| `0.6.5` | `2026-08-19` | Group simultaneous P3-A/P5-A consequential triggers into one real human Gate, add exact UTC-expiring delegated authorization sessions for P3-E/P3-G, and preserve compact schemas while routine local work continues automatically. | P6-F repository-only source, documentation/tests, deterministic candidate, and additive evidence; no global, host, target, runtime, deployment, publication, pilot, or release action. |
+| `0.6.2` | `2026-08-18` | Make Status Snapshots universal across human-readable terminal routes, expose P6-C source-bound total/current-stage progress and exact continuation, add bounded loop-harness ordering/resume semantics, and preserve the P6-B definition under an immutable history path. | P6-C repository-only source, templates, documentation/tests, candidate, and one additive history file; no global, host, target, runtime, or external action. |
+| `0.6.4` | `2026-08-19` | Add the additive universal user-result presentation facade, preserve all closed P3 compact schemas, require one final source-bound Status Snapshot or explicit `not-computable` continuation, and align Sol/Terra completion guidance. | P6-E repository-only facade, roadmap reconciliation, package/version, documentation/tests, and additive evidence; no global, host, target, runtime, deployment, publication, pilot, or release action. |
+| `0.6.3` | `2026-08-19` | Add a separate source-bound APG program roadmap projection with whole-program/current-stage percentages, readable successor transactions, historical S33 exclusion with fresh S34 successor, and program-aware bounded loop continuation. | P6-D repository-only projection, active roadmap binding, templates, documentation/tests, and additive evidence; no global, host, target, runtime, deployment, publication, pilot, or release action. |
+| `0.5.1` | `2026-08-18` | Add the P6-B APG self-roadmap baseline, immutable historical definition, active source-bound progress definition, final-response Status Snapshot contract, and Doctor lifecycle-source validation. | P6-B repository-only roadmap/history, tests, documentation, and one local candidate; no global, host, target, runtime, or external action. |
 | `0.5.0` | `2026-08-18` | Add P6-A source-bound progress definitions and snapshots, mandatory Status Snapshot reporting, read-only progress diagnostics, and a bounded non-executing loop-harness planner, with the `0.6.0-dev.20260818` repository candidate. | P6-A controller, tests, package contract, documentation, and one new candidate; no global, host, target, runtime, or external action. |
 | `0.4.0` | `2026-08-16` | Add P5-A deterministic specification convergence, beginner prompt aliases, bounded automatic local implementation, consequential confirmation, incomplete-work blocking, generated implicit-invocation metadata, and the `0.5.0-dev.20260816` repository candidate. | P5-A controller, tests, package contract, documentation, and one new candidate; no global or external action. |
 | `0.3.3` | `2026-08-15` | Correct the source and packaged CLI version to `0.4.0-dev.20260814`, record P4-2B1 disk promotion and the blocked pre-push P4-2B2 attempt, add a package-runtime regression assertion, and rebuild the candidate without claiming host or publication acceptance. | Five repository files, one bounded evidence directory, and the canonical candidate plus retained preimage. |
@@ -539,7 +547,7 @@ The beginner policy is layered rather than indiscriminately permissive:
 | Explicit planning alias | `AUTO` planning authority | Continue without redundant approval. |
 | Explicit `/implement`, safe local facts complete | `AUTO` execution authority | Execute only the exact bounded reversible local work. |
 | Explicit `/implement`, safe alternative only | `AUTO` with selected default | Use the safe default and record the recommendation. |
-| Consequential or materially ambiguous work | `CONFIRM` | Ask for the missing transaction-specific decision. |
+| Consequential or materially ambiguous work | One grouped `CONFIRM` | Ask once for the exact transaction-specific decision and retain every reason. |
 | Missing root, scope, Gates, rollback, readiness, or secret safety | `BLOCK` | Explain the missing fact; do not guess or execute. |
 
 This policy reduces routine approval burden for beginners without weakening
@@ -548,6 +556,14 @@ compare-and-swap, rollback, phase isolation, or the later host/target/runtime/
 deployment/publication/pilot/release boundaries. The installable skill package
 sets `allow_implicit_invocation: true` so a beginner's non-trivial project
 request can reach the controller; invocation is not execution authority.
+
+When several consequential facts belong to one exact transaction, P3-A and
+P5-A surface one grouped Gate with the complete canonical reason set. One
+`AuthorizationSession` may then reuse that Gate only for its named child
+transactions and only while owner, policy, source digest, required preimage,
+scope, reason set, and UTC expiry match. It is not generic consent and cannot
+cross a new root, provider/network, Git, host, runtime, deployment,
+publication, pilot, or release boundary.
 
 P5-A repository acceptance is limited to focused tests, affected package and
 version tests, required project validation, deterministic candidate checks, and
@@ -602,15 +618,24 @@ verification, and Doctor. It performs no global promotion, host action, target
 execution, provider/network access, runtime, deployment, publication, pilot,
 or release.
 
-## P6-B APG self-roadmap and final reporting
+## P6-C universal status, progress, and loop continuity
 
-P6-B declares APG's current repository roadmap in
-`.governance/progress/active.json`. Its percentages have a deliberately narrow
-denominator: the seven source-bound work packages in the named lifecycle, with
-`repository-validated` as the target. It does not rewrite the past, infer
-completion from receipt volume, or collapse the P5-H host boundary into this
-roadmap. Runtime, deployment, publication, pilot, and release remain explicit
-later boundaries; host ownership/reload remains a separate external boundary.
+P6-C is the current active repository denominator at
+`.governance/progress/active.json`. It declares seven equally weighted,
+source-bound work packages for the universal terminal snapshot, adapter parity,
+continuity/harness contract, implementation, verification, candidate delivery,
+and independent acceptance. Its target is `repository-validated`; at creation
+the total and current-stage execution and verified progress are `0.00%`.
+
+The historical P6-B definition is preserved at
+`.governance/progress/history/progress.apg.self-roadmap.v1.definition-57b785db849d93abfdca5a9fb0123317ce12e059c5b917541b3e9a05f76b698f.json`.
+Its percentages had a deliberately narrow denominator: the seven
+source-bound work packages in the named lifecycle, with `repository-validated`
+as the target. It does not rewrite the past, infer completion from receipt
+volume, or collapse the P5-H host boundary into this roadmap. P6-C likewise
+does not infer whole-program completion. Runtime, deployment, publication,
+pilot, and release remain explicit later boundaries; host ownership/reload
+remains a separate external boundary.
 
 Every material checkpoint, successful or failed final result, `BLOCK`, or
 `CONFIRM` must end with exactly one `Status Snapshot` section. The snapshot is
@@ -619,3 +644,39 @@ the current phase, completed work, total/current-stage execution and verified
 progress (or the precise reason it is not computable), delivery/Gate state,
 next automatic work, any real human gate, blockers/review, later boundaries,
 and the exact continuation/resume condition.
+
+## P6-D program roadmap and successor continuation
+
+P6-D keeps the P6-C lifecycle denominator intact and adds a separate
+source-bound program denominator at
+`.governance/progress/apg-p6-d-program-roadmap-v1.json`. The current roadmap
+records P6-C repository validation as completed, reports its whole-program and
+current-program-stage percentages independently, and orders P6-D local
+validation, global promotion, a fresh P5-H S34 host transaction, runtime,
+deployment, publication, pilot, and release. P5-H S33 remains immutable
+historical BLOCK evidence outside the denominator. Missing or drifted program
+evidence is `not-computable`; the bounded loop harness may prepare a plan gate
+for the next transaction but never creates authority or claims a later
+delivery boundary passed.
+
+## P6-F beginner autonomy and one bounded Gate
+
+P6-F preserves the principle that a beginner describes an outcome and APG owns
+routine planning, execution routing, and validation. It groups simultaneous
+consequential P3-A decisions into one canonical confirmation bundle, without
+dropping any trigger or evidence reference. P5-A likewise returns one
+consequential route containing the complete reason set instead of a sequence of
+approval prompts.
+
+The canonical `AuthorizationSession` is owner-bound, non-secret, exact-scope,
+single-source-digest-bound, policy-bound, preimage-bound where P3-E requires it,
+and UTC-expiring. P3-E may reuse it only for explicitly listed child
+transactions that share that one exact source, preimage, scope, and reason set.
+P3-G additionally binds one lifecycle run, plan, wave, and `CONFIRM` task set,
+and may expand it only into that wave's existing approval fields. New source,
+preimage, scope, reason, policy, transaction, run, plan, wave, task, or external
+boundary facts fail closed. A new checkpoint requires a live session; an expired
+one can appear only in an event-identical replay of an already recorded
+checkpoint. Repository acceptance of this capability does not imply global
+promotion, host lifecycle, runtime, deployment, publication, pilot, or release
+acceptance.

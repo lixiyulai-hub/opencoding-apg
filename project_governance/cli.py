@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import sys
+from contextlib import redirect_stderr
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -154,16 +156,428 @@ def _error_receipt(command: str, error: Exception | str) -> Receipt:
     )
 
 
-def _emit(receipt: Receipt, *, json_output: bool, label: str) -> None:
+def _fallback_terminal_status(
+    *,
+    label: str,
+    receipt: Receipt,
+    reason: str,
+) -> str:
+    """Render the fail-closed terminal status when progress cannot be read."""
+
+    terminal_result = f"terminal-result-{label}-{receipt.classification}"
+    error_type = receipt.outputs.get("error_type")
+    reasons = [reason, terminal_result]
+    if (
+        type(error_type) is str
+        and error_type
+        and error_type.replace("-", "").replace("_", "").isalnum()
+    ):
+        reasons.append(f"terminal-error-{error_type.casefold()}")
+    elif error_type is not None:
+        reasons.append("terminal-error-detail-retained-in-receipt")
+    invalid_input = (
+        receipt.classification == "invalid"
+        or reason == "progress-target-unavailable"
+    )
+    if invalid_input:
+        delivery_state = "blocked-by-invalid-input"
+        terminal_state = "invalid-input"
+        next_action = "inspect-invalid-input"
+        terminal_reason = "terminal-invalid-input"
+        review_state = "blocked-by-invalid-input"
+        resume_condition = "resume.after-invalid-input-is-corrected"
+    else:
+        delivery_state = "blocked-by-progress-source"
+        terminal_state = "progress-source-unavailable"
+        next_action = "inspect-progress-scope"
+        terminal_reason = "terminal-progress-source-unavailable"
+        review_state = "blocked-by-progress-source"
+        resume_condition = "resume.after-progress-source-is-readable"
+    return "\n".join(
+        (
+            "Status Snapshot",
+            "Scope: not-computable",
+            "Progress basis: definition_id=absent; denominator_tasks=not-computable; "
+            "denominator_weight=not-computable; lifecycle_ref=not-computable; "
+            "plan_id=not-computable",
+            f"Completed work: unavailable; terminal_result={label}:{receipt.classification}",
+            "Total progress: execution=not-computable verified=not-computable",
+            "Program progress: scope=not-computable; definition_id=absent; "
+            "execution=not-computable verified=not-computable; "
+            "reason=program-roadmap-unavailable",
+            "Current phase: unavailable/not-computable",
+            "Lifecycle stage: unavailable; execution=not-computable verified=not-computable",
+            "Program stage (current): unavailable/not-computable; packages=not-computable; "
+            "execution=not-computable verified=not-computable",
+            "Next lifecycle boundary: unavailable/not-computable",
+            "Immediate program transaction: unavailable/not-computable",
+            "Following program stage: unavailable/not-computable",
+            "Roadmap: unavailable/not-computable",
+            "Delivery and Gates: target=none; "
+            f"state={delivery_state}; gate_health=unavailable; terminal_state={terminal_state}",
+            f"Next automatic work: {next_action}",
+            "Human gate: none",
+            "Blockers and review: "
+            f"reasons={','.join(reasons)}; terminal_reason={terminal_reason}; independent_review={review_state}",
+            "Later boundaries: unavailable/not-computable",
+            f"Continuation: state=freeze; action={next_action}; "
+            "owner=harness-controller; requires_existing_authority=false; "
+            "dispatch_permitted=false; "
+            f"resume_condition={resume_condition}",
+        )
+    )
+
+
+def _with_terminal_result(
+    status_snapshot: str,
+    *,
+    label: str,
+    receipt: Receipt,
+) -> str:
+    """Bind the command result to an otherwise source-bound status snapshot."""
+
+    lines = status_snapshot.rstrip("\n").splitlines()
+    required_prefixes = (
+        "Status Snapshot",
+        "Scope: ",
+        "Progress basis: ",
+        "Completed work: ",
+        "Total progress: ",
+        "Program progress: ",
+        "Current phase: ",
+        "Lifecycle stage: ",
+        "Program stage (current): ",
+        "Next lifecycle boundary: ",
+        "Immediate program transaction: ",
+        "Following program stage: ",
+        "Roadmap: ",
+        "Delivery and Gates: ",
+        "Next automatic work: ",
+        "Human gate: ",
+        "Blockers and review: ",
+        "Later boundaries: ",
+        "Continuation: ",
+    )
+    if (
+        lines.count("Status Snapshot") != 1
+        or not lines
+        or lines[0] != "Status Snapshot"
+        or not lines[-1].startswith("Continuation: ")
+        or any(sum(line.startswith(prefix) for line in lines) != 1 for prefix in required_prefixes[1:])
+    ):
+        return _fallback_terminal_status(
+            label=label,
+            receipt=receipt,
+            reason="progress-terminal-status-invalid",
+        )
+    for index, line in enumerate(lines):
+        if line.startswith("Completed work: "):
+            lines[index] = (
+                f"{line}; terminal_result={label}:{receipt.classification}"
+            )
+            break
+    if label == "check":
+        _overlay_check_terminal_outcome(lines, receipt)
+    else:
+        _overlay_terminal_stop(lines, label=label, receipt=receipt)
+    return "\n".join(lines)
+
+
+def _replace_status_field(line: str, field: str, value: str) -> str:
+    """Replace one semicolon-delimited status field without changing its order."""
+
+    parts = line.split("; ")
+    marker = f"{field}="
+    for index, part in enumerate(parts):
+        if part.startswith(marker):
+            parts[index] = f"{marker}{value}"
+            return "; ".join(parts)
+    parts.append(f"{marker}{value}")
+    return "; ".join(parts)
+
+
+def _freeze_terminal_status(
+    lines: list[str],
+    *,
+    delivery_state: str,
+    gate_health: str | None,
+    next_action: str,
+    terminal_field: str,
+    terminal_value: str,
+    terminal_reason: str,
+    review_state: str,
+    resume_condition: str,
+    owner: str,
+    requires_existing_authority: bool,
+    human_gate: str | None = None,
+) -> None:
+    """Overlay a terminal stop without changing source-bound progress values."""
+
+    authority = "true" if requires_existing_authority else "false"
+    for index, line in enumerate(lines):
+        if line.startswith("Delivery and Gates: "):
+            line = _replace_status_field(line, "state", delivery_state)
+            if gate_health is not None:
+                line = _replace_status_field(line, "gate_health", gate_health)
+            lines[index] = _replace_status_field(
+                line,
+                terminal_field,
+                terminal_value,
+            )
+        elif line.startswith("Next automatic work: "):
+            lines[index] = f"Next automatic work: {next_action}"
+        elif line.startswith("Blockers and review: "):
+            line = _replace_status_field(line, "terminal_reason", terminal_reason)
+            lines[index] = _replace_status_field(
+                line,
+                "independent_review",
+                review_state,
+            )
+        elif line.startswith("Human gate: ") and human_gate is not None:
+            lines[index] = f"Human gate: {human_gate}"
+        elif line.startswith("Continuation: "):
+            lines[index] = (
+                f"Continuation: state=freeze; action={next_action}; owner={owner}; "
+                f"requires_existing_authority={authority}; dispatch_permitted=false; "
+                f"resume_condition={resume_condition}"
+            )
+
+
+def _overlay_terminal_stop(
+    lines: list[str],
+    *,
+    label: str,
+    receipt: Receipt,
+) -> None:
+    """Keep generic non-check terminal failures out of a work-in-progress state."""
+
+    classification = receipt.classification
+    conflicts = receipt.outputs.get("conflicts")
+    if label == "adopt" and isinstance(conflicts, (list, tuple)) and conflicts:
+        _freeze_terminal_status(
+            lines,
+            delivery_state="blocked-by-adoption-conflict",
+            gate_health="evidence-blocked",
+            next_action="resolve-adoption-conflicts",
+            terminal_field="terminal_state",
+            terminal_value="adoption-conflict",
+            terminal_reason="terminal-adoption-conflict",
+            review_state="blocked-by-adoption-conflict",
+            resume_condition="resume.after-adoption-conflicts-are-resolved",
+            owner="authorized-executor",
+            requires_existing_authority=True,
+            human_gate="resolve-adoption-conflict",
+        )
+    elif classification == "invalid":
+        _freeze_terminal_status(
+            lines,
+            delivery_state="blocked-by-invalid-input",
+            gate_health="evidence-blocked",
+            next_action="inspect-invalid-input",
+            terminal_field="terminal_state",
+            terminal_value="invalid-input",
+            terminal_reason="terminal-invalid-input",
+            review_state="blocked-by-invalid-input",
+            resume_condition="resume.after-invalid-input-is-corrected",
+            owner="harness-controller",
+            requires_existing_authority=False,
+        )
+    elif classification == "scope-violation":
+        _freeze_terminal_status(
+            lines,
+            delivery_state="scope-violation",
+            gate_health="evidence-blocked",
+            next_action="inspect-scope-and-replan",
+            terminal_field="terminal_state",
+            terminal_value="scope-violation",
+            terminal_reason="terminal-scope-violation",
+            review_state="blocked-by-scope",
+            resume_condition="resume.after-scope-repair-and-replan",
+            owner="validator",
+            requires_existing_authority=True,
+        )
+    elif classification == "inconclusive":
+        _freeze_terminal_status(
+            lines,
+            delivery_state="blocked-by-inconclusive-evidence",
+            gate_health="evidence-blocked",
+            next_action="resolve-inconclusive-evidence",
+            terminal_field="terminal_state",
+            terminal_value="inconclusive",
+            terminal_reason="terminal-inconclusive",
+            review_state="blocked-by-evidence",
+            resume_condition="resume.after-inconclusive-evidence-is-resolved",
+            owner="validator",
+            requires_existing_authority=True,
+        )
+    elif classification in {"diagnostic", "fail"}:
+        _freeze_terminal_status(
+            lines,
+            delivery_state="blocked-by-terminal-diagnostic",
+            gate_health="evidence-blocked",
+            next_action="inspect-terminal-diagnostic",
+            terminal_field="terminal_state",
+            terminal_value="diagnostic",
+            terminal_reason="terminal-diagnostic",
+            review_state="blocked-by-diagnostic",
+            resume_condition="resume.after-terminal-diagnostic-is-resolved",
+            owner="validator",
+            requires_existing_authority=True,
+        )
+
+
+def _overlay_check_terminal_outcome(lines: list[str], receipt: Receipt) -> None:
+    """Make nonzero check exits visible instead of leaving a pending Gate label."""
+
+    exit_code = receipt.outputs.get("exit_code")
+    if type(exit_code) is not int:
+        if receipt.classification == "invalid":
+            _freeze_terminal_status(
+                lines,
+                delivery_state="blocked-by-invalid-check-input",
+                gate_health="evidence-blocked",
+                next_action="inspect-invalid-check-input",
+                terminal_field="terminal_gate",
+                terminal_value="invalid-check-input",
+                terminal_reason="terminal-invalid-check-input",
+                review_state="blocked-by-invalid-check-input",
+                resume_condition="resume.after-invalid-check-input-is-corrected",
+                owner="harness-controller",
+                requires_existing_authority=False,
+            )
+        return
+    if exit_code == 0 and receipt.classification != "invalid":
+        return
+    if exit_code == 1:
+        terminal_gate = "required-gate-failed"
+        delivery_state = "blocked-by-required-gate"
+        next_action = "recover-required-gates"
+        reason = "terminal-required-gate-failed"
+        resume_condition = "resume.after-required-gates-pass"
+        review_state = "blocked-by-gate"
+    elif exit_code == 3:
+        terminal_gate = "required-gate-inconclusive"
+        delivery_state = "blocked-by-required-gate"
+        next_action = "recover-required-gates"
+        reason = "terminal-required-gate-inconclusive"
+        resume_condition = "resume.after-required-gates-pass"
+        review_state = "blocked-by-gate"
+    elif exit_code == 4:
+        terminal_gate = "scope-violation"
+        delivery_state = "scope-violation"
+        next_action = "inspect-scope-and-replan"
+        reason = "terminal-scope-violation"
+        resume_condition = "resume.after-scope-repair-and-replan"
+        review_state = "blocked-by-scope"
+    else:
+        terminal_gate = "check-failed"
+        delivery_state = "blocked-by-check"
+        next_action = "inspect-check-result"
+        reason = "terminal-check-nonzero"
+        resume_condition = "resume.after-check-review"
+        review_state = "blocked-by-check"
+    _freeze_terminal_status(
+        lines,
+        delivery_state=delivery_state,
+        gate_health="evidence-blocked",
+        next_action=next_action,
+        terminal_field="terminal_gate",
+        terminal_value=terminal_gate,
+        terminal_reason=reason,
+        review_state=review_state,
+        resume_condition=resume_condition,
+        owner="validator",
+        requires_existing_authority=True,
+    )
+    for index, line in enumerate(lines):
+        if line.startswith("Delivery and Gates: "):
+            lines[index] = _replace_status_field(
+                line, "check_exit_code", str(exit_code)
+            )
+            break
+
+
+def _terminal_status_snapshot(
+    *,
+    target: str | Path | None,
+    label: str,
+    receipt: Receipt,
+    status_snapshot: str | None = None,
+) -> str:
+    if status_snapshot is None:
+        if target is None:
+            return _fallback_terminal_status(
+                label=label,
+                receipt=receipt,
+                reason="progress-target-unavailable",
+            )
+        try:
+            from .commands.progress import run_progress
+
+            status_snapshot = run_progress(target).status_snapshot
+        except Exception:
+            return _fallback_terminal_status(
+                label=label,
+                receipt=receipt,
+                reason="progress-source-unavailable",
+            )
+    return _with_terminal_result(
+        status_snapshot,
+        label=label,
+        receipt=receipt,
+    )
+
+
+def _emit(
+    receipt: Receipt,
+    *,
+    json_output: bool,
+    label: str,
+    target: str | Path | None = None,
+    status_snapshot: str | None = None,
+) -> None:
     if json_output:
         sys.stdout.buffer.write(canonical_json_bytes(receipt))
     else:
-        print(f"{label}: {receipt.classification}")
+        print(
+            _terminal_status_snapshot(
+                target=target,
+                label=label,
+                receipt=receipt,
+                status_snapshot=status_snapshot,
+            )
+        )
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    try:
+        if "--json" in raw_argv:
+            with redirect_stderr(io.StringIO()):
+                args = parser.parse_args(raw_argv)
+        else:
+            args = parser.parse_args(raw_argv)
+    except SystemExit as error:
+        if error.code != 2:
+            raise
+        label = next(
+            (item for item in raw_argv if item in COMMANDS),
+            "controller",
+        )
+        if "--json" in raw_argv and label in COMMANDS:
+            _emit(
+                _error_receipt(label, "ArgumentError"),
+                json_output=True,
+                label=label,
+            )
+            return 2
+        _emit(
+            _error_receipt(label, "ArgumentError"),
+            json_output=False,
+            label=label,
+        )
+        return 2
     if args.version:
         if args.json_output:
             print(json.dumps({"version": VERSION}))
@@ -171,15 +585,24 @@ def main(argv: list[str] | None = None) -> int:
             print(VERSION)
         return 0
     if args.command is None:
-        parser.print_help()
-        return 0
+        _emit(
+            _error_receipt("controller", "ArgumentError"),
+            json_output=args.json_output,
+            label="controller",
+        )
+        return 2
 
     try:
         if args.command == "audit":
             from .commands.audit import run_audit
 
             outcome = run_audit(args.target, receipt_dir=args.receipt_dir)
-            _emit(outcome.receipt, json_output=args.json_output, label="audit")
+            _emit(
+                outcome.receipt,
+                json_output=args.json_output,
+                label="audit",
+                target=args.target,
+            )
             return outcome.exit_code
 
         if args.command == "init":
@@ -196,7 +619,12 @@ def main(argv: list[str] | None = None) -> int:
                 approval=approval,
                 apply=args.apply,
             )
-            _emit(outcome.receipt, json_output=args.json_output, label="init")
+            _emit(
+                outcome.receipt,
+                json_output=args.json_output,
+                label="init",
+                target=args.target,
+            )
             return outcome.exit_code
 
         if args.command == "plan-change":
@@ -204,7 +632,12 @@ def main(argv: list[str] | None = None) -> int:
 
             outcome = run_plan_change(args.target, _read_json(args.request), apply=args.apply)
             receipt = outcome.receipt or _error_receipt("plan-change", outcome.message)
-            _emit(receipt, json_output=args.json_output, label="plan-change")
+            _emit(
+                receipt,
+                json_output=args.json_output,
+                label="plan-change",
+                target=args.target,
+            )
             return 0 if outcome.ok else 2
 
         if args.command == "adopt":
@@ -223,7 +656,12 @@ def main(argv: list[str] | None = None) -> int:
                 structural_migration=args.structural_migration,
             )
             receipt = outcome.receipt or _error_receipt("adopt", outcome.message)
-            _emit(receipt, json_output=args.json_output, label="adopt")
+            _emit(
+                receipt,
+                json_output=args.json_output,
+                label="adopt",
+                target=args.target,
+            )
             return 0 if outcome.ok else 2
 
         if args.command == "check":
@@ -241,24 +679,37 @@ def main(argv: list[str] | None = None) -> int:
                 policy_digest=policy_digest,
                 require_policy_binding=True,
             )
-            _emit(outcome.receipt, json_output=args.json_output, label="check")
+            _emit(
+                outcome.receipt,
+                json_output=args.json_output,
+                label="check",
+                target=args.target,
+            )
             return outcome.exit_code
 
         if args.command == "doctor":
             from .commands.doctor import run_doctor
 
             outcome = run_doctor(args.target)
-            _emit(outcome.receipt, json_output=args.json_output, label="doctor")
+            _emit(
+                outcome.receipt,
+                json_output=args.json_output,
+                label="doctor",
+                target=args.target,
+            )
             return outcome.exit_code
 
         if args.command == "progress":
             from .commands.progress import run_progress
 
             outcome = run_progress(args.target, definition=args.definition)
-            if args.json_output:
-                _emit(outcome.receipt, json_output=True, label="progress")
-            else:
-                print(outcome.status_snapshot)
+            _emit(
+                outcome.receipt,
+                json_output=args.json_output,
+                label="progress",
+                target=args.target,
+                status_snapshot=outcome.status_snapshot,
+            )
             return outcome.exit_code
 
         if args.command == "git-safety":
@@ -269,13 +720,23 @@ def main(argv: list[str] | None = None) -> int:
                 preview=args.preview,
                 large_file_limit=args.large_file_limit,
             )
-            _emit(outcome.receipt, json_output=args.json_output, label="git-safety")
+            _emit(
+                outcome.receipt,
+                json_output=args.json_output,
+                label="git-safety",
+                target=args.target,
+            )
             return outcome.exit_code
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as error:
         receipt = _error_receipt(args.command, error)
-        _emit(receipt, json_output=args.json_output, label=args.command)
         if not args.json_output:
             print(f"{args.command}: invalid input ({type(error).__name__})", file=sys.stderr)
+        _emit(
+            receipt,
+            json_output=args.json_output,
+            label=args.command,
+            target=getattr(args, "target", None),
+        )
         return 2
     return 2
 

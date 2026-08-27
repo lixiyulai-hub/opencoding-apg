@@ -423,6 +423,44 @@ def _question(
     )
 
 
+def _confirmation_bundle(
+    decisions: tuple[IntentDecision, ...],
+) -> tuple[IntentDecision, ...]:
+    """Collapse simultaneous consequential triggers into one human Gate."""
+
+    if len(decisions) <= 1:
+        return decisions
+    triggers = tuple(
+        sorted({trigger for item in decisions for trigger in item.trigger_codes})
+    )
+    evidence_refs = tuple(
+        sorted({reference for item in decisions for reference in item.evidence_refs})
+    )
+    return (
+        IntentDecision(
+            decision_id="decision.confirmation.bundle",
+            topic_code="confirmation.bundle",
+            disposition=DecisionDisposition.CONFIRM,
+            recommendation_code="recommendation.resolve-confirmation-bundle",
+            rationale_code="rationale.confirmation-bundle",
+            confidence=Confidence.HIGH,
+            trigger_codes=triggers,
+            evidence_refs=evidence_refs,
+        ),
+    )
+
+
+def _confirmation_bundle_question(refs: tuple[str, ...]) -> NecessaryQuestion:
+    return _question(
+        "question.confirmation.bundle",
+        "confirmation.bundle",
+        "recommendation.resolve-confirmation-bundle",
+        "rationale.confirmation-bundle",
+        "impact.consequential-boundary",
+        refs,
+    )
+
+
 def _intent_facts(record: UserIntent) -> tuple[IntentDecision, ...]:
     refs = record.evidence_refs
     decisions: list[IntentDecision] = []
@@ -712,7 +750,7 @@ def route_user_intent(
             key=lambda item: item.decision_id,
         )
     )
-    confirm = tuple(
+    confirm_candidates = tuple(
         sorted(
             (
                 item
@@ -722,12 +760,31 @@ def route_user_intent(
             key=lambda item: item.decision_id,
         )
     )
+    confirm = _confirmation_bundle(confirm_candidates)
     questions = tuple(
         sorted(
             uncertainty_questions + constraint_questions,
             key=lambda item: item.question_id,
         )
     )
+    if len(confirm_candidates) > 1:
+        confirm_topics = {item.topic_code for item in confirm_candidates}
+        questions = tuple(
+            item for item in questions if item.topic_code not in confirm_topics
+        ) + (
+            _confirmation_bundle_question(
+                tuple(
+                    sorted(
+                        {
+                            reference
+                            for item in confirm_candidates
+                            for reference in item.evidence_refs
+                        }
+                    )
+                )
+            ),
+        )
+        questions = tuple(sorted(questions, key=lambda item: item.question_id))
     all_decisions = automatic + recommended + confirm
     plan = tuple(
         sorted(
@@ -748,7 +805,12 @@ def route_user_intent(
                 - {""}
             )
         )
-    rationale = tuple(sorted({item.rationale_code for item in all_decisions}))
+    rationale = tuple(
+        sorted(
+            {item.rationale_code for item in decisions}
+            | {item.rationale_code for item in all_decisions}
+        )
+    )
     evidence_refs = set(record.evidence_refs)
     evidence_refs.update(
         reference for item in all_decisions for reference in item.evidence_refs

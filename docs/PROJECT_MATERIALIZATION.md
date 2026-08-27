@@ -74,7 +74,7 @@ The controller never turns an absent fact into an automatic success.
 | --- | --- |
 | `AUTO` | Proceed only for a bounded, reversible, no-secret, no-network, no-cost, no-credential, no-real-data local transaction whose policy digest and evidence references match P3-D. |
 | `RECOMMEND` | Return a safe recommendation and make no write. |
-| `CONFIRM` | Pause only for provider or network access, cost or quota, credentials, real or production data, public delivery, runtime launch, deployment, irreversible change, security or privacy posture change, or materially ambiguous direction. The approval must bind the transaction ID, P3-D digest, physical-root fingerprint, and allowed paths. |
+| `CONFIRM` | Pause only for provider or network access, cost or quota, credentials, real or production data, public delivery, runtime launch, deployment, irreversible change, security or privacy posture change, or materially ambiguous direction. One owner approval or one exact expiring authorization session must bind the transaction ID, P3-D digest, physical-root fingerprint, allowed paths, policy, and complete reason set. |
 | `BLOCK` | Stop on incomplete evidence, unbounded scope, secret-shaped content, unsafe path or root, policy or preview drift, a compare-and-swap mismatch, snapshot tampering, or rollback drift. |
 
 `AUTO` is not a broad permission. It is available only after the frozen P3-D
@@ -88,7 +88,8 @@ logical root locator into a filesystem location.
 2. Verify the caller-supplied content bytes match every frozen manifest hash
    and no additional path is present.
 3. Classify the action. `AUTO` needs no owner interruption; `RECOMMEND` writes
-   nothing; `CONFIRM` checks a fresh transaction-bound owner approval.
+   nothing; `CONFIRM` checks a fresh transaction-bound owner approval or an
+   exact authorization session already approved for this child transaction.
 4. Resolve a regular absolute physical root, reject links, reparse points,
    traversal, and root escape, then read every compare-and-swap pre-state.
 5. On execution, reread pre-state, retain a separate snapshot with hashes,
@@ -106,3 +107,18 @@ publication, promotion, pilot, or release acceptance.
 Rollback for the APG implementation transaction is limited to its declared
 repository paths. Downstream rollback remains a separate, owner-authorized
 transaction and must preserve unrelated dirty state and historical evidence.
+
+### Delegated authorization session
+
+One canonical `AuthorizationSession` may cover several pre-bound P3-E child
+transactions after one real owner Gate. It is not a broad standing permission:
+its owner, explicitly listed transaction IDs, policy digest, one P3-D preview
+digest, one physical-root preimage, one exact manifest scope, one complete
+consequential reason set, evidence refs, issuance time, and UTC expiry are all
+checked before the plan becomes `ready`. Every child must match that exact
+source, root, scope, and reason set; a session does not combine alternative
+sources or pair an arbitrary transaction ID with a different source. A
+lifecycle-bound P3-G session is never valid for P3-E. A new path, root, source
+digest, risk reason, provider/network, Git, runtime, deployment, publication,
+pilot, release, or other delivery boundary is not session reuse; it is a new
+`CONFIRM` or `BLOCK` decision.

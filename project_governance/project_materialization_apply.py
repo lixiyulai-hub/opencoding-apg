@@ -19,6 +19,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from .authorization_session import AuthorizationSession
 from .project_materialization import (
     PreviewState,
     ProjectMaterializationError,
@@ -509,6 +510,7 @@ def plan_materialization_apply(
     transaction_id: str,
     context: ActionContext | None = None,
     approval: TransactionApproval | None = None,
+    authorization_session: AuthorizationSession | None = None,
 ) -> MaterializationApplyPlan:
     """Validate an apply without writing the root or snapshot evidence."""
 
@@ -556,19 +558,33 @@ def plan_materialization_apply(
                 blockers.append("pre-state-mismatch")
         except (MaterializationApplyError, OSError) as error:
             blockers.append(_reason_code(str(error)))
+    if authorization_session is not None and type(authorization_session) is not AuthorizationSession:
+        raise TypeError("authorization_session must be an exact AuthorizationSession")
     if assessment.classification is AuthorizationClass.CONFIRM:
-        if approval is None:
+        if approval is not None:
+            if root_sha256 is None or not _approval_covers(
+                approval,
+                manifest,
+                transaction_id=transaction_id,
+                preview_sha256=preview_digest,
+                physical_root_sha256=root_sha256,
+            ):
+                blockers.append("approval-binding-mismatch")
+        elif authorization_session is None:
             blockers.append("owner-approval-required")
-        elif root_sha256 is None:
-            blockers.append("approval-binding-mismatch")
-        elif not _approval_covers(
-            approval,
-            manifest,
+        elif root_sha256 is None or context is None:
+            blockers.append("authorization-session-binding-mismatch")
+        elif authorization_session.lifecycle_run_id is not None:
+            blockers.append("authorization-session-binding-mismatch")
+        elif not authorization_session.covers(
             transaction_id=transaction_id,
-            preview_sha256=preview_digest,
-            physical_root_sha256=root_sha256,
+            policy_sha256=context.policy_sha256,
+            source_sha256=preview_digest,
+            preimage_sha256=root_sha256,
+            scope=manifest,
+            reason_codes=assessment.reason_codes,
         ):
-            blockers.append("approval-binding-mismatch")
+            blockers.append("authorization-session-binding-mismatch")
     blockers = sorted(set(blockers))
     if not blockers:
         state = ApplyState.READY

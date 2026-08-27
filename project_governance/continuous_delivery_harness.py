@@ -22,6 +22,11 @@ from .progress_projection import (
     ProgressSnapshot,
     render_progress_snapshot,
 )
+from .program_progress import (
+    ProgramDeliveryState,
+    ProgramProgressSnapshot,
+    ProgramScopeStatus,
+)
 from .storage import canonical_json_bytes
 
 
@@ -39,6 +44,9 @@ class HarnessState(str, Enum):
     """The only states a continuity planner may recommend."""
 
     INSPECT = "inspect"
+    # PROGRESS is the explicit read-only projection step between inspection
+    # and planning. It never grants execution authority.
+    PROGRESS = "progress"
     PLAN_GATE = "plan-gate"
     DISPATCH = "dispatch"
     VALIDATE = "validate"
@@ -48,6 +56,22 @@ class HarnessState(str, Enum):
     HUMAN_GATE = "human-gate"
     FREEZE = "freeze"
     COMPLETE = "complete"
+
+
+# The planner's normal bounded loop.  This is intentionally a declarative
+# contract: it documents the order in which a caller may move between
+# read-only projection, an already-authorized transaction, its Gates, review,
+# reporting, and a bounded requeue.  The harness never executes these steps.
+CONTINUOUS_DELIVERY_WORKFLOW = (
+    HarnessState.INSPECT,
+    HarnessState.PROGRESS,
+    HarnessState.PLAN_GATE,
+    HarnessState.DISPATCH,
+    HarnessState.VALIDATE,
+    HarnessState.INDEPENDENT_VERIFY,
+    HarnessState.REPORT,
+    HarnessState.REQUEUE,
+)
 
 
 class HarnessOwner(str, Enum):
@@ -64,6 +88,7 @@ class HarnessOwner(str, Enum):
 
 _OWNER_BY_STATE = {
     HarnessState.INSPECT: HarnessOwner.CONTROLLER,
+    HarnessState.PROGRESS: HarnessOwner.CONTROLLER,
     HarnessState.PLAN_GATE: HarnessOwner.PLANNER,
     HarnessState.DISPATCH: HarnessOwner.EXECUTOR,
     HarnessState.VALIDATE: HarnessOwner.VALIDATOR,
@@ -77,6 +102,7 @@ _OWNER_BY_STATE = {
 
 _ACTION_CODE_BY_STATE = {
     HarnessState.INSPECT: "inspect-progress-scope",
+    HarnessState.PROGRESS: "compute-progress-snapshot",
     HarnessState.PLAN_GATE: "prepare-plan-gate",
     HarnessState.DISPATCH: "queue-authorized-work",
     HarnessState.VALIDATE: "run-bound-validation",
@@ -88,12 +114,23 @@ _ACTION_CODE_BY_STATE = {
     HarnessState.COMPLETE: "record-completion-status",
 }
 
+_RESUME_CONDITION_BY_STATE = {
+    HarnessState.INSPECT: "resume.after-progress-source-is-readable",
+    HarnessState.PROGRESS: "resume.after-source-bound-progress-is-computed",
+    HarnessState.PLAN_GATE: "resume.after-plan-gate-pass-and-authority-is-bound",
+    HarnessState.DISPATCH: "resume.after-authorized-executor-is-available",
+    HarnessState.VALIDATE: "resume.after-selected-gates-pass",
+    HarnessState.INDEPENDENT_VERIFY: "resume.after-independent-review-accepts-evidence",
+    HarnessState.REPORT: "resume.after-status-snapshot-is-recorded",
+    HarnessState.REQUEUE: "resume.after-bounded-loop-continues-without-stop-condition",
+    HarnessState.HUMAN_GATE: "resume.after-owner-decision-is-recorded",
+    HarnessState.FREEZE: "resume.after-blocker-scope-drift-or-missing-evidence-is-resolved",
+    HarnessState.COMPLETE: "resume.only-on-an-explicit-successor-transaction-or-new-scope",
+}
+
 _DISPATCH_PERMITTED_STATES = frozenset(
     {
         HarnessState.DISPATCH,
-        HarnessState.VALIDATE,
-        HarnessState.INDEPENDENT_VERIFY,
-        HarnessState.REQUEUE,
     }
 )
 
@@ -143,6 +180,32 @@ def _snapshot_field(snapshot: ProgressSnapshot, name: str) -> object:
         raise ContinuousDeliveryHarnessError(
             f"ProgressSnapshot is missing required field: {name}"
         ) from error
+
+
+def _validated_program_snapshot(
+    snapshot: ProgramProgressSnapshot | None,
+) -> tuple[
+    ProgramScopeStatus | None,
+    ProgramDeliveryState | None,
+    str | None,
+    str | None,
+    tuple[str, ...],
+]:
+    """Validate optional program facts and return safe planner hints."""
+
+    if snapshot is None:
+        return None, None, None, None, ()
+    if type(snapshot) is not ProgramProgressSnapshot:
+        raise ContinuousDeliveryHarnessError(
+            "program_snapshot must be an exact ProgramProgressSnapshot or None"
+        )
+    return (
+        snapshot.scope_status,
+        snapshot.delivery_state,
+        snapshot.next_transaction_id,
+        snapshot.human_gate_transaction_id,
+        tuple(snapshot.reason_codes),
+    )
 
 
 def _validated_snapshot(
@@ -288,7 +351,9 @@ class ContinuousDeliveryPlan:
     reason_codes: tuple[str, ...]
     dispatch_permitted: bool
     human_gate_required: bool
+    resume_condition: str = "resume.after-status-snapshot-is-recorded"
     execution_performed: bool = False
+    program_snapshot: ProgramProgressSnapshot | None = None
 
     def __post_init__(self) -> None:
         if type(self) is not ContinuousDeliveryPlan:
@@ -298,6 +363,7 @@ class ContinuousDeliveryPlan:
         if self.schema_version != CONTINUOUS_DELIVERY_HARNESS_SCHEMA_VERSION:
             raise ContinuousDeliveryHarnessError("unsupported continuous-delivery schema")
         _validated_snapshot(self.snapshot)
+        _validated_program_snapshot(self.program_snapshot)
         if self.loop_stop_state is not None and type(self.loop_stop_state) is not LoopStopState:
             raise ContinuousDeliveryHarnessError(
                 "loop_stop_state must be a LoopStopState or null"
@@ -321,11 +387,23 @@ class ContinuousDeliveryPlan:
             raise ContinuousDeliveryHarnessError(
                 "dispatch_permitted must match the primary harness state"
             )
+        if self.snapshot.gate_health is GateHealth.EVIDENCE_PENDING and self.state in {
+            HarnessState.DISPATCH,
+            HarnessState.INDEPENDENT_VERIFY,
+            HarnessState.REQUEUE,
+        }:
+            raise ContinuousDeliveryHarnessError(
+                "pending Gate evidence must be validated before dispatch, review, or requeue"
+            )
         if type(self.human_gate_required) is not bool:
             raise ContinuousDeliveryHarnessError("human_gate_required must be a boolean")
         if self.human_gate_required is not (self.state is HarnessState.HUMAN_GATE):
             raise ContinuousDeliveryHarnessError(
                 "human_gate_required must match the primary harness state"
+            )
+        if self.resume_condition != _RESUME_CONDITION_BY_STATE[self.state]:
+            raise ContinuousDeliveryHarnessError(
+                "resume_condition must match the primary harness state"
             )
         if self.execution_performed is not False:
             raise ContinuousDeliveryHarnessError(
@@ -365,6 +443,13 @@ def _snapshot_state(
         "next.provide-transaction-approval",
     ):
         return HarnessState.HUMAN_GATE, ("human-decision-required",)
+    # Gate evidence is an ordering barrier.  It must win over an execution /
+    # verification gap so a planner cannot recommend review or dispatch while
+    # the transaction's required validation is still pending.
+    if gate_health is GateHealth.EVIDENCE_PENDING or _has_hint(
+        combined, "validate", "gate"
+    ):
+        return HarnessState.VALIDATE, ("validation-required",)
     if (
         (execution is not None and verified is not None and execution > verified)
         or _has_hint(
@@ -377,10 +462,6 @@ def _snapshot_state(
         return HarnessState.INDEPENDENT_VERIFY, (
             "execution-ahead-of-verification",
         )
-    if gate_health is GateHealth.EVIDENCE_PENDING or _has_hint(
-        combined, "validate", "gate"
-    ):
-        return HarnessState.VALIDATE, ("validation-required",)
     if _has_hint(
         combined,
         "plan-gate",
@@ -389,6 +470,8 @@ def _snapshot_state(
         "next.decide-recommendation",
     ):
         return HarnessState.PLAN_GATE, ("plan-gate-required",)
+    if _has_hint(combined, "progress", "next.compute-progress"):
+        return HarnessState.PROGRESS, ("progress-projection-required",)
     if next_actions:
         return HarnessState.DISPATCH, ("next-actions-available",)
     return HarnessState.REPORT, ("status-report-required",)
@@ -397,12 +480,16 @@ def _snapshot_state(
 def plan_continuous_delivery_harness(
     snapshot: ProgressSnapshot,
     loop_decision: LoopDecision | None = None,
+    *,
+    program_snapshot: ProgramProgressSnapshot | None = None,
 ) -> ContinuousDeliveryPlan:
     """Return a deterministic continuation plan without executing any work.
 
-    ``dispatch_permitted`` only records a logical continuation state.  A caller
-    still needs to re-check the exact transaction authority, scope, budget,
-    rollback, and independent-review obligations before it can dispatch.
+    ``dispatch_permitted`` is true only when the immediate primary state is
+    ``DISPATCH``. A caller still needs to re-check exact transaction authority,
+    scope, budget, rollback, and independent-review obligations before it can
+    dispatch. Validation, review, and requeue may require existing authority,
+    but do not themselves permit a new dispatch.
     """
 
     (
@@ -414,6 +501,13 @@ def plan_continuous_delivery_harness(
         next_actions,
         snapshot_reasons,
     ) = _validated_snapshot(snapshot)
+    (
+        program_scope,
+        program_delivery,
+        program_next_transaction,
+        program_human_gate,
+        program_reasons,
+    ) = _validated_program_snapshot(program_snapshot)
     if loop_decision is not None and type(loop_decision) is not LoopDecision:
         raise ContinuousDeliveryHarnessError(
             "loop_decision must be a LoopDecision or null"
@@ -454,6 +548,33 @@ def plan_continuous_delivery_harness(
                 state, derived_reasons = HarnessState.REQUEUE, (loop_reason,)
 
     reasons = tuple(sorted(set(snapshot_reasons + derived_reasons)))
+    reasons = tuple(sorted(set(reasons + program_reasons)))
+    # Program continuation is deliberately advisory and only takes over when
+    # the bounded lifecycle itself has reached a stable completion.  Missing
+    # or blocked program evidence freezes that continuation; it never grants
+    # dispatch authority.
+    if loop_decision is None or loop_decision.stop_state is None:
+        if (
+            program_scope is ProgramScopeStatus.NOT_COMPUTABLE
+            and state is not HarnessState.INSPECT
+        ):
+            state = HarnessState.FREEZE
+            reasons = tuple(sorted(set(reasons + ("program-progress-not-computable",))))
+        elif (
+            program_delivery is ProgramDeliveryState.BLOCKED
+            and state is not HarnessState.INSPECT
+        ):
+            state = HarnessState.FREEZE
+            reasons = tuple(sorted(set(reasons + ("program-delivery-blocked",))))
+        elif program_human_gate is not None and state not in {
+            HarnessState.INSPECT,
+            HarnessState.FREEZE,
+        }:
+            state = HarnessState.HUMAN_GATE
+            reasons = tuple(sorted(set(reasons + ("program-human-gate-required",))))
+        elif program_next_transaction is not None and state is HarnessState.COMPLETE:
+            state = HarnessState.PLAN_GATE
+            reasons = tuple(sorted(set(reasons + ("program-successor-available",))))
     actions: list[HarnessAction] = [_primary_action(state, reasons)]
     if state is not HarnessState.REPORT:
         actions.append(
@@ -471,7 +592,9 @@ def plan_continuous_delivery_harness(
         reason_codes=reasons,
         dispatch_permitted=state in _DISPATCH_PERMITTED_STATES,
         human_gate_required=state is HarnessState.HUMAN_GATE,
+        resume_condition=_RESUME_CONDITION_BY_STATE[state],
         execution_performed=False,
+        program_snapshot=program_snapshot,
     )
 
 
@@ -481,6 +604,46 @@ def continuous_delivery_harness_mapping(value: ContinuousDeliveryPlan) -> dict[s
     if type(value) is not ContinuousDeliveryPlan:
         raise ContinuousDeliveryHarnessError("value must be an exact ContinuousDeliveryPlan")
     snapshot_mapping = json.loads(render_progress_snapshot(value.snapshot).decode("utf-8"))
+    program_snapshot = value.program_snapshot
+    program_mapping = None
+    if program_snapshot is not None:
+        program_mapping = {
+            "schema_version": program_snapshot.schema_version,
+            "definition_id": program_snapshot.definition_id,
+            "definition_sha256": program_snapshot.definition_sha256,
+            "scope_status": program_snapshot.scope_status.value,
+            "denominator_package_count": program_snapshot.denominator_package_count,
+            "denominator_weight": program_snapshot.denominator_weight,
+            "execution_progress_basis_points": program_snapshot.execution_progress_basis_points,
+            "verified_progress_basis_points": program_snapshot.verified_progress_basis_points,
+            "current_stage": program_snapshot.current_stage,
+            "current_stage_package_ids": list(program_snapshot.current_stage_package_ids),
+            "current_stage_total_weight": program_snapshot.current_stage_total_weight,
+            "current_stage_execution_basis_points": program_snapshot.current_stage_execution_basis_points,
+            "current_stage_verified_basis_points": program_snapshot.current_stage_verified_basis_points,
+            "next_stage": program_snapshot.next_stage,
+            "ordered_successor_transactions": [
+                {
+                    "transaction_id": item.transaction_id,
+                    "label": item.label,
+                    "stage_id": item.stage_id,
+                    "authority_state": item.authority_state.value,
+                    "gate_ref": item.gate_ref,
+                    "rollback_ref": item.rollback_ref,
+                    "depends_on": list(item.depends_on),
+                    "package_state": item.package_state.value,
+                }
+                for item in program_snapshot.ordered_successor_transactions
+            ],
+            "next_transaction_id": program_snapshot.next_transaction_id,
+            "human_gate_transaction_id": program_snapshot.human_gate_transaction_id,
+            "delivery_state": program_snapshot.delivery_state.value,
+            "excluded_historical_blocked_package_ids": list(
+                program_snapshot.excluded_historical_blocked_package_ids
+            ),
+            "reason_codes": list(program_snapshot.reason_codes),
+            "execution_performed": program_snapshot.execution_performed,
+        }
     return {
         "actions": [
             {
@@ -496,10 +659,12 @@ def continuous_delivery_harness_mapping(value: ContinuousDeliveryPlan) -> dict[s
         "dispatch_permitted": value.dispatch_permitted,
         "execution_performed": value.execution_performed,
         "human_gate_required": value.human_gate_required,
+        "resume_condition": value.resume_condition,
         "loop_stop_state": (
             None if value.loop_stop_state is None else value.loop_stop_state.value
         ),
         "progress_snapshot": snapshot_mapping,
+        "program_snapshot": program_mapping,
         "reason_codes": list(value.reason_codes),
         "schema_version": value.schema_version,
         "state": value.state.value,
@@ -514,6 +679,7 @@ def render_continuous_delivery_harness(value: ContinuousDeliveryPlan) -> bytes:
 
 __all__ = [
     "CONTINUOUS_DELIVERY_HARNESS_SCHEMA_VERSION",
+    "CONTINUOUS_DELIVERY_WORKFLOW",
     "ContinuousDeliveryHarnessError",
     "ContinuousDeliveryPlan",
     "HarnessAction",

@@ -19,5 +19,10 @@ The snapshot MUST state the current phase, completed work, source-bound total
 progress and current-stage progress (or `not-computable` with the missing
 source), current delivery and Gate state, next automatic work, at most one
 real human gate, blockers and independent-review state, later delivery
-boundaries, and the exact Continuation/resume condition. Never infer a
+boundaries, and the exact Continuation/resume condition. When a program
+roadmap is declared, it MUST also state the separate program total and current
+program-stage percentages, the immediate program transaction, the following
+program stage, and the ordered successor transactions. The immediate program
+transaction is the user's next actionable work; a later confirmation boundary
+must not be presented as if it were the immediate step. Never infer a
 percentage from time, tokens, changed files, receipts, or Gate counts.

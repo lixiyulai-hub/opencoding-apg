@@ -7,7 +7,8 @@ checkpoints, and phase-scoped acceptance without performing any external work.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import datetime
 from enum import Enum
 import hashlib
 import json
@@ -25,6 +26,7 @@ from .autonomous_task_orchestration import (
     parse_autonomous_task_plan,
     render_autonomous_task_plan,
 )
+from .authorization_session import AuthorizationSession, authorization_session_sha256
 from .project_materialization_apply import AuthorizationClass
 from .storage import SchemaError, canonical_json_bytes
 
@@ -254,6 +256,90 @@ class LifecycleApproval:
         _scalar(self.actor, "approval.actor", 128)
         _code(self.role, "approval.role")
         _timestamp(self.timestamp_utc, "approval.timestamp_utc")
+
+
+def _session_approvals(
+    lifecycle: "GoalDeliveryLifecycle",
+    authorization_session: AuthorizationSession,
+    *,
+    exact_replay: bool = False,
+) -> tuple[LifecycleApproval, ...]:
+    """Expand one exact session into task evidence for one confirmation wave."""
+
+    if type(authorization_session) is not AuthorizationSession:
+        raise TypeError("authorization_session must be an exact AuthorizationSession")
+    routes = tuple(
+        item
+        for item in lifecycle.plan.routes
+        if item.task_id in lifecycle.current_wave_task_ids
+        and item.classification is AuthorizationClass.CONFIRM
+        and item.task_id not in {approval.task_id for approval in lifecycle.approvals}
+    )
+    if not routes:
+        raise GoalDeliveryLifecycleError(
+            "authorization session does not bind a current confirmation wave"
+        )
+    scope = tuple(
+        sorted({path for route in routes for path in _task_scope(lifecycle.plan, route.task_id)})
+    )
+    reasons = tuple(
+        sorted({reason for route in routes for reason in route.reason_codes})
+    )
+    task_ids = tuple(sorted(route.task_id for route in routes))
+    replay_now = (
+        datetime.fromisoformat(authorization_session.issued_at_utc.replace("Z", "+00:00"))
+        if exact_replay
+        else None
+    )
+    if (
+        authorization_session.lifecycle_run_id != lifecycle.lifecycle_run_id
+        or authorization_session.plan_id != lifecycle.plan_id
+        or authorization_session.wave_index != lifecycle.current_wave_index
+        or authorization_session.task_ids != task_ids
+        or authorization_session.source_sha256 != lifecycle.plan_sha256
+        or authorization_session.preimage_sha256 is not None
+        or len(authorization_session.transaction_ids) != 1
+        or authorization_session.scope != scope
+        or authorization_session.reason_codes != reasons
+        or not authorization_session.covers(
+            transaction_id=authorization_session.transaction_ids[0],
+            policy_sha256=lifecycle.plan.policy_sha256,
+            source_sha256=lifecycle.plan_sha256,
+            scope=scope,
+            reason_codes=reasons,
+            preimage_sha256=None,
+            now=replay_now,
+        )
+    ):
+        raise GoalDeliveryLifecycleError(
+            "authorization session does not bind the exact confirmation wave"
+        )
+    session_sha256 = authorization_session_sha256(authorization_session)
+    transaction_id = authorization_session.transaction_ids[0]
+    return tuple(
+        LifecycleApproval(
+            approval_id=(
+                "approval.session."
+                + hashlib.sha256(
+                    (
+                        session_sha256
+                        + "|"
+                        + route.task_id
+                    ).encode("utf-8")
+                ).hexdigest()
+            ),
+            transaction_id=transaction_id,
+            lifecycle_run_id=lifecycle.lifecycle_run_id,
+            plan_id=lifecycle.plan_id,
+            plan_sha256=lifecycle.plan_sha256,
+            task_id=route.task_id,
+            scope=_task_scope(lifecycle.plan, route.task_id),
+            actor=authorization_session.actor,
+            role="owner-delegated",
+            timestamp_utc=authorization_session.issued_at_utc,
+        )
+        for route in sorted(routes, key=lambda item: item.task_id)
+    )
 
 
 @dataclass(frozen=True)
@@ -936,6 +1022,7 @@ def advance_goal_delivery_lifecycle(
     task_evidence: Sequence[TaskExecutionEvidence] = (),
     decisions: Sequence[LifecycleDecision] = (),
     approvals: Sequence[LifecycleApproval] = (),
+    authorization_session: AuthorizationSession | None = None,
     consolidations: Sequence[TaskConsolidation] = (),
     phase_acceptances: Sequence[LifecyclePhaseAcceptance] = (),
 ) -> GoalDeliveryLifecycle:
@@ -970,6 +1057,37 @@ def advance_goal_delivery_lifecycle(
         record_type=LifecycleApproval,
         key=lambda item: item.approval_id,
     )
+    if authorization_session is not None:
+        # A retry is checked against the state immediately before its checkpoint.
+        # The current lifecycle can already have advanced to a later wave.
+        session_lifecycle = lifecycle
+        if sequence <= len(lifecycle.checkpoints):
+            session_lifecycle = _derive(
+                lifecycle_run_id=lifecycle.lifecycle_run_id,
+                plan=lifecycle.plan,
+                checkpoints=lifecycle.checkpoints[: sequence - 1],
+            )
+        session_approval_records = _session_approvals(
+            session_lifecycle,
+            authorization_session,
+            exact_replay=sequence <= len(lifecycle.checkpoints),
+        )
+        approval_records = _canonical_event_records(
+            approval_records + session_approval_records,
+            label="approvals",
+            record_type=LifecycleApproval,
+            key=lambda item: item.approval_id,
+        )
+        by_task = {item.task_id: item for item in session_approval_records}
+        evidence = tuple(
+            replace(
+                item,
+                authorization_ref=by_task[item.task_id].approval_id,
+            )
+            if item.task_id in by_task and item.authorization_ref is None
+            else item
+            for item in evidence
+        )
     consolidation_records = _canonical_event_records(
         consolidations,
         label="consolidations",

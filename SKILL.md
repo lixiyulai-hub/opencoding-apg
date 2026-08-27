@@ -29,6 +29,14 @@ authority only after the controller proves exact root, write scope, Gates, rollb
 reversibility, secret safety, and a safe P3-E ActionContext. Consequential work remains
 `CONFIRM`; incomplete or unsafe work is `BLOCK`.
 
+When one exact bounded transaction has several simultaneous consequential
+reasons, the controller presents one real `CONFIRM` Gate with the complete
+reason set rather than making a beginner relay repeated approvals. A confirmed
+authorization session is reusable only for the named child transactions and
+their exact policy, source digest, required preimage, scope, reason set, owner,
+and UTC expiry. Any source, preimage, scope, reason, transaction, or delivery
+boundary drift requires a new Gate or `BLOCK`.
+
 ## Beginner prompt aliases
 
 The global router may invoke this skill implicitly for a non-trivial project request.
@@ -44,15 +52,34 @@ mutates a file, calls a provider, deploys, publishes, pilots, or releases by its
 At every material checkpoint, successful or failed terminal result, `BLOCK`, or
 `CONFIRM`, the final user-facing response MUST end with exactly one `Status Snapshot`
 section. It is the final section: no trailing classification, conclusion, or
-additional next-step text may appear after it. The snapshot MUST state:
+additional next-step text may appear after it. Every non-JSON controller result
+uses this same envelope; canonical JSON receipts remain machine-only. The snapshot MUST state:
 the current phase; completed work; verified and execution progress when an
 approved, source-bound ProgressDefinition makes them computable; current-stage
-progress; current delivery and Gate state; the next automatic work; at most one
+progress; the definition ID and declared denominator; current delivery and Gate state; the next automatic work; at most one
 real human decision or transaction gate; blocking reasons; independent-review
 state; later delivery boundaries that remain unperformed; and the exact
-Continuation/resume condition. Never fabricate a percentage from elapsed time,
+Continuation/resume condition. When a program roadmap is declared, also state
+its separate total and current-stage percentages, the immediate program
+transaction, the following program stage, and ordered successor transactions.
+The immediate transaction is the user's next actionable work; a later
+confirmation boundary must not be presented as if it were the immediate step.
+Never fabricate a percentage from elapsed time,
 token use, changed files, receipts, or Gates. If the explicit denominator or
 source binding is absent, say `not-computable` and explain the missing evidence.
+
+The repository CLI can mechanically enforce this envelope for its own
+human-readable routes. Arbitrary host or model final prose is not intercepted
+by repository code; host/adapter enforcement remains a later separate
+lifecycle transaction.
+
+Repository-owned user-result routes may use the additive presentation facade
+(`project_governance.presentation`) to wrap the closed compact P3 result with
+the same one-snapshot envelope. The facade preserves compact schema bytes,
+reports `not-computable` when no progress source is bound, and keeps the
+bounded loop continuation (`dispatch_permitted`, `resume_condition`, and
+first-failure-stop) unchanged. This repository wrapper still does not
+intercept arbitrary host or model prose.
 
 Use the bounded continuity loop only as a planner:
 `INSPECT -> PROGRESS -> PLAN_GATE -> DISPATCH -> VALIDATE ->

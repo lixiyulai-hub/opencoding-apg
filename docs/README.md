@@ -17,6 +17,16 @@ This directory documents the approved Version 1 Adaptive Project Governance cont
 
 The controller is technology-neutral, has no resident daemon, and does not dictate framework, language, architecture, or repository layout. Global activation for future projects or user-wide Codex, Claude Code, Cursor, or launcher configuration is outside Version 1 and requires separate authorization.
 
+## Beginner autonomy
+
+APG plans, validates, and performs routine bounded local work without turning a
+beginner into an approval relay. Simultaneous consequential reasons within one
+exact transaction are grouped into at most one real owner Gate. A confirmed
+authorization session may cover only its pre-bound child transactions when they
+share one exact source, required preimage, scope, and reason set. A P3-G session
+also names one lifecycle run, plan, wave, and `CONFIRM` task set. Any drift or
+new external boundary remains a new `CONFIRM` or `BLOCK` outcome.
+
 ## Six operations
 
 | Operation | Contract |
@@ -753,10 +763,31 @@ for the canonical P6-A contract. P6-A remains repository-local: it does not
 authorize global promotion, host action, target execution, provider/network
 use, runtime, deployment, publication, pilot, or release.
 
-P6-B makes APG itself an explicit consumer of that contract through one active
-self-roadmap. Its total and current-stage percentages apply only to the named
-current repository lifecycle and its `repository-validated` target. They do
+P6-B made APG itself an explicit consumer of that contract through one
+historical self-roadmap definition preserved at
+`.governance/progress/history/progress.apg.self-roadmap.v1.definition-57b785db849d93abfdca5a9fb0123317ce12e059c5b917541b3e9a05f76b698f.json`.
+The current active scope is P6-C at `.governance/progress/active.json`.
+The historical P6-B total and current-stage percentages applied only to the named
+repository lifecycle and its `repository-validated` target. They do
 not guess a whole-product percentage or include host, runtime, deployment,
 publication, pilot, or release work. Every terminal user-facing response must
 end with the fixed Status Snapshot, including next automatic work, the one real
 human gate, blocker/review state, later boundaries, and continuation.
+
+P6-D adds an explicit APG program roadmap at
+`.governance/progress/apg-p6-d-program-roadmap-v1.json`, referenced by the
+active definition. It measures the completed P6-C repository lifecycle
+separately from the remaining APG program, reports the current program stage
+and its percentage, and lists the ordered successor transactions. The prior
+P5-H S33 BLOCK remains immutable historical evidence outside the denominator;
+the next host work is a fresh P5-H S34 transaction. Missing or drifted program
+evidence is reported as `not-computable`, and the loop harness remains a
+non-executing planner.
+
+P6-E adds the repository-owned presentation facade for compact domain results,
+guided intake, P3-F acceptance, and loop completion. It keeps those canonical
+schemas unchanged while requiring one final Status Snapshot with source-bound
+total/current-stage progress, the immediate and following program stages, and
+the ordered continuation. Missing progress sources are explicit
+`not-computable`; arbitrary host/model final prose remains a separate lifecycle
+boundary.

@@ -9,7 +9,7 @@ from pathlib import Path, PurePosixPath
 import stat
 from typing import Any
 
-from ..audit_contract import audit_proof_contract, snapshot_for_audit
+from ..audit_contract import AUDIT_CONTENT_HASH_LIMIT, audit_proof_contract, snapshot_for_audit
 from ..continuous_delivery_harness import (
     ContinuousDeliveryPlan,
     continuous_delivery_harness_mapping,
@@ -33,6 +33,13 @@ from ..progress_projection import (
     render_progress_snapshot,
     render_progress_status,
 )
+from ..program_progress import (
+    MAX_PROGRAM_ROADMAP_BYTES,
+    ProgramProgressSnapshot,
+    ProgramScopeStatus,
+    parse_program_roadmap_definition,
+    recompute_program_progress,
+)
 from ..receipts import build_receipt
 from ..storage import digest
 
@@ -48,6 +55,7 @@ class ProgressOutcome:
     status_snapshot: str
     snapshot: ProgressSnapshot | None = None
     continuation: ContinuousDeliveryPlan | None = None
+    program_snapshot: ProgramProgressSnapshot | None = None
 
 
 def _project_relative(value: str | Path, label: str) -> str:
@@ -119,17 +127,31 @@ def _not_computable_status(*reasons: str) -> str:
         (
             "Status Snapshot",
             "Scope: not-computable",
+            "Progress basis: definition_id=absent; denominator_tasks=not-computable; "
+            "denominator_weight=not-computable; lifecycle_ref=not-computable; "
+            "plan_id=not-computable",
             "Completed work: unavailable",
             "Total progress: execution=not-computable verified=not-computable",
+            "Program progress: scope=not-computable; definition_id=absent; "
+            "execution=not-computable verified=not-computable; "
+            "reason=program-roadmap-unavailable",
             "Current phase: unavailable/not-computable",
-            "Current stage: unavailable; execution=not-computable verified=not-computable",
-            "Next phase: unavailable/not-computable",
+            "Lifecycle stage: unavailable; execution=not-computable verified=not-computable",
+            "Program stage (current): unavailable/not-computable; packages=not-computable; "
+            "execution=not-computable verified=not-computable",
+            "Next lifecycle boundary: unavailable/not-computable",
+            "Immediate program transaction: unavailable/not-computable",
+            "Following program stage: unavailable/not-computable",
+            "Roadmap: unavailable/not-computable",
             "Delivery and Gates: target=none; state=not-computable; gate_health=unavailable",
             "Next automatic work: inspect-progress-scope",
             "Human gate: none",
             f"Blockers and review: reasons={reason_text}; independent_review=unavailable",
             "Later boundaries: unavailable/not-computable",
-            "Continuation: state=inspect; action=inspect-progress-scope; dispatch_permitted=false",
+            "Continuation: state=inspect; action=inspect-progress-scope; "
+            "owner=harness-controller; requires_existing_authority=false; "
+            "dispatch_permitted=false; "
+            "resume_condition=resume.after-progress-source-is-readable",
         )
     )
 
@@ -150,37 +172,209 @@ def _snapshot_mapping(snapshot: ProgressSnapshot) -> dict[str, Any]:
     return json.loads(render_progress_snapshot(snapshot).decode("utf-8"))
 
 
+def _program_snapshot_mapping(snapshot: ProgramProgressSnapshot) -> dict[str, Any]:
+    """Return a bounded receipt mapping without adding a second file format."""
+
+    return {
+        "schema_version": snapshot.schema_version,
+        "definition_id": snapshot.definition_id,
+        "definition_sha256": snapshot.definition_sha256,
+        "scope_status": snapshot.scope_status.value,
+        "denominator_package_count": snapshot.denominator_package_count,
+        "denominator_weight": snapshot.denominator_weight,
+        "execution_progress_basis_points": snapshot.execution_progress_basis_points,
+        "verified_progress_basis_points": snapshot.verified_progress_basis_points,
+        "current_stage": snapshot.current_stage,
+        "current_stage_package_ids": list(snapshot.current_stage_package_ids),
+        "current_stage_total_weight": snapshot.current_stage_total_weight,
+        "current_stage_execution_basis_points": snapshot.current_stage_execution_basis_points,
+        "current_stage_verified_basis_points": snapshot.current_stage_verified_basis_points,
+        "next_stage": snapshot.next_stage,
+        "ordered_successor_transactions": [
+            {
+                "transaction_id": item.transaction_id,
+                "label": item.label,
+                "stage_id": item.stage_id,
+                "authority_state": item.authority_state.value,
+                "gate_ref": item.gate_ref,
+                "rollback_ref": item.rollback_ref,
+                "depends_on": list(item.depends_on),
+                "package_state": item.package_state.value,
+            }
+            for item in snapshot.ordered_successor_transactions
+        ],
+        "next_transaction_id": snapshot.next_transaction_id,
+        "human_gate_transaction_id": snapshot.human_gate_transaction_id,
+        "delivery_state": snapshot.delivery_state.value,
+        "excluded_historical_blocked_package_ids": list(
+            snapshot.excluded_historical_blocked_package_ids
+        ),
+        "reason_codes": list(snapshot.reason_codes),
+        "execution_performed": snapshot.execution_performed,
+    }
+
+
+def _read_program_snapshot(
+    guard: WorkspaceGuard,
+    parsed_definition: ProgressDefinition,
+) -> tuple[ProgramProgressSnapshot, str | None, str | None]:
+    """Read and verify the optional roadmap and its declared evidence.
+
+    The program projection owns all percentage and source-drift decisions.  A
+    missing roadmap/evidence is therefore represented as a not-computable
+    snapshot rather than turning a valid lifecycle report into an estimate.
+    """
+
+    roadmap_ref = parsed_definition.program_roadmap_ref
+    if roadmap_ref is None:
+        return recompute_program_progress(None, None), None, None
+    try:
+        roadmap_payload = _read_project_file(
+            guard,
+            _project_relative(roadmap_ref, "progress definition program_roadmap_ref"),
+            maximum=MAX_PROGRAM_ROADMAP_BYTES,
+            label="program roadmap",
+        )
+        roadmap = parse_program_roadmap_definition(roadmap_payload)
+    except (OSError, TypeError, ValueError):
+        return recompute_program_progress(None, None), roadmap_ref, None
+
+    source_digests: dict[str, str] = {}
+    evidence_paths = sorted(
+        {
+            evidence.path
+            for package in roadmap.packages
+            for evidence in package.evidence
+        }
+    )
+    for evidence_path in evidence_paths:
+        try:
+            evidence_payload = _read_project_file(
+                guard,
+                _project_relative(evidence_path, "program evidence path"),
+                maximum=AUDIT_CONTENT_HASH_LIMIT,
+                label="program evidence",
+            )
+        except (OSError, TypeError, ValueError):
+            # Omission is intentional: recompute_program_progress then emits
+            # a source-bound missing/drift reason and withholds successors.
+            continue
+        source_digests[evidence_path] = digest(evidence_payload)
+    return (
+        recompute_program_progress(roadmap, source_digests),
+        roadmap_ref,
+        digest(roadmap_payload),
+    )
+
+
+def _lifecycle_human_gate(snapshot: ProgressSnapshot) -> bool:
+    """Return whether the lifecycle itself, rather than its successor, is gated."""
+
+    hints = tuple(snapshot.next_actions) + tuple(snapshot.reason_codes)
+    prefixes = (
+        "human-gate",
+        "confirm",
+        "owner-decision",
+        "owner-authorization-pending",
+        "next.provide-transaction-approval",
+    )
+    return any(
+        item == prefix or item.startswith(f"{prefix}-") or item.startswith(f"{prefix}.")
+        for item in hints
+        for prefix in prefixes
+    )
+
+
 def _render_status_snapshot(
     snapshot: ProgressSnapshot,
     continuation: ContinuousDeliveryPlan,
     *,
     current_phase: str | None = None,
     next_phase: str | None = None,
+    definition_total_weight: int | None = None,
+    program_snapshot: ProgramProgressSnapshot | None = None,
 ) -> str:
     primary = continuation.actions[0]
+    lifecycle_gate = _lifecycle_human_gate(snapshot)
     human_gate = (
         primary.action_code
+        if continuation.human_gate_required and lifecycle_gate
+        else program_snapshot.human_gate_transaction_id
+        if continuation.human_gate_required
+        and program_snapshot is not None
+        and program_snapshot.human_gate_transaction_id is not None
+        else primary.action_code
         if continuation.human_gate_required
         else "none"
+    )
+    requires_authority = "true" if primary.requires_existing_authority else "false"
+    dispatch_permitted = "true" if continuation.dispatch_permitted else "false"
+    continuation_text = (
+        f"state={continuation.state.value}; action={primary.action_code}; "
+        f"owner={primary.owner.value}; "
+        f"requires_existing_authority={requires_authority}; "
+        f"dispatch_permitted={dispatch_permitted}; "
+        f"resume_condition={continuation.resume_condition}"
     )
     base = render_progress_status(
         snapshot,
         current_phase=current_phase,
         next_phase=next_phase,
+        definition_total_weight=definition_total_weight,
+        continuation=continuation_text,
+        program_snapshot=program_snapshot,
     )
     lines = base.splitlines()
+    for index, line in enumerate(lines):
+        if line.startswith("Next automatic work: "):
+            source_sequence = ",".join(snapshot.next_actions)
+            program_transaction = (
+                None
+                if program_snapshot is None
+                or program_snapshot.scope_status is not ProgramScopeStatus.COMPUTABLE
+                or not program_snapshot.ordered_successor_transactions
+                else program_snapshot.ordered_successor_transactions[0]
+            )
+            if program_transaction is None:
+                lines[index] = f"Next automatic work: {primary.action_code}"
+            else:
+                lines[index] = (
+                    f"Next automatic work: {primary.action_code} for program transaction "
+                    f"{program_transaction.label} [{program_transaction.transaction_id}]"
+                )
+            if (
+                source_sequence
+                and primary.action_code not in snapshot.next_actions
+                and snapshot.delivery_state.value != "target-reached"
+            ):
+                lines[index] += f"; source_sequence={source_sequence}"
+            break
+    status_reasons = tuple(
+        sorted(
+            set(
+                snapshot.reason_codes
+                + (() if program_snapshot is None else program_snapshot.reason_codes)
+                + (
+                    continuation.reason_codes
+                    if continuation.state.value in {"freeze", "human-gate"}
+                    else ()
+                )
+            )
+        )
+    )
+    for index, line in enumerate(lines):
+        if line.startswith("Blockers and review: "):
+            prefix = "Blockers and review: reasons="
+            if line.startswith(prefix):
+                _, separator, remainder = line[len(prefix) :].partition("; ")
+                lines[index] = prefix + (",".join(status_reasons) or "none")
+                if separator:
+                    lines[index] += "; " + remainder
+            break
     for index, line in enumerate(lines):
         if line.startswith("Human gate: "):
             lines[index] = f"Human gate: {human_gate}"
             break
-    requires_authority = "true" if primary.requires_existing_authority else "false"
-    dispatch_permitted = "true" if continuation.dispatch_permitted else "false"
-    lines.append(
-        "Continuation: "
-        f"state={continuation.state.value}; action={primary.action_code}; "
-        f"owner={primary.owner.value}; requires_existing_authority={requires_authority}; "
-        f"dispatch_permitted={dispatch_permitted}"
-    )
     return "\n".join(lines)
 
 
@@ -192,9 +386,12 @@ def _receipt(
     definition_sha256: str | None,
     lifecycle_ref: str | None,
     lifecycle_sha256: str | None,
+    program_roadmap_ref: str | None = None,
+    program_roadmap_sha256: str | None = None,
     status_snapshot: str,
     changed_paths: tuple[str, ...],
     snapshot: ProgressSnapshot | None = None,
+    program_snapshot: ProgramProgressSnapshot | None = None,
     continuation: ContinuousDeliveryPlan | None = None,
     error_type: str | None = None,
 ) -> Receipt:
@@ -203,8 +400,15 @@ def _receipt(
         "definition_sha256": definition_sha256,
         "lifecycle_ref": lifecycle_ref,
         "lifecycle_sha256": lifecycle_sha256,
+        "program_roadmap_ref": program_roadmap_ref,
+        "program_roadmap_sha256": program_roadmap_sha256,
         "progress_snapshot": (
             None if snapshot is None else _snapshot_mapping(snapshot)
+        ),
+        "program_snapshot": (
+            None
+            if program_snapshot is None
+            else _program_snapshot_mapping(program_snapshot)
         ),
         "continuation": (
             None
@@ -218,7 +422,9 @@ def _receipt(
     if error_type is not None:
         outputs["error_type"] = error_type
     evidence_refs = tuple(
-        item for item in (definition_ref, lifecycle_ref) if item is not None
+        item
+        for item in (definition_ref, lifecycle_ref, program_roadmap_ref)
+        if item is not None
     )
     return build_receipt(
         command="progress",
@@ -320,7 +526,14 @@ def run_progress(
             lifecycle_payload
         )
         snapshot = recompute_progress_snapshot(parsed_definition, lifecycle)
-        continuation = plan_continuous_delivery_harness(snapshot)
+        program_snapshot, program_roadmap_ref, program_roadmap_sha256 = _read_program_snapshot(
+            guard,
+            parsed_definition,
+        )
+        continuation = plan_continuous_delivery_harness(
+            snapshot,
+            program_snapshot=program_snapshot,
+        )
         changed = guard.changed_paths(before)
         route_by_id = {route.task_id: route for route in lifecycle.plan.routes}
         next_phase = None
@@ -337,6 +550,8 @@ def run_progress(
             continuation,
             current_phase=lifecycle.phase.value,
             next_phase=next_phase,
+            definition_total_weight=parsed_definition.total_weight,
+            program_snapshot=program_snapshot,
         )
         receipt = _receipt(
             fingerprint=digest(before),
@@ -346,6 +561,10 @@ def run_progress(
                 else (
                     "pass"
                     if snapshot.scope_status.value == "computable"
+                    and (
+                        program_roadmap_ref is None
+                        or program_snapshot.scope_status is ProgramScopeStatus.COMPUTABLE
+                    )
                     else "not-computable"
                 )
             ),
@@ -353,9 +572,12 @@ def run_progress(
             definition_sha256=definition_sha256,
             lifecycle_ref=lifecycle_ref,
             lifecycle_sha256=digest(lifecycle_payload),
+            program_roadmap_ref=program_roadmap_ref,
+            program_roadmap_sha256=program_roadmap_sha256,
             status_snapshot=status_snapshot,
             changed_paths=changed,
             snapshot=snapshot,
+            program_snapshot=program_snapshot,
             continuation=continuation,
         )
         return ProgressOutcome(
@@ -364,6 +586,7 @@ def run_progress(
             receipt=receipt,
             status_snapshot=status_snapshot,
             snapshot=snapshot,
+            program_snapshot=program_snapshot,
             continuation=continuation,
         )
     except (

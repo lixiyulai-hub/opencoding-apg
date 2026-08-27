@@ -1,5 +1,72 @@
 # Changelog
 
+## 0.6.5-dev.20260819
+
+### Added
+
+- P6-F groups simultaneous P3-A and P5-A consequential reasons into one
+  bounded human confirmation route while retaining every trigger and evidence
+  reference.
+- `AuthorizationSession` binds one owner Gate to an exact, UTC-expiring set of
+  child transactions, policy and source digests, required preimage, scope, and
+  reason codes; source, scope, preimage, policy, reason, transaction, or expiry
+  drift fails closed.
+- P3-E can consume a matching session for pre-bound apply children, and P3-G
+  can expand one session into task-bound approvals for exactly one confirmation
+  wave while preserving canonical compact P3 result schemas.
+
+### Fixed
+
+- P6-F sessions now bind one exact source, preimage, scope, and reason set.
+  P3-G additionally binds run, plan, wave, and `CONFIRM` task IDs; a derived
+  approval commits to the complete canonical session hash. New checkpoints
+  reject expired sessions, while only an event-identical replay can retain an
+  expired recorded session checkpoint.
+
+### Compatibility
+
+- The candidate remains repository-local. Global promotion, host reload or
+  invocation, target execution, provider/network use, runtime, deployment,
+  publication, pilot, release, and Git actions remain separate transactions.
+
+## 0.6.4-dev.20260819
+
+### Added
+
+- P6-E adds an additive presentation facade for lifecycle, idea/session,
+  requirement-trace, target, guided-intake, P3-F acceptance, and bounded-loop
+  results without changing any closed P3 compact schema or canonical bytes.
+- Every facade result has exactly one final source-bound Status Snapshot; when
+  no progress source is available it reports `not-computable` instead of
+  inventing total or stage percentages.
+- Sol/Terra completion guidance now requires the same ordered continuation and
+  final Status Snapshot, while arbitrary host/model prose remains a separate
+  host lifecycle boundary.
+
+### Compatibility
+
+- P6-D lifecycle and program projections remain source-bound. Global promotion,
+  host reload/invocation, runtime, deployment, publication, pilot, release,
+  provider/network, and Git actions remain separate transactions.
+
+## 0.6.3-dev.20260819
+
+### Added
+
+- P6-D adds a canonical source-bound program roadmap and separate whole-program
+  and current-stage progress lines to every read-only Status Snapshot.
+- The continuation harness now exposes the next preparable successor after a
+  completed lifecycle, preserves one real human gate, and freezes on missing or
+  drifted program evidence.
+- Historical P5-H S33 BLOCK evidence remains outside the denominator and points
+  only to a fresh P5-H S34 successor.
+
+### Compatibility
+
+- P6-C lifecycle percentages remain unchanged. Program projection does not
+  authorize global promotion, host reload/invocation, runtime, deployment,
+  publication, pilot, release, provider/network, or Git actions.
+
 ## 0.6.2-dev.20260818
 
 ### Added

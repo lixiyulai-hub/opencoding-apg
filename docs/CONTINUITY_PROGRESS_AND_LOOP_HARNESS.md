@@ -9,7 +9,9 @@ total and current-stage progress, next automatic work, any actual human gate,
 blockers, review state, and later delivery boundaries without converting that
 report into execution authority.
 
-This document is normative for the P6-A repository capability. It does not
+This document is normative for the P6-A/P6-C repository capability. P6-C makes
+the terminal Status Snapshot and continuation contract universal while keeping
+the P6-A source-bound projection and pure-planner boundaries. It does not
 replace the P3-F through P3-J contracts, feedback-loop records, ChangeRecords,
 or phase-scoped delivery acceptance.
 
@@ -23,10 +25,10 @@ Status Snapshot
 Completed work: <bounded source-derived summary>
 Total progress: <execution basis points>; verified: <basis points>
 Current phase: <source-bound lifecycle phase>
-Current stage: <stage>; execution: <basis points>; verified: <basis points>
-Next phase: <phase of the next source-bound task, or unavailable/not-computable>
+Lifecycle stage: <stage>; execution: <basis points>; verified: <basis points>
+Next lifecycle boundary: <phase of the next source-bound task, or unavailable/not-computable>
 Delivery and Gates: <delivery state>; <gate health>
-Next automatic work: <zero through five ordered action codes>
+Next automatic work: <immediate planner action; source task sequence when a Gate barrier is active>
 Human gate: <one real decision or transaction gate, or none>
 Blockers and review: <stable reason codes>; <independent-review state>
 Later boundaries: <runtime/deployment/publication/pilot/release states>
@@ -43,11 +45,62 @@ The canonical machine result is a JSON receipt. The human Status Snapshot is a
 projection of that same source-bound result and does not become an approval,
 execution record, or acceptance artifact.
 
-The Status Snapshot is also the terminal-response contract. Every material
+The progress renderer and the CLI use the same continuation grammar. A
+continuation is one compact record with `state`, `action`, `owner`,
+`requires_existing_authority`, `dispatch_permitted`, and an exact
+`resume_condition=resume.<stable-code>`. The renderer may show
+`not-computable` percentages, but it must never replace a missing denominator
+with an estimate.
+
+When a Gate is pending, `Next automatic work` names the immediate barrier first
+and retains the source task sequence after it, for example
+`run-bound-validation; source_sequence=next.execute-current-wave,task.design.product`.
+This makes the required validation order visible without hiding the actual next
+task or suggesting that implementation has already completed.
+
+The Status Snapshot is also the repository-controller terminal-response
+contract. Every material
 checkpoint, successful or failed terminal result, `BLOCK`, or `CONFIRM` MUST
 end with exactly one Status Snapshot section. It MUST be the final section of
 the response: no trailing classification, conclusion, or prose next step may
 appear after `Continuation`.
+
+The repository CLI can mechanically enforce this contract for its own
+human-readable routes. It cannot intercept arbitrary host or model prose;
+that enforcement requires a later host/adapter lifecycle transaction.
+
+Repository-owned domain results that intentionally use compact P3 schemas may
+be wrapped by `project_governance.presentation`. The facade preserves the
+closed compact mapping, emits exactly one final Snapshot, and reports
+`not-computable` when no declared progress source is available. Its loop view
+must preserve the harness `dispatch_permitted`, `resume_condition`, and
+first-failure-stop semantics; this wrapper still cannot intercept arbitrary
+host/model prose.
+
+## Program Roadmap Projection
+
+The lifecycle denominator and the whole-program denominator are separate
+measurements. When `ProgressDefinition.program_roadmap_ref` points to a
+canonical `ProgramRoadmapDefinition`, the snapshot adds four lines:
+
+```text
+Program progress: <whole-program execution and verified percentages>
+Program stage (current): <current program stage and stage percentages>
+Immediate program transaction: <the next transaction, its stage/authority, the following stage, and one human gate if any>
+Roadmap: <ordered successor transaction labels and IDs>
+```
+
+The projection also renders a `Following program stage` line between the
+immediate transaction and the ordered roadmap.
+
+Completed lifecycle work contributes only to the declared program denominator.
+Historical blocked work, including an immutable failed host attempt, is
+retained as evidence but excluded from that denominator and must point to a
+fresh successor transaction. Missing or drifted roadmap evidence makes the
+program projection `not-computable`; it never produces an estimate. The
+program projection can recommend a plan gate for the next preparable
+transaction, but it cannot authorize dispatch or imply that global promotion,
+host, runtime, deployment, publication, pilot, or release work occurred.
 
 ## Progress Definition
 
@@ -77,6 +130,7 @@ reports:
 - verified progress: work with the required independent validation or review;
 - total and current-stage values in integer basis points from 0 through 10,000;
 - total/current task counts and source binding;
+- the declared definition ID and denominator task/weight meaning;
 - delivery state, delivery phase, and Gate health;
 - zero through five stable ordered next actions;
 - blocker reason codes, review state, one actual human gate where present, and
@@ -92,7 +146,10 @@ progress values null and assigns `not-computable` with a stable reason.
 `project-governance progress <target>` loads the optional active definition,
 recomputes the snapshot, plans a bounded continuation, and emits one receipt.
 `--json` emits canonical receipt JSON; the ordinary form emits the fixed Status
-Snapshot. The command is read-only and must retain an empty changed-path proof.
+Snapshot. A malformed human invocation emits a not-computable Status Snapshot;
+a malformed invocation that requests `--json` emits one canonical `invalid`
+receipt instead of an argparse document. The command is read-only and must
+retain an empty changed-path proof.
 
 Doctor treats a missing optional definition as a pass diagnostic. When a
 definition is present, it validates its containment, canonical form, and source
@@ -113,6 +170,7 @@ The primary state can also be `HUMAN_GATE`, `FREEZE`, or `COMPLETE`.
 | State | Meaning | Owner | Authority rule |
 | --- | --- | --- | --- |
 | `INSPECT` | Read and validate declared sources or explain why progress is unavailable. | harness controller | Read-only only. |
+| `PROGRESS` | Recompute the source-bound total and current-stage projection. | harness controller | Read-only only; no authority is created. |
 | `PLAN_GATE` | Prepare the exact next transaction and its Gate/rollback binding. | plan owner | Does not apply it. |
 | `DISPATCH` | Queue existing authorized work after fresh scope and authority checks. | authorized executor | Requires existing authority; never creates it. |
 | `VALIDATE` | Run the already-bound validation route. | validator | Requires existing authority and preserves evidence. |
@@ -128,6 +186,13 @@ the actual decision or transaction boundary. Routine inspection, projection,
 reporting, planning, and requeue preparation proceed without redundant owner
 interruption.
 
+Gate validation is an ordering barrier. If Gate evidence is pending, the
+primary state MUST be `VALIDATE` (or `PLAN_GATE` when a new acceptance
+transaction must first be bound) before `DISPATCH`, `INDEPENDENT_VERIFY`, or
+`REQUEUE` can be recommended. `dispatch_permitted` is therefore `false` on a
+`VALIDATE` plan: validation may consume existing authority, but it cannot
+authorize a new dispatch or imply that work was executed.
+
 ## Stop and Resume Conditions
 
 The harness MUST use `FREEZE` when source scope is invalid, a lifecycle is
@@ -137,8 +202,25 @@ is missing. It MUST retain the exact source references and stable reason codes.
 
 Resumption requires a new valid source snapshot plus the separately required
 decision, transaction authority, budget, scope, rollback, Gate, or review
-evidence. Requeueing never retries blindly and never restarts a historical
-host, runtime, deployment, publication, pilot, or release action.
+evidence. The exact condition is state-bound and is serialized in the
+continuation field:
+
+| Primary state | Exact resume condition |
+| --- | --- |
+| `INSPECT` | `resume.after-progress-source-is-readable` |
+| `PROGRESS` | `resume.after-source-bound-progress-is-computed` |
+| `PLAN_GATE` | `resume.after-plan-gate-pass-and-authority-is-bound` |
+| `DISPATCH` | `resume.after-authorized-executor-is-available` |
+| `VALIDATE` | `resume.after-selected-gates-pass` |
+| `INDEPENDENT_VERIFY` | `resume.after-independent-review-accepts-evidence` |
+| `REPORT` | `resume.after-status-snapshot-is-recorded` |
+| `REQUEUE` | `resume.after-bounded-loop-continues-without-stop-condition` |
+| `HUMAN_GATE` | `resume.after-owner-decision-is-recorded` |
+| `FREEZE` | `resume.after-blocker-scope-drift-or-missing-evidence-is-resolved` |
+| `COMPLETE` | `resume.only-on-an-explicit-successor-transaction-or-new-scope` |
+
+Requeueing never retries blindly and never restarts a historical host, runtime,
+deployment, publication, pilot, or release action.
 
 ## Boundaries
 
@@ -149,11 +231,41 @@ completion, host activation, runtime behavior, deployment, public delivery, or
 release. Those actions remain their own exact-scope transactions with their own
 preimages, Gates, rollback, review, and acceptance evidence.
 
-## P6-B APG Self-Roadmap
+## P6-C APG Self-Roadmap (Current)
 
-P6-B makes this APG repository a consumer of the progress contract. The active
-definition at `.governance/progress/active.json` binds exactly one canonical
-P3-G lifecycle at `.governance/progress/apg-self-roadmap-v1.lifecycle.json`.
+P6-C is the current active repository denominator for universal status
+continuity. `.governance/progress/active.json` has definition ID
+`progress.apg.p6c.status-continuity.v1` and binds the contained
+`apg-p6-c-status-continuity-v1.lifecycle.json` source. It declares seven
+equally weighted work packages for the reporting/adapter contract, continuity
+architecture, source binding, implementation, verification, delivery
+preparation, and independent acceptance. The target is
+`repository-validated`; at creation, execution and independently verified
+progress are both `0.00%` and the current lifecycle stage is source-derived,
+not inferred from time, receipts, changed files, or prior P6-B completion.
+
+The active P6-C percentage describes only those seven repository work packages.
+It is not a whole-program, installed-package, host, runtime, deployment,
+publication, pilot, or release percentage. Those remain later delivery
+boundaries and require separate transactions.
+
+### P6-C Loop Continuation
+
+Each terminal human-readable route reports the same bounded loop contract:
+`INSPECT -> PROGRESS -> PLAN_GATE -> DISPATCH -> VALIDATE ->
+INDEPENDENT_VERIFY -> REPORT -> REQUEUE`. The harness is a planner and
+serializes `execution_performed=false`; it does not run a task, create
+authority, or turn routine work into an approval queue. The next automatic work
+and the one real human gate are derived from the current source snapshot.
+
+## P6-B APG Self-Roadmap (Historical)
+
+P6-B made this APG repository a consumer of the progress contract. Its immutable
+definition is retained at
+`.governance/progress/history/progress.apg.self-roadmap.v1.definition-57b785db849d93abfdca5a9fb0123317ce12e059c5b917541b3e9a05f76b698f.json`;
+the active `.governance/progress/active.json` is now P6-C and does not bind the
+P6-B scope. The historical P6-B definition binds exactly one canonical P3-G
+lifecycle at `.governance/progress/apg-self-roadmap-v1.lifecycle.json`.
 The denominator covers only its declared current repository work packages. It
 does not backfill P3/P5 history or use elapsed time, receipts, token use, or
 changed-file counts as work evidence.

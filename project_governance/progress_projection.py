@@ -24,6 +24,10 @@ from .goal_delivery_lifecycle import (
     LifecycleState,
     render_goal_delivery_lifecycle,
 )
+from .program_progress import (
+    ProgramProgressSnapshot,
+    render_program_status_lines,
+)
 from .storage import canonical_json_bytes
 
 
@@ -246,6 +250,7 @@ class ProgressDefinition:
     total_weight: int | None
     target_delivery_phase: LifecyclePhase | None
     out_of_scope_phases: tuple[LifecyclePhase, ...]
+    program_roadmap_ref: str | None = None
 
     def __post_init__(self) -> None:
         if type(self) is not ProgressDefinition:
@@ -274,6 +279,7 @@ class ProgressDefinition:
                 "target_delivery_phase must be an exact LifecyclePhase or null"
             )
         phases = _phase_tuple(self.out_of_scope_phases, "out_of_scope_phases")
+        _optional_path(self.program_roadmap_ref, "program_roadmap_ref")
         if self.target_delivery_phase is None and phases:
             raise ProgressProjectionError(
                 "out_of_scope_phases requires a target_delivery_phase"
@@ -487,7 +493,12 @@ def _current_stage(lifecycle: GoalDeliveryLifecycle) -> tuple[str, tuple[str, ..
     if lifecycle.state is LifecycleState.BLOCK:
         return "stage.blocked", ()
     if lifecycle.state is LifecycleState.COMPLETE:
-        return "stage.completed-work", ()
+        # A completed lifecycle has no pending wave, but its completed stage
+        # is still a real denominator: render it at 100% instead of hiding the
+        # current-stage percentage behind an empty task set.
+        return "stage.completed-work", tuple(
+            sorted(route.task_id for route in lifecycle.plan.routes)
+        )
     if lifecycle.current_wave_index is None:
         return "stage.unknown", ()
     task_ids = tuple(sorted(lifecycle.current_wave_task_ids))
@@ -668,10 +679,14 @@ def _task_weight_mapping(value: ProgressTaskWeight) -> dict[str, object]:
     return {"task_id": value.task_id, "weight": value.weight}
 
 
-def _definition_mapping(value: ProgressDefinition) -> dict[str, object]:
+def _definition_mapping(
+    value: ProgressDefinition,
+    *,
+    include_program_roadmap_ref: bool = True,
+) -> dict[str, object]:
     if type(value) is not ProgressDefinition:
         raise TypeError("value must be an exact ProgressDefinition")
-    return {
+    result: dict[str, object] = {
         "schema_version": value.schema_version,
         "definition_id": value.definition_id,
         "lifecycle_ref": value.lifecycle_ref,
@@ -685,6 +700,9 @@ def _definition_mapping(value: ProgressDefinition) -> dict[str, object]:
         ),
         "out_of_scope_phases": [item.value for item in value.out_of_scope_phases],
     }
+    if include_program_roadmap_ref:
+        result["program_roadmap_ref"] = value.program_roadmap_ref
+    return result
 
 
 def render_progress_definition(value: ProgressDefinition) -> bytes:
@@ -822,22 +840,26 @@ def parse_progress_definition(value: str | bytes) -> ProgressDefinition:
     """Parse canonical definition bytes and reject unknown fields or driftable form."""
 
     mapping, raw = _payload(value, maximum=MAX_PROGRESS_DEFINITION_BYTES)
+    legacy_fields = frozenset(
+        {
+            "schema_version",
+            "definition_id",
+            "lifecycle_ref",
+            "lifecycle_run_id",
+            "plan_id",
+            "plan_sha256",
+            "task_weights",
+            "total_weight",
+            "target_delivery_phase",
+            "out_of_scope_phases",
+        }
+    )
+    current_fields = legacy_fields | {"program_roadmap_ref"}
+    actual_fields = frozenset(mapping)
+    legacy_definition = actual_fields == legacy_fields
     item = _closed(
         mapping,
-        frozenset(
-            {
-                "schema_version",
-                "definition_id",
-                "lifecycle_ref",
-                "lifecycle_run_id",
-                "plan_id",
-                "plan_sha256",
-                "task_weights",
-                "total_weight",
-                "target_delivery_phase",
-                "out_of_scope_phases",
-            }
-        ),
+        legacy_fields if legacy_definition else current_fields,
         "progress_definition",
     )
     weights = tuple(
@@ -864,8 +886,22 @@ def parse_progress_definition(value: str | bytes) -> ProgressDefinition:
             tuple(_array(item["out_of_scope_phases"], "progress_definition.out_of_scope_phases", len(_PHASE_ORDER))),
             "progress_definition.out_of_scope_phases",
         ),
+        program_roadmap_ref=(
+            None
+            if legacy_definition
+            else _optional_path(
+                item["program_roadmap_ref"],
+                "progress_definition.program_roadmap_ref",
+            )
+        ),
     )
-    if raw != render_progress_definition(definition):
+    expected = canonical_json_bytes(
+        _definition_mapping(
+            definition,
+            include_program_roadmap_ref=not legacy_definition,
+        )
+    )
+    if raw != expected:
         raise ProgressProjectionError("progress definition JSON is not canonical")
     return definition
 
@@ -1053,11 +1089,37 @@ def parse_progress_snapshot(
     return snapshot
 
 
+_CONTINUATION_RE = re.compile(
+    r"\A"
+    r"state=(?P<state>[a-z0-9][a-z0-9._-]{0,127}); "
+    r"action=(?P<action>[a-z0-9][a-z0-9._-]{0,127}); "
+    r"owner=(?P<owner>[a-z0-9][a-z0-9._-]{0,127}); "
+    r"requires_existing_authority=(?P<authority>true|false); "
+    r"dispatch_permitted=(?P<dispatch>true|false); "
+    r"resume_condition=(?P<resume>resume\.[a-z0-9][a-z0-9._-]{0,127})"
+    r"\Z"
+)
+
+
+def _continuation_fields(value: object) -> dict[str, str]:
+    """Validate and split the compact continuation contract used in text output."""
+
+    if type(value) is not str or not value or "\n" in value or "\r" in value:
+        raise ValueError("continuation must be a canonical status continuation")
+    match = _CONTINUATION_RE.fullmatch(value)
+    if match is None:
+        raise ValueError("continuation must be a canonical status continuation")
+    return match.groupdict()
+
+
 def render_progress_status(
     value: ProgressSnapshot,
     *,
     current_phase: str | None = None,
     next_phase: str | None = None,
+    definition_total_weight: int | None = None,
+    continuation: str | None = None,
+    program_snapshot: ProgramProgressSnapshot | None = None,
 ) -> str:
     """Return the fixed, source-preserving human Status Snapshot text.
 
@@ -1069,6 +1131,8 @@ def render_progress_status(
 
     if type(value) is not ProgressSnapshot:
         raise TypeError("value must be an exact ProgressSnapshot")
+    if program_snapshot is not None and type(program_snapshot) is not ProgramProgressSnapshot:
+        raise TypeError("program_snapshot must be an exact ProgramProgressSnapshot or None")
 
     phase_text = current_phase or "unavailable/not-computable"
     next_phase_text = next_phase or "unavailable/not-computable"
@@ -1077,6 +1141,11 @@ def render_progress_status(
         if item is None:
             return "not-computable"
         return f"{item // 100}.{item % 100:02d}%"
+
+    if definition_total_weight is not None and (
+        type(definition_total_weight) is not int or definition_total_weight <= 0
+    ):
+        raise TypeError("definition_total_weight must be a positive integer or None")
 
     targets = (
         "unavailable/not-computable"
@@ -1096,10 +1165,42 @@ def render_progress_status(
     next_actions = ",".join(value.next_actions) or "none"
     reasons = ",".join(value.reason_codes) or "none"
     counts = value.task_counts
+    if value.scope_status is ProgressScopeStatus.COMPUTABLE and value.definition_id:
+        denominator_tasks = str(counts.total)
+        denominator_weight = (
+            str(definition_total_weight)
+            if definition_total_weight is not None
+            else "not-computable"
+        )
+        definition_id = value.definition_id
+        lifecycle_ref = value.lifecycle_ref or "not-computable"
+        plan_id = value.plan_id
+    else:
+        definition_id = "absent" if value.definition_id is None else value.definition_id
+        denominator_tasks = "not-computable"
+        denominator_weight = "not-computable"
+        lifecycle_ref = value.lifecycle_ref or "not-computable"
+        plan_id = value.plan_id if value.plan_id else "not-computable"
+    if continuation is None:
+        continuation = (
+            "state=inspect; action=inspect-progress-scope; "
+            "owner=harness-controller; requires_existing_authority=false; "
+            "dispatch_permitted=false; "
+            "resume_condition=resume.after-progress-source-is-readable"
+        )
+    continuation_fields = _continuation_fields(continuation)
+    continuation_state = continuation_fields["state"]
+    continuation_action = continuation_fields["action"]
     human_gate = (
-        "confirmation-required"
+        continuation_action
+        if continuation_state == "human-gate"
+        else "confirmation-required"
         if any(
-            item.startswith("owner-authorization-pending.")
+            item.startswith((
+                "owner-authorization-pending.",
+                "next.provide-transaction-approval",
+                "owner-decision-required",
+            ))
             for item in value.reason_codes
         )
         else "none"
@@ -1120,10 +1221,27 @@ def render_progress_status(
         review_state = "accepted"
     else:
         review_state = "not-required-yet"
+    if program_snapshot is None:
+        program_lines = (
+            "Program progress: scope=not-computable; definition_id=absent; "
+            "execution=not-computable verified=not-computable; "
+            "reason=program-roadmap-unavailable",
+            "Program stage (current): unavailable/not-computable; packages=not-computable; "
+            "execution=not-computable verified=not-computable",
+            "Immediate program transaction: unavailable/not-computable",
+            "Following program stage: unavailable/not-computable",
+            "Roadmap: unavailable/not-computable",
+        )
+    else:
+        program_lines = render_program_status_lines(program_snapshot)
     return "\n".join(
         (
             "Status Snapshot",
             f"Scope: {value.scope_status.value}",
+            "Progress basis: "
+            f"definition_id={definition_id}; denominator_tasks={denominator_tasks}; "
+            f"denominator_weight={denominator_weight}; lifecycle_ref={lifecycle_ref}; "
+            f"plan_id={plan_id}",
             "Completed work: "
             f"total={counts.total} executed={counts.execution_evidenced} "
             f"succeeded={counts.execution_succeeded} verified={counts.independently_verified} "
@@ -1131,20 +1249,33 @@ def render_progress_status(
             "Total progress: "
             f"execution={format_basis_points(value.execution_progress_basis_points)} "
             f"verified={format_basis_points(value.verified_progress_basis_points)}",
+            *program_lines[:1],
             f"Current phase: {phase_text}",
-            "Current stage: "
+            "Lifecycle stage: "
             f"{value.current_stage}; "
             f"execution={format_basis_points(value.current_stage_execution_basis_points)} "
             f"verified={format_basis_points(value.current_stage_verified_basis_points)}",
-            f"Next phase: {next_phase_text}",
+            program_lines[1],
+            f"Next lifecycle boundary: {next_phase_text}",
+            program_lines[2],
+            program_lines[3],
+            program_lines[4],
             "Delivery and Gates: "
             f"target={targets}; state={value.delivery_state.value}; "
-            f"gate_health={value.gate_health.value}",
-            f"Next automatic work: {next_actions}",
+            f"gate_health={value.gate_health.value}; "
+            f"program_state={program_snapshot.scope_status.value if program_snapshot is not None else 'not-computable'}/"
+            f"{program_snapshot.delivery_state.value if program_snapshot is not None else 'not-computable'}",
+            f"Next automatic work: {continuation_action or next_actions}"
+            + (
+                f"; source_sequence={next_actions}"
+                if continuation_action and continuation_action not in next_actions and next_actions != "none"
+                else ""
+            ),
             f"Human gate: {human_gate}",
             "Blockers and review: "
             f"reasons={reasons}; independent_review={review_state}",
             f"Later boundaries: {out_of_scope}",
+            f"Continuation: {continuation}",
         )
     )
 

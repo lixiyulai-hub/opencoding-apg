@@ -16,7 +16,7 @@ record.
 | --- | --- | --- |
 | `AUTO` | The current dependency-closed wave is safe, bounded, and reversible under the P3-F context. | None for routine work. |
 | `RECOMMEND` | A safe choice is available but the preferred option is not an owner decision. | One task-bound decision. |
-| `CONFIRM` | A consequential P3-E boundary, Git mutation, release, provider, credential, network, deployment, or materially ambiguous choice is present. | One transaction-bound approval. |
+| `CONFIRM` | A consequential P3-E boundary, Git mutation, release, provider, credential, network, deployment, or materially ambiguous choice is present. | One transaction-bound approval or one exact session for the current wave. |
 | `BLOCK` | Evidence, dependency, scope, digest, reviewer, rollback, or policy facts are unsafe or incomplete. | Resolve the blocker; no implicit consent. |
 | `COMPLETE` | Every P3-F task has accepted evidence and consolidation trace. | Review the result, then explicitly record any next phase acceptance. |
 
@@ -39,6 +39,21 @@ replay of an already-applied sequence is idempotent. A changed replay, skipped
 sequence, duplicate task evidence, duplicate decision or approval identifier,
 stale plan digest, unknown field, duplicate JSON key, or changed previous digest
 is rejected.
+
+One owner-approved `AuthorizationSession` may be expanded into the internal
+task-bound `LifecycleApproval` evidence needed by every `CONFIRM` task in one
+current dependency-closed wave. The session must bind exactly one transaction,
+the P3-F plan digest and policy, no P3-E physical-root preimage, the lifecycle
+run ID, plan ID, wave index, exact `CONFIRM` task IDs, and the exact union of
+current-wave task scopes and reason codes, the owner, and a UTC expiry. It
+cannot authorize another run, a later wave, a different plan, a new reason, or
+any external delivery boundary. The closed P3-G JSON schema stays unchanged:
+the derived approvals and task authorization references are ordinary canonical
+checkpoint evidence, and each derived approval ID commits to the complete
+canonical session hash. New checkpoints require a live session. When a caller
+exactly replays a session-backed checkpoint, P3-G recomputes the wave
+immediately before that checkpoint and may match the original expired session
+only when the rebuilt event digest is identical; it does not broaden reuse.
 
 The controller stops at the first failed task or blocking review and marks all
 dependents `BLOCK`. It never invents an approval, decision, transaction,
