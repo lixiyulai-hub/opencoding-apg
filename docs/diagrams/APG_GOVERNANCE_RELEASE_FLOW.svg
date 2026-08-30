@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1750" height="700" viewBox="0 0 1750 700">
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#555"/></marker><style>text{font-family:Segoe UI,Microsoft YaHei,sans-serif;fill:#222}.n{stroke-width:2}.p{fill:#dae8fc;stroke:#6c8ebf}.d{fill:#fff2cc;stroke:#d6b656}.io{fill:#ffe6cc;stroke:#d79b00}.s{fill:#d5e8d4;stroke:#82b366}.r{fill:#f8cecc;stroke:#b85450}.sub{fill:#e1d5e7;stroke:#9673a6}.e{stroke:#555;stroke-width:2;fill:none;marker-end:url(#a)}</style></defs>
+<rect width="1750" height="700" fill="#fff"/><text x="40" y="40" font-size="26" font-weight="700">APG 治理与发布边界（验证项目）</text>
+<g class="e"><path d="M190 180H240"/><path d="M420 180H470"/><path d="M660 180H720"/><path d="M910 180H970"/><path d="M1170 180H1230"/><path d="M1430 180H1490"/><path d="M1600 220V420H1160"/><path d="M815 280V420"/><path d="M1160 455H1230"/><path d="M1420 455H1490"/><path d="M815 280V420"/><path d="M815 420H600V220H565"/></g>
+<g font-size="16" text-anchor="middle"><ellipse class="n s" cx="115" cy="180" rx="75" ry="35"/><text x="115" y="175">开始</text><text x="115" y="195">APG 测试请求</text>
+<rect class="n p" x="240" y="145" width="180" height="70"/><text x="330" y="175">Intake</text><text x="330" y="197">确认范围与非目标</text>
+<rect class="n p" x="470" y="145" width="190" height="70"/><text x="565" y="175">Plan-change</text><text x="565" y="197">变更、风险、回滚</text>
+<polygon class="n d" points="815,130 910,180 815,230 720,180"/><text x="815" y="175">Gate</text><text x="815" y="195">范围/证据/审批</text>
+<rect class="n io" x="970" y="145" width="200" height="70"/><text x="1070" y="175">Evidence / Receipt</text><text x="1070" y="197">哈希与命令结果</text>
+<rect class="n sub" x="1230" y="145" width="200" height="70"/><text x="1330" y="175">Independent Review</text><text x="1330" y="197">离线复核与回滚</text>
+<rect class="n io" x="1490" y="145" width="210" height="70"/><text x="1595" y="175">Deployment Preview</text><text x="1595" y="197">仅预览，不部署</text>
+<rect class="n p" x="950" y="420" width="210" height="70"/><text x="1055" y="450">Release Boundary</text><text x="1055" y="472">APG 验证发布边界</text>
+<ellipse class="n s" cx="1325" cy="455" rx="95" ry="35"/><text x="1325" y="450">PASS</text><text x="1325" y="470">Tag + Release</text>
+<ellipse class="n r" cx="815" cy="455" rx="95" ry="35"/><text x="815" y="450">BLOCK</text><text x="815" y="470">修正预览/补证据</text>
+<rect class="n r" x="1490" y="420" width="210" height="70"/><text x="1595" y="450">Rollback</text><text x="1595" y="472">恢复副本，保留证据</text></g>
+<g font-size="15"><text x="925" y="165">通过</text><text x="1190" y="165">通过</text><text x="1450" y="165">预览</text><text x="1615" y="335">边界确认</text><text x="1185" y="445">PASS</text><text x="835" y="350">失败</text><text x="1450" y="445">回滚</text><text x="610" y="390">修正</text></g>
+<g transform="translate(40,520)" font-size="15"><text font-weight="700" y="0">图例</text><rect class="n p" x="0" y="15" width="25" height="18"/><text x="35" y="30">流程</text><polygon class="n d" points="110,15 125,24 110,33 95,24"/><text x="135" y="30">Gate/决策</text><rect class="n io" x="235" y="15" width="25" height="18"/><text x="270" y="30">证据/预览</text><ellipse class="n s" cx="380" cy="24" rx="15" ry="9"/><text x="405" y="30">PASS</text><ellipse class="n r" cx="500" cy="24" rx="15" ry="9"/><text x="525" y="30">BLOCK/回滚</text></g>
+</svg>
