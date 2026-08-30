@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "validation_date": "2026-08-31",
+  "result": "PASS",
+  "scope": "APG governance and release/deployment orchestration project validation",
+  "not_product_release": true,
+  "passed_capabilities": [
+    "governance-initialization",
+    "plan-change-routing",
+    "source-bound-progress",
+    "deployment-preview",
+    "deterministic-gate-blocking",
+    "independent-review",
+    "rollback-rehearsal",
+    "release-boundary-preservation"
+  ],
+  "verification": {
+    "offline_unit_tests": {"status": "PASS", "count": 15, "exit_status": 0},
+    "independent_review": {"status": "PASS", "exit_status": 0},
+    "doctor": {"status": "PASS", "exit_status": 0, "known_warning": "generated-files:.governance/progress"},
+    "audit": {"status": "WARN_READ_ONLY", "exit_status": 0},
+    "full_check": {"status": "PASS", "exit_status": 0}
+  },
+  "external_actions": {
+    "provider": false,
+    "network": false,
+    "credentials": false,
+    "real_data": false,
+    "runtime": false,
+    "deployment": false,
+    "publication": false,
+    "pilot": false,
+    "git": false
+  },
+  "source_evidence": "Local APG fixture evidence retained outside this repository; this file is the published bounded summary."
+}
