@@ -1,3 +1,48 @@
+# APG：让小白也能轻松面对 AI Coding
+
+> **中文为主｜English follows**
+
+Adaptive Project Governance（APG）面向普通小白和初学者：用户只需要用自然语言提出一个 Coding 项目想法，APG 就会主动把模糊需求整理成可执行、可验证、可回滚的项目路径。
+
+## 你只需要说出想法
+
+APG 会先用 **Grill Me** 自然语言追问，把目标、用户、平台、约束、预算、风险和验收标准问清楚；不会让初学者自己填写复杂表格，也不会把用户变成审批 relay。
+
+## APG 会自动整理什么
+
+根据不同项目类型，APG 会生成并绑定一组适合的 Markdown 文献和治理资料，例如：
+
+- `PROJECT_BRIEF.md`：项目简报与目标；
+- `PRODUCT_PLAN.md`：产品计划、范围与里程碑；
+- `UX_FLOW.md`：用户流程与交互；
+- `ARCHITECTURE.md`：架构与模块边界；
+- `STACK_DECISION.md`：技术栈决策与依据；
+- `TASK_GRAPH.md`：需求拆分、依赖和执行波次；
+- `QUALITY_PLAN.md`：测试、质量 Gate 与验收；
+- `DEPLOYMENT_PLAN.md`：部署预览、发布边界与回滚；
+- `PRG plan / memory / agents / design`：按项目需要生成的规划、记忆、代理协作和设计文档。
+
+## 从需求到落地
+
+1. **提出想法**：用日常语言描述你想做的 Coding 项目。
+2. **Grill Me 澄清**：APG 追问真正会改变范围、风险或验收的关键问题。
+3. **形成文档**：将答案整理成结构化 Markdown 资料，并保留来源证据。
+4. **拆分需求**：把目标拆成任务、依赖、Gate、证据和回滚步骤。
+5. **分波次执行**：自动安排可安全执行的工作；遇到外部发布、生产数据、凭据或不可逆动作时只提出明确的单一 Gate。
+6. **验证并交付**：运行检查、独立复核、生成结果证据，最终帮助项目落地。
+
+## 可视化总览
+
+![APG 治理与 idea-to-result 流程图](diagrams/APG_GOVERNANCE_RELEASE_FLOW.svg)
+
+可编辑源文件：[`diagrams/APG_GOVERNANCE_RELEASE_FLOW.drawio`](diagrams/APG_GOVERNANCE_RELEASE_FLOW.drawio)
+
+---
+
+## English summary
+
+APG helps beginners face AI coding with a simple natural-language project request. It **Grill Me**-clarifies the idea, generates project-specific Markdown artifacts (brief, plan, memory, agents, design, architecture, task graph, quality and deployment plans), decomposes requirements, orchestrates bounded execution waves, and preserves evidence, Gates, and rollback. Consequential external actions remain explicit transaction boundaries.
+
 # Project Governance Operator Guide
 
 This directory documents the approved Version 1 Adaptive Project Governance contract: repository-scoped, audit-first, evidence-producing, and reversible. Governance reduces regression risk, limits blast radius, preserves rollback, and retains evidence; it cannot promise zero bugs or prove the absence of defects.
