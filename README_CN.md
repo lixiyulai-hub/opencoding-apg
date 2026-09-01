@@ -23,3 +23,17 @@ Adaptive Project Governance（APG）不是儿童产品源码，而是一个面�
 ## English (secondary)
 
 APG is a beginner-friendly idea-to-result coordinator for AI coding: it Grill Me-clarifies natural-language requests, creates project-specific Markdown plans and memory/agent/design artifacts, decomposes requirements, orchestrates execution waves, and preserves Gates, evidence, and rollback.
+
+## 下一阶段正式目标
+
+已确认 APG 下一阶段聚焦 **初心者交互体验与执行器连接**：
+
+- 让小白用中文自然语言开始项目；
+- 用 Grill Me 问清真正关键的需求；
+- 自动形成项目专属 Markdown 资料；
+- 拆分需求并安排执行波次；
+- 定义与 AI coding 执行器的适配器契约；
+- 先离线模拟和契约测试，再考虑受控本地执行；
+- 外部 Host、Provider、凭据、网络、运行时、Git、部署和发布继续保持独立 Gate。
+
+这项确认是 APG 的正式产品方向，不等于已经连接或调用任何执行器。
