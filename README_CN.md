@@ -13,3 +13,9 @@ OpenCoding 帮助不会写代码、刚开始学习 AI coding 的人，把一个�
 一句话：**让小白也能有条理地开始 AI coding 项目。**
 
 本仓库用于验证 OpenCoding/APG 的治理流程，不代表儿童知行星球下游产品已经实现或上线。
+
+## 流程图
+
+![OpenCoding 小白入门流程图](docs/diagrams/OpenCoding_INTRO.svg)
+
+可编辑源文件：`docs/diagrams/OpenCoding_INTRO.drawio`

@@ -16,6 +16,12 @@ OpenCoding 帮助不会写代码、刚开始学 AI coding 的人，把一个模�
 
 本仓库是 APG-only 治理与验证夹具，不实现儿童知行星球下游产品。
 
+## 流程图 / Workflow diagram
+
+![OpenCoding beginner workflow](docs/diagrams/OpenCoding_INTRO.svg)
+
+- 可编辑 draw.io 源文件 / Editable source: `docs/diagrams/OpenCoding_INTRO.drawio`
+
 ## English
 
 OpenCoding helps people who do not know how to code yet, or are new to AI coding, turn a rough idea into a clear, executable, and verifiable project plan.
