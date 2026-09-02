@@ -1,27 +1,15 @@
-# OpenCoding（APG）：让小白轻松面对 AI Coding
+# OpenCoding（APG）中文介绍
 
-正式品牌：OpenCoding。`adaptive-project-governance` 与 `APG` 保留为兼容技术标识。
+OpenCoding 帮助不会写代码、刚开始学习 AI coding 的人，把一个模糊想法变成清楚、可执行、可验证的项目计划。
 
-把一句想法，变成一套能自动推进的项目计划。
+它可以帮助你：
 
-OpenCoding 面向普通用户和 AI coding 初学者：用中文说出想做什么，Grill Me 会追问关键问题，OpenCoding 自动整理需求、任务、验证、证据和回滚。
+- 用 Grill Me 追问关键需求，减少遗漏；
+- 自动整理项目说明、知识包、任务清单和执行顺序；
+- 把大目标拆成容易理解的小步骤；
+- 为每一步准备检查、证据和回滚方案；
+- 在密钥、金钱、网络、部署或发布之前停下来确认。
 
-## 核心体验
+一句话：**让小白也能有条理地开始 AI coding 项目。**
 
-- 自然语言澄清：解释为什么提问，不要求先懂项目管理。
-- Markdown 知识包：生成项目专属目标、需求、架构、任务、质量和回滚文档。
-- 自动编排：例行工作自动推进；Git、网络、凭据、部署、公开发布和不可逆动作保留一次 consequential Gate。
-
-## 可视化流程
-
-![APG idea-to-result flow](docs/diagrams/APG_GITHUB_INTRO.svg)
-
-中文想法 → Grill Me → Markdown 知识包 → 任务图 → 离线 Adapter → 验证/报告
-
-- 可编辑图稿：docs/diagrams/APG_GITHUB_INTRO.drawio
-- 验证摘要：docs/validation/APG_PROJECT_VALIDATION_20260902.md
-- 上游归属：docs/attribution/GRILL_ME_UPSTREAM.md
-
-## 验证边界
-
-本仓库内容用于验证 OpenCoding/APG 的治理、Gate、证据、回滚和发布编排能力，不代表儿童知行星球下游产品已经实现、部署或上线。
+本仓库用于验证 OpenCoding/APG 的治理流程，不代表儿童知行星球下游产品已经实现或上线。
