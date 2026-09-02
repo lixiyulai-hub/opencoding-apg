@@ -1,21 +1,52 @@
-# OpenCoding（APG）中文介绍
+# OpenCoding（APG）中文入口
 
-OpenCoding 帮助不会写代码、刚开始学习 AI coding 的人，把一个模糊想法变成清楚、可执行、可验证的项目计划。
+## 一句话认识 OpenCoding
 
-它可以帮助你：
+OpenCoding 面向不会写代码、刚开始使用 AI coding 的人：把一个模糊想法变成清楚、可执行、可验证、可回退的项目计划。
 
-- 用 Grill Me 追问关键需求，减少遗漏；
-- 自动整理项目说明、知识包、任务清单和执行顺序；
-- 把大目标拆成容易理解的小步骤；
-- 为每一步准备检查、证据和回滚方案；
-- 在密钥、金钱、网络、部署或发布之前停下来确认。
+## 你可以用它做什么？
 
-一句话：**让小白也能有条理地开始 AI coding 项目。**
+- 用自然语言说出想法；
+- 让 Grill Me 追问目标、用户、边界和验收条件；
+- 自动整理知识包、任务清单、依赖顺序和执行上下文；
+- 先 preview，再按授权范围 apply；
+- 为每一步保留测试、receipt、哈希和 rollback；
+- 失败时冻结任务，修正输入后 Requeue；
+- 在密钥、金钱、网络、部署、远程 GitHub 或发布前停在人工 Gate。
 
-本仓库用于验证 OpenCoding/APG 的治理流程，不代表儿童知行星球下游产品已经实现或上线。
+## 适合哪些人？
 
-## 流程图
+小白、AI coding 初学者、学生、独立开发者、产品人员，以及需要维护旧项目证据链的项目负责人，都可以先从“说清楚目标”开始，而不是先学习复杂工具链。
 
-![OpenCoding 小白入门流程图](docs/diagrams/OpenCoding_INTRO.svg)
+## 如何运作？
 
-可编辑源文件：`docs/diagrams/OpenCoding_INTRO.drawio`
+**想法 → Grill Me 澄清 → 知识包 → 任务与顺序 → bounded preview → 离线执行 → 测试/doctor/audit → 验收或 Requeue**。
+
+普通离线任务自动推进；外部影响动作保留 Human Gate。本仓库目前是 APG-only 离线治理夹具，不连接真实 Git、网络、Provider、Host 或部署环境。
+
+## 反馈与验收
+
+1. 先看 receipt、`VERIFICATION.txt` 和测试输出；
+2. 发现问题就补充需求、修正路径或更新任务输入；
+3. 重新生成 bounded preview；
+4. 从最近有效 checkpoint Requeue；
+5. 验收时确认路径、哈希、证据、测试、回滚和最终状态全部可追溯。
+
+## 从哪里开始？
+
+```powershell
+Set-Location E:\儿童知行星球
+Get-Content .\README.md
+Get-ChildItem .\docs\apg
+python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+```
+
+重点入口：`docs/apg/`（契约、Gate、验收、回滚）、`docs/diagrams/`（双语流程图）、`scripts/`（离线脚本）、`tests/`（测试）、`.governance/receipts/`（证据）。
+
+## English quick view
+
+OpenCoding helps non-coders and AI-coding beginners turn a rough idea into a clear, executable, verifiable, and reversible plan. It clarifies requirements with Grill Me, builds task and evidence structure, previews bounded changes offline, supports failure freeze and Requeue, and keeps human Gates for secrets, money, network, deployment, remote GitHub, and release actions.
+
+## 项目边界 / Project boundary
+
+本仓库只验证 OpenCoding/APG 治理流程，不代表“儿童知行星球”下游产品已经实现或发布。技术兼容标识继续保留：`adaptive-project-governance`、`Adaptive Project Governance`、`APG`、`$adaptive-project-governance`。
