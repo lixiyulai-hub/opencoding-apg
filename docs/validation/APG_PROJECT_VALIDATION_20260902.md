@@ -1,4 +1,8 @@
-﻿# APG Project Validation Summary (2026-09-02)
+# OpenCoding / APG Project Validation Summary — 2026-09-02
+
+本报告使用 OpenCoding 作为正式品牌；APG 与 `adaptive-project-governance` 为兼容别名。
+
+# APG Project Validation Summary (2026-09-02)
 
 This publication contains APG-only governance and validation evidence. It is not a release of the downstream child product.
 
@@ -14,4 +18,4 @@ This publication contains APG-only governance and validation evidence. It is not
 
 - Governance initialization, plan-change routing, progress binding, and evidence retention.
 - Offline PRG, Grill Me, beginner executor, adaptive Git checkpoint, Controller Bridge, checkpoint Ledger, local persistence, idempotent replay, and failure freeze.
-- Publication boundaries remain explicit: no provider, network, credentials, runtime, deployment, release, or downstream product execution is implied.
+- Publication boundaries remain explicit: no provider, network, credentials, runtime, deployment, release, or downstream product execution is implied.

@@ -1,8 +1,10 @@
-# APG：让小白轻松面对 AI Coding
+# OpenCoding（APG）：让小白轻松面对 AI Coding
+
+正式品牌：OpenCoding。`adaptive-project-governance` 与 `APG` 保留为兼容技术标识。
 
 把一句想法，变成一套能自动推进的项目计划。
 
-APG 面向普通用户和 AI coding 初学者：用中文说出想做什么，Grill Me 会追问关键问题，APG 自动整理需求、任务、验证、证据和回滚。
+OpenCoding 面向普通用户和 AI coding 初学者：用中文说出想做什么，Grill Me 会追问关键问题，OpenCoding 自动整理需求、任务、验证、证据和回滚。
 
 ## 核心体验
 
@@ -22,4 +24,4 @@ APG 面向普通用户和 AI coding 初学者：用中文说出想做什么，Gr
 
 ## 验证边界
 
-本仓库内容用于验证 APG 的治理、Gate、证据、回滚和发布编排能力，不代表儿童知行星球下游产品已经实现、部署或上线。
+本仓库内容用于验证 OpenCoding/APG 的治理、Gate、证据、回滚和发布编排能力，不代表儿童知行星球下游产品已经实现、部署或上线。

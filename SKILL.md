@@ -1,9 +1,11 @@
 ---
 name: adaptive-project-governance
-description: Route software-project governance by project state and risk before repository writes or external actions. Use for governance diagnosis, adoption, specification planning, quality gates, global or host changes, target-project mutation, runtime, deployment, publication, pilot, or release work. Skip ordinary chat, translation, and unrelated informational requests.
+description: OpenCoding brand for the Route software-project governance by project state and risk before repository writes or external actions. Use for governance diagnosis, adoption, specification planning, quality gates, global or host changes, target-project mutation, runtime, deployment, publication, pilot, or release work. Skip ordinary chat, translation, and unrelated informational requests.
 ---
 
-# Adaptive Project Governance
+# OpenCoding / Adaptive Project Governance
+
+OpenCoding is the public brand. The skill invocation ID `$adaptive-project-governance` remains unchanged for compatibility.
 
 Use this skill only for an explicitly authorized project. The global router decides
 when to invoke it; project `AGENTS.md` files own project-specific commands and Gates.

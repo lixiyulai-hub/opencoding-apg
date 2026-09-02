@@ -1,3 +1,7 @@
+# OpenCoding Documentation
+
+OpenCoding 是正式品牌；Adaptive Project Governance（APG）是兼容技术标识。
+
 # APG 下一阶段正式目标：初心者交互体验与执行器连接
 
 当前正式目标不是直接“替用户盲目执行代码”，而是把 APG 的初心者体验做完整：

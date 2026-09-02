@@ -1,6 +1,6 @@
 interface:
-  display_name: "Adaptive Project Governance"
+  display_name: "OpenCoding (APG)"
   short_description: "Route project governance by state and risk"
-  default_prompt: "Use $adaptive-project-governance to classify this project task and apply the smallest safe governance route."
+  default_prompt: "Use $adaptive-project-governance (OpenCoding/APG) to classify this project task and apply the smallest safe governance route."
 policy:
   allow_implicit_invocation: true
