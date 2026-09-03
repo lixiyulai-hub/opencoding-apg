@@ -35,7 +35,7 @@ OpenCoding 面向不会写代码、刚开始使用 AI coding 的人：把一个�
 ## 从哪里开始？
 
 ```powershell
-Set-Location E:\儿童知行星球
+Set-Location <your-project-root>
 Get-Content .\README.md
 Get-ChildItem .\docs\apg
 python -X utf8 -m unittest discover -s tests -p 'test_*.py'
@@ -49,4 +49,4 @@ OpenCoding helps non-coders and AI-coding beginners turn a rough idea into a cle
 
 ## 项目边界 / Project boundary
 
-本仓库只验证 OpenCoding/APG 治理流程，不代表“儿童知行星球”下游产品已经实现或发布。技术兼容标识继续保留：`adaptive-project-governance`、`Adaptive Project Governance`、`APG`、`$adaptive-project-governance`。
+本仓库只验证 OpenCoding/APG 治理流程，不代表任何特定下游产品已经实现或发布。技术兼容标识继续保留：`adaptive-project-governance`、`Adaptive Project Governance`、`APG`、`$adaptive-project-governance`。
