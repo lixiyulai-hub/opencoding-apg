@@ -2,13 +2,17 @@
 
 ## 一句话认识 OpenCoding
 
-OpenCoding 面向不会写代码、刚开始使用 AI coding 的人：把一个模糊想法变成清楚、可执行、可验证、可回退的项目计划。
+OpenCoding 面向不会写代码、刚开始使用 AI coding 的人：你只要说清楚目标和场景，系统就会用大白话补齐需求，直接给出平台和技术方案，再把项目拆成可以一步步完成的计划。
 
 ## 你可以用它做什么？
 
 - 用自然语言说出想法；
 - 让 Grill Me 追问目标、用户、边界和验收条件；
-- 自动整理知识包、任务清单、依赖顺序和执行上下文；
+- 主动判断 Windows、Mac、iPhone、安卓、网页等使用平台；
+- 不要求小白选择前端技术，系统直接给出客户端、后端、数据库和 API 方案；
+- 主动判断是否需要服务器、数据库、登录、支付、消息通知、后台和文件存储；
+- 按项目需要生成 `AGENTS.md`、`memory.md`、`PRG.md`、`plan.md` 及其他 Markdown 文档；
+- 自动整理知识包、任务清单、依赖顺序和执行波次；
 - 先 preview，再按授权范围 apply；
 - 为每一步保留测试、receipt、哈希和 rollback；
 - 失败时冻结任务，修正输入后 Requeue；
@@ -20,9 +24,9 @@ OpenCoding 面向不会写代码、刚开始使用 AI coding 的人：把一个�
 
 ## 如何运作？
 
-**想法 → Grill Me 澄清 → 知识包 → 任务与顺序 → bounded preview → 离线执行 → 测试/doctor/audit → 验收或 Requeue**。
+**想法 → Grill Me 澄清 → 平台与方案建议 → 能力判断 → 项目文档 → 任务与波次 → bounded preview → 离线执行 → 测试/doctor/audit → 验收或 Requeue**。
 
-普通离线任务自动推进；外部影响动作保留 Human Gate。本仓库目前是 APG-only 离线治理夹具，不连接真实 Git、网络、Provider、Host 或部署环境。
+普通离线任务自动推进；外部影响动作保留 Human Gate。本仓库目前是 APG-only 离线治理夹具，不连接真实 Git、网络、Provider、Host 或部署环境。这里展示的是“从想法到方案与执行准备”的能力，不代表下游产品已经完成。
 
 ## 反馈与验收
 

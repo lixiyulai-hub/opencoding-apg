@@ -106,6 +106,9 @@ OpenCoding is a **beginner-oriented AI coding governance and execution-preparati
 
 - accept a rough idea in natural language;
 - use **Grill Me** to clarify goals, users, boundaries, acceptance criteria, and risks;
+- recommend target platforms and a front-end/back-end approach without asking beginners to choose frameworks;
+- identify likely needs for servers, databases, APIs, login, payments, notifications, admin tools, and file storage;
+- generate project-specific Markdown such as `AGENTS.md`, `memory.md`, `PRG.md`, and `plan.md` when needed;
 - produce project notes, knowledge packs, task lists, dependencies, and execution context;
 - split a large goal into small steps with checks, evidence, and rollback;
 - run an offline preview before any apply step;
