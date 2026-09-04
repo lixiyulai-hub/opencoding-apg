@@ -54,3 +54,9 @@ OpenCoding helps non-coders and AI-coding beginners turn a rough idea into a cle
 ## 项目边界 / Project boundary
 
 本仓库只验证 OpenCoding/APG 治理流程，不代表任何特定下游产品已经实现或发布。技术兼容标识继续保留：`adaptive-project-governance`、`Adaptive Project Governance`、`APG`、`$adaptive-project-governance`。
+
+## 上游致谢与来源
+
+本项目的 **Grill Me** 追问式需求澄清能力，参考并致谢 [mattpocock/skills](https://github.com/mattpocock/skills) 中的 `/grill-me` 入口；需要结合项目文档时，可参考其 `/grill-with-docs` 入口。
+
+OpenCoding 这里只做中文优先、离线的 APG 契约与流程模拟，不会自动连接或安装上游项目，也不表示得到上游作者背书。上游项目的许可证、使用方式和最新内容请以其仓库为准。

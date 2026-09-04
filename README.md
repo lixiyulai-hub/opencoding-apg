@@ -189,3 +189,9 @@ Large, popular GitHub projects commonly include positioning, features, quick sta
 - 技术兼容别名 / Technical aliases: `adaptive-project-governance`, `Adaptive Project Governance`, `APG`, `$adaptive-project-governance`
 
 历史脚本、测试、Ledger、receipts、snapshots 和 change IDs 保持原名，以保证可重放和证据链连续。
+
+## 上游致谢与来源 / Upstream attribution
+
+本项目的 **Grill Me** 追问式需求澄清能力，参考并致谢 [mattpocock/skills](https://github.com/mattpocock/skills) 中的 `/grill-me` 入口；需要结合项目文档时，可参考其 `/grill-with-docs` 入口。
+
+OpenCoding 在 APG 中提供的是中文优先、离线的契约与流程模拟：不会自动连接或安装上游项目，也不表示得到上游作者背书。上游项目的许可证、使用方式和最新内容请以其仓库为准。
