@@ -1,0 +1,65 @@
+{
+  "change_id": "opencoding-w1-accepted-byte-integration-20260905",
+  "problem": "Reviewed W1 module bytes remain separate; integrate only the exact frozen source package after independent fault acceptance.",
+  "outcome": "After A R4 independent acceptance, import only reviewed source/test bytes into the existing isolated integration root, make the mandated default unittest discover nonzero tests, verify actual multi-module journeys, and retain exact provenance without importing worker governance history.",
+  "risk": "routine",
+  "surfaces": [
+    "isolated-local-integration",
+    "nonzero-default-unittest",
+    "reviewed-module-contract"
+  ],
+  "changed_paths": [
+    "opencoding/safety.py",
+    "opencoding/transactions.py",
+    "opencoding/intake.py",
+    "opencoding/decisions.py",
+    "opencoding/sessions.py",
+    "opencoding/documents.py",
+    "opencoding/planning.py",
+    "tests/test_product_safety.py",
+    "tests/test_product_transactions.py",
+    "tests/test_product_intake.py",
+    "tests/test_product_decisions.py",
+    "tests/test_product_sessions.py",
+    "tests/test_product_documents.py",
+    "tests/test_product_planning.py",
+    "tests/__init__.py",
+    "tests/test_product_integration.py",
+    "docs/product/CONTRACTS_V1_1.md",
+    "artifacts/w1-isolated-integration-20260905"
+  ],
+  "non_goals": [
+    "Do not apply on any source, destination or approval drift; module acceptance does not imply integrated product acceptance.",
+    "Do not initialize Git in the original root or copy product code back to it in this transaction.",
+    "Do not merge whole worker branches or import worker reports, receipts, snapshots, Ledger, caches, or unrelated dirty files.",
+    "Do not change existing README, AGENTS, roadmap, legacy source/tests or existing governance history.",
+    "Do not use network, remote Git, provider, coding Host, credentials, production data, deployment, publication or downstream application runtime.",
+    "Do not start W2 from the seed or an unaccepted integration candidate."
+  ],
+  "acceptance": [
+    "A R4 new immutable commit passes independent actual OS interruption and cross-root concurrency tests; B R4 and C R3 accepted module bytes remain unchanged.",
+    "Before applying, bind the exact integration root and seed HEAD, clean owned destination state, no remotes, precise source commits, byte hashes, before/postimages, and rollback policy in a generated immutable manifest.",
+    "Run root-local doctor and audit with no overlapping writes; both read-only proofs pass and blocking drift is absent.",
+    "Import exact reviewed source/test bytes only; add tests/__init__.py and independent integration tests under coordinator ownership.",
+    "python -B -X utf8 -m unittest discovers nonzero tests; explicit full discovery and integration journeys pass in the isolated root with CARGO_NET_OFFLINE=true.",
+    "Preview causes no target writes; session answers/revisions reach recommendations, dynamic documents and task waves; digest rejection, actual writes, user drift protection and rollback remain real and verifiable.",
+    "Record exact local commit, retained test/fault evidence and limitations. Only after independent integrated acceptance may W1 milestones be accepted and W2 be dispatched.",
+    "Exact target, seed HEAD and 17 postimages are bound by E:\\儿童知行星球\\artifacts\\opencoding-w1-review-20260905\\integration-input-0940\\MANIFEST.json SHA256 05ce45c6dec8a685ba9444242a8deb3d9eb166010dc04ea5296ae87820b8f168. Recheck every source and destination before write."
+  ],
+  "metric": "Accepted integrated milestone evidence, independent nonzero test counts and source-byte provenance; no percentage inferred from files, receipts or elapsed time.",
+  "telemetry": [
+    "source_commits",
+    "preimage_sha256",
+    "postimage_sha256",
+    "integration_head",
+    "independent_fault_results",
+    "default_test_count",
+    "full_test_count",
+    "source_preservation"
+  ],
+  "rollout": "First a read-only controller preview in the existing isolated integration root. A R4 and its acceptance manifest are prerequisite gates. Re-preview the completed exact hash-bound transaction before any apply. Controller apply records only its plan, then the bounded source import and local exact-path commit are separately executed and verified.",
+  "rollback": "Keep the original root and all worker branches untouched. Preserve seed HEAD, before/postimages and every receipt. If acceptance fails, freeze the integration candidate with retained evidence and do not dispatch W2. Do not reset, clean, delete or blindly restore any dirty file.",
+  "approval_refs": [
+    "USER-CONTINUE-SAME-LUNA-HIGH-WITH-COORDINATOR-ACCEPTANCE-20260905"
+  ]
+}

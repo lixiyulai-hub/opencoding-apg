@@ -1,0 +1,1 @@
+{"entries":[{"after_sha256":"406effb1e9c59672c66a598c2b21e331b23b16c54024e96d6df3e7c173549791","before_exists":false,"before_identity":null,"before_sha256":null,"path":"nested/new.txt","preimage_file":null}],"plan_digest":"f41def549cd87ca827dacba285ea783d29734e0fa737f1ce6fb6f10061e160d7","schema_version":"1.0","transaction_id":"tx-20260905T094823018701Z-4823447b4ce0"}

@@ -1,0 +1,145 @@
+{
+  "manifest_sha256": "05ce45c6dec8a685ba9444242a8deb3d9eb166010dc04ea5296ae87820b8f168",
+  "expected_head": "9586fb52d9260c5c45f1b25c728a7fb740ebfdbf",
+  "actual_head": "9586fb52d9260c5c45f1b25c728a7fb740ebfdbf",
+  "count": 17,
+  "all_match": true,
+  "rows": [
+    {
+      "path": "opencoding/safety.py",
+      "expected": "b9b7b7cd8f376549fd0d727e5aa517917bd0d1f4f55bb58895cacb3f67f96fdc",
+      "actual": "b9b7b7cd8f376549fd0d727e5aa517917bd0d1f4f55bb58895cacb3f67f96fdc",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "tests/test_product_safety.py",
+      "expected": "06d8ad89b9698509548297e373f350e92130a22dff1925865adeea4d16115d6b",
+      "actual": "06d8ad89b9698509548297e373f350e92130a22dff1925865adeea4d16115d6b",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "opencoding/transactions.py",
+      "expected": "8e8f74110e0df10e77a5b121c1f919aec17b0c3e983905abffe94b1246b938db",
+      "actual": "8e8f74110e0df10e77a5b121c1f919aec17b0c3e983905abffe94b1246b938db",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "tests/test_product_transactions.py",
+      "expected": "f367331e8a488fe743f2a2348895bb120c789fd0abc5366b5925caeabab6de97",
+      "actual": "f367331e8a488fe743f2a2348895bb120c789fd0abc5366b5925caeabab6de97",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "opencoding/intake.py",
+      "expected": "d55b97ad4222c68e988e2f6a45c7d7c9fd0627b0ca0d865624d95b8dee992b23",
+      "actual": "d55b97ad4222c68e988e2f6a45c7d7c9fd0627b0ca0d865624d95b8dee992b23",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "tests/test_product_intake.py",
+      "expected": "e516b1d8acae4c6fd64a1649d00f89bc1daf7d91b066847fe5eea017609ce246",
+      "actual": "e516b1d8acae4c6fd64a1649d00f89bc1daf7d91b066847fe5eea017609ce246",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "opencoding/decisions.py",
+      "expected": "a65e1709aa3ec0718cbf5086492bf6541cdee4e3e5a61eb0de84974d4b853319",
+      "actual": "a65e1709aa3ec0718cbf5086492bf6541cdee4e3e5a61eb0de84974d4b853319",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "tests/test_product_decisions.py",
+      "expected": "19022ddf55e979d538a6814830dfaeea2b9a0d6a9c1c20e143a38d6e9709647a",
+      "actual": "19022ddf55e979d538a6814830dfaeea2b9a0d6a9c1c20e143a38d6e9709647a",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "opencoding/sessions.py",
+      "expected": "2570362623b22958fc1e5853403778f55ac361ff958d8cc3722ab0470628ff4f",
+      "actual": "2570362623b22958fc1e5853403778f55ac361ff958d8cc3722ab0470628ff4f",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "tests/test_product_sessions.py",
+      "expected": "f0a0da287aa294a6cbae3cc769d4d3b39f4ef9ff56c2f6a5839bc8aa050b0672",
+      "actual": "f0a0da287aa294a6cbae3cc769d4d3b39f4ef9ff56c2f6a5839bc8aa050b0672",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "opencoding/documents.py",
+      "expected": "bee97dbe861e59106cbe020d9b5fac9fbfd2a746754beafd6768ebb7f2098f25",
+      "actual": "bee97dbe861e59106cbe020d9b5fac9fbfd2a746754beafd6768ebb7f2098f25",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "tests/test_product_documents.py",
+      "expected": "4a8743613f00068b2329f82ddb5194ccb7c116161774df7616cefa0043014ec0",
+      "actual": "4a8743613f00068b2329f82ddb5194ccb7c116161774df7616cefa0043014ec0",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "opencoding/planning.py",
+      "expected": "ff2418e0d63fe138707e6f2efdf15c13cc1df85fdcef96e214c8885f6221d795",
+      "actual": "ff2418e0d63fe138707e6f2efdf15c13cc1df85fdcef96e214c8885f6221d795",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "tests/test_product_planning.py",
+      "expected": "62120292bf8a574ab1481c040c1a0b434c7edf6d5ab6377dfcc7ed28eb4c8727",
+      "actual": "62120292bf8a574ab1481c040c1a0b434c7edf6d5ab6377dfcc7ed28eb4c8727",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "tests/__init__.py",
+      "expected": "9bed6b89c7422b1db4b08a9b61762b3f487f352470f8f792c16f557c1d9cce74",
+      "actual": "9bed6b89c7422b1db4b08a9b61762b3f487f352470f8f792c16f557c1d9cce74",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "tests/test_product_integration.py",
+      "expected": "2fb6cbba05801246f1bc4ec25648b91082a291bfe8a7a164de407b4795ccc646",
+      "actual": "2fb6cbba05801246f1bc4ec25648b91082a291bfe8a7a164de407b4795ccc646",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    },
+    {
+      "path": "docs/product/CONTRACTS_V1_1.md",
+      "expected": "da9946a18b605aa9be23f6097918ad9117dff3a409dca1417cfe36decf3417ca",
+      "actual": "da9946a18b605aa9be23f6097918ad9117dff3a409dca1417cfe36decf3417ca",
+      "match": true,
+      "exists": true,
+      "symlink": false
+    }
+  ]
+}
