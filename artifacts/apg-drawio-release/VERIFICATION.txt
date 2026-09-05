@@ -1,0 +1,71 @@
+APG Drawio / About / Tag / Release Verification
+Transaction: zhi-xing-planet-apg-drawio-about-tag-release-20260831
+Scope: APG validation only; no child-product deployment or runtime.
+
+1. Baseline/modified offline test
+Command: python -X utf8 -m unittest discover -s tests -p test_*.py
+Input: E:\儿童知行星球\tests
+Literal output/result:
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.520s
+
+OK
+Exit status: 0
+
+1b. Modified offline test
+Command: python -X utf8 -m unittest discover -s tests -p test_*.py
+Input: E:\\儿童知行星球\\tests
+Literal output/result: ...............; Ran 15 tests; OK
+Exit status: 0
+
+2. Drawio structural validation
+Command: python C:\Users\Administrator\drawio-skill\skills\drawio-skill\scripts\validate.py docs\diagrams\APG_GOVERNANCE_RELEASE_FLOW.drawio --score
+Input: C:\Users\Administrator\adaptive-project-governance-publish2\docs\diagrams\APG_GOVERNANCE_RELEASE_FLOW.drawio
+Literal output/result: 0 error(s), 0 warning(s)
+score: 0 (0 through-vertex, 0 crossings, 0 overlaps)
+Exit status: 0
+
+3. Git diff hygiene
+Command: git diff --check
+Input: publish repository working tree
+Literal output/result: (no output)
+Exit status: 0
+
+4. Remote commit/tag/About/Release
+Command: git rev-parse HEAD
+Literal output/result: 8db94d03f840899a0dabad06a99179c949c4c8b3
+Exit status: 0
+Command: git ls-remote --tags origin apg-validation-20260830
+Literal output/result: 3de1d9518f3095f489992ca22ca46edb0e7c9826	refs/tags/apg-validation-20260830
+Exit status: 0
+Command: gh repo view lixiyulai-hub/adaptive-project-governance --json description
+Literal output/result: {"description":"Adaptive Project Governance 0.3.0：有边界、可产生证据、可回滚的项目治理控制器。用于验证项目规划、Gate、证据、部署预览与发布边界。 APG 0.3.0: bounded, evidence-producing, reversible project governance controller."}
+Exit status: 0
+Command: gh release view apg-validation-20260830 --repo lixiyulai-hub/adaptive-project-governance --json name,tagName,targetCommitish,url,isDraft,isPrerelease
+Literal output/result: {"isDraft":false,"isPrerelease":false,"name":"APG Validation 2026-08-30","tagName":"apg-validation-20260830","targetCommitish":"main","url":"https://github.com/lixiyulai-hub/adaptive-project-governance/releases/tag/apg-validation-20260830"}
+Exit status: 0
+
+5. Governance diagnostics
+Command: python -m project_governance doctor . --json
+Literal output/result: classification=diagnostic; checks={'root-containment': 'pass', 'schema-support-project': 'pass', 'schema-support-policy': 'pass', 'policy-profile-coherence': 'pass', 'quality-gates': 'pass', 'adapter-drift': 'fail', 'missing-tools': 'pass', 'baseline': 'pass', 'receipts': 'pass', 'current-state': 'pass', 'progress-definition': 'fail', 'regression-ledger': 'pass', 'interrupted-recovery': 'pass', 'generated-files': 'pass', 'conditional-documents': 'pass'}
+Exit status: 1
+Command: python -m project_governance audit . --json
+Literal output/result: classification=warn; read_only_proof_passed=True
+Exit status: 0
+Command: python -m project_governance check . --json
+Literal output/result: {"actor":"controller","approvals":[],"authorized_scope":[".governance/receipts"],"checks":[],"classification":"check","command":"check","evidence_refs":[],"findings":[],"inputs":{"phase":"fast"},"outputs":{"exit_code":0,"gate_execution_evidence":{"entries":[],"entry_count":0,"performed":false,"phase":"fast","policy_sha256":"93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7","schema_version":"1.0","selection_mode":"phase"}},"policy_digest":"93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7","schema_version":"1.0","target_fingerprint":"71519805fa2bf85a7197f92c3b0afac3c197ad99ba90f1f9c4629d25522b5c07","timestamp_utc":"2026-08-30T19:25:31.650048Z"}
+Exit status: 0
+
+6. Rollback rehearsal
+Command: bash artifacts/apg-drawio-release/ROLLBACK.sh <disposable-modified> <disposable-baseline>
+Input: disposable copy under C:\Users\Administrator\AppData\Local\Temp\apg-drawio-rollback-test
+Literal output/result: restored=<disposable modified path>; rollback_match=True; modified_file_still_changed=True
+Exit status: 0
+
+Artifacts:
+- MODIFIED_FILE: E:\儿童知行星球\artifacts\apg-drawio-release\MODIFIED_FILE (left changed)
+- DIFF_FILE: E:\儿童知行星球\artifacts\apg-drawio-release\DIFF_FILE
+- VERIFICATION.txt: E:\儿童知行星球\artifacts\apg-drawio-release\VERIFICATION.txt
+- ROLLBACK.sh: E:\儿童知行星球\artifacts\apg-drawio-release\ROLLBACK.sh
+- RESULT.json: E:\儿童知行星球\artifacts\apg-drawio-release\RESULT.json

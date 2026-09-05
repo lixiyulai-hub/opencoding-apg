@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "repository": "lixiyulai-hub/adaptive-project-governance",
+  "url": "https://github.com/lixiyulai-hub/adaptive-project-governance",
+  "visibility": "public",
+  "default_branch": "main",
+  "remote_head_verified": "320b79aff044a691f38d97421aa1fa9024237573",
+  "local_workspace": "E:/儿童知行星球",
+  "local_git_state": {
+    "repository_exists": false,
+    "remote_configured": false,
+    "commit_performed": false,
+    "push_performed": false,
+    "release_created": false
+  },
+  "connectivity": {
+    "ls_remote": "PASS",
+    "clone": "BLOCKED_NETWORK_CONNECTIVITY"
+  },
+  "publish_scope": {
+    "allowed_next_scope": "APG test result and fixture evidence only",
+    "child_product_publication": false
+  },
+  "status": "PREPARATION_ONLY"
+}

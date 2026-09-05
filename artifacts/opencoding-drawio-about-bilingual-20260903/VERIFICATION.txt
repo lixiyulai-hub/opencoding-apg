@@ -1,0 +1,38 @@
+OpenCoding drawio-skill diagram and bilingual GitHub About verification
+Date: 2026-09-03
+
+Changed branch/field: lixiyulai-hub/opencoding-apg main; README workflow graphic and GitHub About description.
+Paths: docs/diagrams/OpenCoding_INTRO.drawio, docs/diagrams/OpenCoding_INTRO.svg, README.md, README_CN.md; evidence directory artifacts/opencoding-drawio-about-bilingual-20260903/.
+
+BASELINE command: python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+BASELINE literal output: Ran 42 tests in 1.529s; OK
+BASELINE exit status: 0
+
+MODIFIED command: python .tmp/drawio-skill/skills/drawio-skill/scripts/diagramctl.py build .tmp/opencoding-intro.ir.json --from ir -o artifacts/opencoding-drawio-intro-20260903/OpenCoding_INTRO.drawio
+MODIFIED literal result: source_type=ir, nodes=7, edges=6, views=[System]
+MODIFIED exit status: 0
+
+VALIDATION command: python .tmp/drawio-skill/skills/drawio-skill/scripts/validate.py docs/diagrams/OpenCoding_INTRO.drawio --score
+VALIDATION literal result: 0 error(s), 0 warning(s); score: 0 (0 through-vertex, 0 crossings, 0 overlaps)
+VALIDATION exit status: 0
+
+REVIEW command: python .tmp/drawio-skill/skills/drawio-skill/scripts/diagramctl.py review docs/diagrams/OpenCoding_INTRO.drawio -o artifacts/opencoding-drawio-intro-20260903/REVIEW.md
+REVIEW literal result: review completed
+REVIEW exit status: 0
+
+GITHUB CONTENT command: GitHub API fast-forward update of main
+GITHUB CONTENT literal result: f0be5ebb3988d9ce20a5d81f9242d41992b8a00f -> f416a97ec5d3b032f0b0ca8ad6cc2c5100cab624; README.md, README_CN.md, OpenCoding_INTRO.drawio, OpenCoding_INTRO.svg
+GITHUB CONTENT exit status: 0
+
+GITHUB ABOUT command: gh repo edit lixiyulai-hub/opencoding-apg --description <bilingual description>
+GITHUB ABOUT literal result: description updated and verified via gh repo view
+GITHUB ABOUT exit status: 0
+
+RELEASE verification command: gh release list -R lixiyulai-hub/opencoding-apg --limit 20
+RELEASE literal result: apg-validation-20260830, v0.3.0; no new Release
+RELEASE exit status: 0
+
+ROLLBACK command: bash artifacts/opencoding-drawio-about-bilingual-20260903/ROLLBACK.sh <disposable-copy> f416a97ec5d3b032f0b0ca8ad6cc2c5100cab624
+ROLLBACK literal result: disposable copy reverted f416a97 to parent f0be5eb; exit 0
+ROLLBACK exit status: 0
+Restored behavior/status: disposable copy restored to pre-diagram state; published main remains f416a97; no Release, deployment, runtime, or downstream product publication was performed.

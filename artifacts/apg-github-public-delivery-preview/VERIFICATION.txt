@@ -1,0 +1,64 @@
+APG GitHub 公共交付 preview 验证（APG-only）
+change_id=apg-github-public-delivery-preview-20260902
+product_delivery=false
+
+BASELINE
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=preview 应用前 APG 离线回归套件
+literal_output=.......................... / Ran 26 tests / OK
+exit_status=0
+
+MODIFIED
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=写入首屏、图文介绍和 SVG 后的 APG 离线回归套件
+literal_output=.......................... / Ran 26 tests / OK
+exit_status=0
+
+DRAWIO_CHECK
+command=python -X utf8 -c "检查 mxGraphModel、节点和连接线"
+input=APG_GITHUB_INTRO.drawio
+literal_output=mxGraphModel=true; nodes=7; main_edges=5; gate_edge=1; layout=left-to-right
+exit_status=0
+
+SVG_CHECK
+command=python -X utf8 -c "检查 SVG 标签和首屏关键文案"
+input=APG_GITHUB_INTRO.svg
+literal_output=svg=true; hook=true; Grill_Me=true; Markdown=true; consequential_Gate=true
+exit_status=0
+
+DOCTOR
+command=python -X utf8 C:/Users/Administrator/.codex/skills/adaptive-project-governance/scripts/project_governance.py doctor E:/儿童知行星球 --json
+input=APG 项目根目录
+literal_output=classification=pass; adapter-drift=pass; receipts=25 canonical
+exit_status=0
+
+GIT_SAFETY
+command=python -X utf8 C:/Users/Administrator/.codex/skills/adaptive-project-governance/scripts/project_governance.py git-safety E:/儿童知行星球 --preview --json
+input=APG-only 公共交付 preview
+literal_output=status=PREVIEW_ONLY; execution_performed=false; project_git_unchanged=true
+exit_status=0
+
+ROLLBACK
+command=sh artifacts/apg-github-public-delivery-preview/ROLLBACK.sh <target-root> <preimage-root>
+input=独立副本；保留源 AGENTS.md 作为 preimage 来源
+literal_output=rollback-restored
+exit_status=0
+restored behavior/status=独立副本新增 preview 文件与目录移除；源工作树未执行 rollback。
+
+UPSTREAM
+Grill Me 原始上游：https://github.com/mattpocock/skills
+Drawio 工作流参考：https://github.com/Agents365-ai/drawio-skill
+
+EXTERNAL_ACTIONS
+GitHub=0; Git=0; network=0; provider=0; host=0; credentials=0; runtime=0; deployment=0; publication=0
+
+PATH_SHA256
+docs/apg/APG_GITHUB_PUBLIC_DELIVERY_PREVIEW_20260902.md=c26ecfe6c046207241cf89511cab344a5672a19c27dbf2a188dc42c48b6fb738
+docs/apg/APG_HOMEPAGE_HERO_PREVIEW_CN.md=2b59bd38c287b03c89e94ca4a4add30de157570fbfc5a1e7bfd6a1ef312cb25a
+docs/apg/APG_DRAWIO_GITHUB_INTRO_PREVIEW.md=297a56586abafe70d4a86d98f92ad3578ed0de590ca7a978f8335fa8231cb5d2
+artifacts/apg-github-public-delivery-preview/APG_PUBLIC_HERO_PREVIEW.md=2b59bd38c287b03c89e94ca4a4add30de157570fbfc5a1e7bfd6a1ef312cb25a
+artifacts/apg-github-public-delivery-preview/APG_GITHUB_INTRO.drawio=9d1aab5e4c80bfe2a6e71a6b0c1faf597980be363017a9fccef86dae08ff0034
+artifacts/apg-github-public-delivery-preview/APG_GITHUB_INTRO.svg=3165b582a1cd51c48237b8d4157a3d1100a6eb2de38d579e877a67935177fad8
+artifacts/apg-github-public-delivery-preview/MODIFIED_FILE=008050354564d370ce450f826ea991a12dafcca027bf3deb8bf6e9afad0fb69c
+artifacts/apg-github-public-delivery-preview/DIFF_FILE=cf0ff7435ec4e09e685c32a744f7124269266e6a1df1c9a977b6dbd376a8b3bf
+artifacts/apg-github-public-delivery-preview/ROLLBACK.sh=6c73a0146d92b529face0de3c74f05c1fb30fe82f56e3d3540e093572dfd2f03

@@ -1,0 +1,4 @@
+APG autonomous PRG fixture
+state=changed
+policy=auto-select-safe-defaults
+human_gate=consequential-only

@@ -1,0 +1,12 @@
+{
+  "change_id": "opencoding-bilingual-readme-20260903",
+  "problem": "The project introduction should present Chinese first and explain clearly what OpenCoding does for beginners before the English version.",
+  "outcome": "README.md presents a concise Chinese-first introduction followed by an English version, with beginner capabilities and explicit APG-only boundaries.",
+  "changed_paths": ["README.md", "README_CN.md", "artifacts/opencoding-bilingual-readme-20260903/MODIFIED_FILE", "artifacts/opencoding-bilingual-readme-20260903/DIFF_FILE", "artifacts/opencoding-bilingual-readme-20260903/VERIFICATION.txt", "artifacts/opencoding-bilingual-readme-20260903/ROLLBACK.sh"],
+  "acceptance": ["Chinese introduction appears before English.", "Beginner users and concrete capabilities are stated clearly and concisely.", "OpenCoding, APG compatibility aliases, and APG-only boundary remain accurate.", "Offline tests and Independent Review pass."],
+  "non_goals": ["Do not rename the canonical adaptive-project-governance skill ID.", "Do not modify historical receipts, snapshots, ledger files, scripts, protocol constants, or the downstream child product.", "Do not push to GitHub in this transaction."],
+  "risk": "routine",
+  "rollback": "Restore README.md from the recorded preimage and remove the newly added README_CN.md on a disposable copy using the evidence ROLLBACK.sh script.",
+  "surfaces": ["documentation", "brand-identity", "beginner-positioning"],
+  "approval_refs": []
+}

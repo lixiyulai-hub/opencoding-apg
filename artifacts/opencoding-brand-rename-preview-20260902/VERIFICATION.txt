@@ -1,0 +1,30 @@
+OpenCoding brand rename preview evidence
+Date: 2026-09-02
+Scope: preview artifacts only; source worktree files were not renamed.
+
+BASELINE
+Command: python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+Input: project root E:/儿童知行星球
+Literal output: Ran 42 tests in 1.037s; OK
+Exit status: 0
+
+PLAN-CHANGE
+Command: python -X utf8 -m project_governance plan-change . --request .tmp/opencoding-brand-rename-request.json --apply --json
+Result: classification=high; change_id=opencoding-brand-rename-preview-20260902; execution_performed=false
+Exit status: 0
+Receipt: .governance/receipts/20260902T185355.482331Z-plan-change-opencoding-brand-rename-preview-20260902-b85ee306d362.json
+
+MODIFIED
+Command: python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+Input: project root E:/儿童知行星球 after preview artifact creation
+Literal output: Ran 42 tests in 1.234s; OK
+Exit status: 0
+
+ROLLBACK
+Command: sh artifacts/opencoding-brand-rename-preview-20260902/ROLLBACK.sh <target-root> <preimage-root>
+Input: disposable copy containing MODIFIED_FILE and preimage-root/PROJECT_BRIEF.md
+Literal output: ROLLBACK_RESTORED (twice: script and harness); MODIFIED_FILE restored to the preimage SHA-256; source worktree unchanged
+Exit status: 0
+
+RESTORED BEHAVIOR/STATUS
+The disposable MODIFIED_FILE matches PROJECT_BRIEF.md byte-for-byte after rollback. The source project remains preview-only, with no GitHub rename, push, Release, runtime, deployment, or publication action.

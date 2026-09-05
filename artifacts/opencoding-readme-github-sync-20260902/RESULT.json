@@ -1,0 +1,53 @@
+{
+  "status": "PASS",
+  "change_id": "opencoding-readme-github-sync-20260902",
+  "repository": "lixiyulai-hub/opencoding-apg",
+  "branch": "main",
+  "remote_head_before": "f416a97ec5d3b032f0b0ca8ad6cc2c5100cab624",
+  "commit": "20ddfe3cc3130648c8771549708b73432e5b9202",
+  "remote_head_after": "20ddfe3cc3130648c8771549708b73432e5b9202",
+  "changed_paths": [
+    "README.md",
+    "README_CN.md"
+  ],
+  "commit_paths": [
+    "README.md",
+    "README_CN.md"
+  ],
+  "local_sha256": {
+    "README.md": "33d673b00fee4484ad84c6cb733f3fd4c8d5d8a88fe90e1317d9584fff0e2b8b",
+    "README_CN.md": "5445bb47fe1561a2860a49ecb6d3d963d7f91d377ae01fa9cfae91ec1018ac8c"
+  },
+  "remote_sha256": {
+    "README.md": "33d673b00fee4484ad84c6cb733f3fd4c8d5d8a88fe90e1317d9584fff0e2b8b",
+    "README_CN.md": "5445bb47fe1561a2860a49ecb6d3d963d7f91d377ae01fa9cfae91ec1018ac8c"
+  },
+  "push": {
+    "command": "git -C .tmp/opencoding-apg-remote push origin main",
+    "literal_result": "f416a97..20ddfe3 main -> main",
+    "exit_status": 0
+  },
+  "tests": {
+    "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+    "literal_result": "Ran 42 tests in 0.993s; OK",
+    "exit_status": 0
+  },
+  "independent_review": {
+    "command": "python -X utf8 scripts/apg_independent_review.py --root .",
+    "literal_result": "status=PASS; provider_network_credentials_used=false; external_actions_executed=false",
+    "exit_status": 0
+  },
+  "rollback": {
+    "command": "bash artifacts/opencoding-readme-github-sync-20260902/ROLLBACK.sh .tmp/opencoding-readme-github-rollback-test-20260902b 20ddfe3cc3130648c8771549708b73432e5b9202",
+    "literal_result": "disposable copy reverted commit; README.md and README_CN.md hashes matched pre-push baseline",
+    "exit_status": 0,
+    "restored_behavior": "PASS"
+  },
+  "releases": {
+    "command": "gh release list -R lixiyulai-hub/opencoding-apg --limit 20",
+    "literal_result": "APG Validation 2026-08-30; Adaptive Project Governance 0.3.0; no new Release",
+    "exit_status": 0
+  },
+  "gate": "USER-CONFIRM-OPENCODING-README-GITHUB-SYNC-20260902-001",
+  "receipt": ".governance/receipts/20260902T234821.408782Z-plan-change-opencoding-readme-github-sync-20260902-aef5e35f69fd.json"
+}

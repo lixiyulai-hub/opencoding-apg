@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "change_id": "zhi-xing-planet-apg-release-approval-simulation-20260830",
+  "authorization": {
+    "actor": "project-owner",
+    "role": "owner",
+    "authorized": true,
+    "timestamp_utc": "2026-08-30T14:59:00Z",
+    "scope": "offline release-approval simulation only"
+  },
+  "simulation_input": {
+    "release_approval": true,
+    "rollback_evidence": true,
+    "publication_requested": true,
+    "deployment_requested": true,
+    "provider_required": true,
+    "network_required": true,
+    "credentials_required": true,
+    "real_data_required": true
+  },
+  "expected_result": {
+    "status": "BLOCK",
+    "external_actions": [],
+    "release_action_executed": false,
+    "publication_action_executed": false,
+    "deployment_action_executed": false
+  },
+  "boundary": "This record authorizes only a local APG test simulation; it does not authorize an external product publication transaction."
+}

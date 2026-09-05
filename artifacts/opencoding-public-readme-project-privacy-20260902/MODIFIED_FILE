@@ -1,0 +1,20 @@
+{
+  "change_id": "opencoding-public-readme-project-privacy-20260902",
+  "changed_paths": [
+    "README.md",
+    "README_CN.md"
+  ],
+  "private_reference_scan": {
+    "README.md": false,
+    "README_CN.md": false
+  },
+  "local_sha256": {
+    "README.md": "14c8f60ba587b0be49a0c08c0dc03a7932a82ca658e81161e4f831fe020732f7",
+    "README_CN.md": "9ad3ab9472cdbf65ddfc8c0f5d1b9b3bf1f18a1b3ea0c24a2656a56366b38d44"
+  },
+  "remote_before": {
+    "commit": "20ddfe3cc3130648c8771549708b73432e5b9202",
+    "README.md": "33d673b00fee4484ad84c6cb733f3fd4c8d5d8a88fe90e1317d9584fff0e2b8b",
+    "README_CN.md": "5445bb47fe1561a2860a49ecb6d3d963d7f91d377ae01fa9cfae91ec1018ac8c"
+  }
+}

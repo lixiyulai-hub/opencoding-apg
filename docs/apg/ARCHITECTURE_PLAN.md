@@ -1,0 +1,1 @@
+# Architecture Plan\n\nPreview only: dual-role permissions, task state machine, ledger, AI safety boundary.\n

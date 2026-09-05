@@ -1,0 +1,66 @@
+APG 自动化 PRG 策略验证
+change_id=apg-autonomous-prg-policy-20260901
+scope=APG-only；不代表儿童知行星球产品交付。
+
+CHANGED_BRANCH_FIELD
+branch=not-a-local-git-repository
+field=default_policy=auto-select-safe-defaults; human_gate=consequential-only
+
+PLANNED_AND_CREATED_PATHS
+E:\儿童知行星球\docs\apg\APG_AUTONOMOUS_PRG_POLICY.md
+E:\儿童知行星球\docs\apg\APG_AUTO_PLAN_LOOP_HARNESS.md
+E:\儿童知行星球\scripts\apg_autonomous_policy_preview.py
+E:\儿童知行星球\tests\test_apg_autonomous_policy.py
+E:\儿童知行星球\artifacts\apg-autonomous-policy\RESULT.json
+E:\儿童知行星球\artifacts\apg-autonomous-policy\MODIFIED_FILE
+E:\儿童知行星球\artifacts\apg-autonomous-policy\DIFF_FILE
+E:\儿童知行星球\artifacts\apg-autonomous-policy\VERIFICATION.txt
+E:\儿童知行星球\artifacts\apg-autonomous-policy\ROLLBACK.sh
+
+RECEIPT
+E:\儿童知行星球\.governance\receipts\20260901T065349.900070Z-plan-change-apg-autonomous-prg-policy-20260901-0de30703a885.json
+
+GATES
+READ_ONLY_AUDIT=pass (read_only_proof.passed=true; classification=warn)
+DOCTOR=fail (pre-existing codex:drifted and ProgressProjectionError; no repair was applied in this transaction)
+POLICY_CONTRACT=pass
+EXTERNAL_ACTIONS=not-executed (host/provider/network/credentials/runtime/deployment/git/publication=false)
+
+BASELINE
+command=python -X utf8 -m unittest tests.test_apg_independent_review tests.test_apg_release_orchestration tests.test_domain_contract tests.test_frontend_contract tests.test_verification_contract
+input=pre-existing APG validation suite before this transaction test was added
+literal output:
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.839s
+
+OK
+exit_status=0
+
+MODIFIED
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=repository tests after autonomous PRG policy, simulator, and contract test were added
+literal output:
+....................
+----------------------------------------------------------------------
+Ran 20 tests in 0.487s
+
+OK
+exit_status=0
+
+ROLLBACK
+command=bash artifacts/apg-autonomous-policy/ROLLBACK.sh .tmp-apg-autonomous-rollback
+input=disposable copy containing only this transaction paths and a preserved unrelated receipt
+literal output:
+rollback-restored
+exit_status=0
+restored behavior/status=transaction paths absent in disposable copy; preserved receipt content remained {"preserved":true}; source MODIFIED_FILE remained changed.
+
+HASHES
+MODIFIED_FILE.sha256=d66bb824e5f36a68781868f13007165e154ef76dbef7b6ea833b67b9190ce21b
+DIFF_FILE.sha256=a74afd3e3a076fb50d1ee59fdee7aae6c5cab117e272871159d6158e77f0af50
+ROLLBACK.sh.sha256=3b7769b99ed728ded7800e278d121dc3c93db4cbaabfc011bd200092f5315c3d
+RESULT.json=opened and validated as parseable JSON.
+
+RESULT
+Routine beginner requests automatically use INSPECT -> PROGRESS -> PLAN -> DISPATCH -> VALIDATE -> REPORT -> REQUEUE with no human gate. Consequential reasons coalesce into one gate, and evidence failure enters FREEZE with a stable resume_condition.

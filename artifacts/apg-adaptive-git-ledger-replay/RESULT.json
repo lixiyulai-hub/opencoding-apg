@@ -1,0 +1,73 @@
+{
+  "change_id": "apg-adaptive-git-ledger-replay-20260902",
+  "changed_branch": "not-a-local-git-repository",
+  "changed_field": "checkpoint_ledger.snapshot_digest",
+  "external_actions_executed": false,
+  "fixture_changed": true,
+  "modified_fixture_sha256": "b78fd962001f51877e23487bea85605eb27c61fad9e256f80273115281f668a9",
+  "path_sha256": {
+    "artifacts/apg-adaptive-git-ledger-replay/DIFF_FILE": "e68d56df955f15a6b85a43a0028fd12d4ae3ec1bcbd0be4013b2a831b53f96fd",
+    "artifacts/apg-adaptive-git-ledger-replay/MODIFIED_FILE": "b78fd962001f51877e23487bea85605eb27c61fad9e256f80273115281f668a9",
+    "artifacts/apg-adaptive-git-ledger-replay/ROLLBACK.sh": "5d6381fb2e305cb8a2234b5a3f79d3b0fecc2204c6fbc9e4dd1922e4ced217f5",
+    "docs/apg/APG_ADAPTIVE_GIT_LEDGER_CONTRACT.md": "414203dec7f43179c81b658ae8b0608c6abb8b49afdf592fce4169fd7294dfe1",
+    "scripts/apg_adaptive_git_controller.py": "898d11bc3daa8e301c0840fd91b2ef6a1a572a765a5ebbbd29a935287a0b55a2",
+    "scripts/apg_adaptive_git_ledger_preview.py": "d9c1969bdc3d30cf885c0c13b8a17d9db217b5a6f01f8bad0131759b427c2185",
+    "scripts/apg_independent_review.py": "70f652724ce25a866696b157b4ff0315119d105a32059a745876c50e2f4ab3ec",
+    "tests/test_apg_adaptive_git_controller.py": "58e868bdeb78a95a5ddbd0c6b898f204c495ec37feeea6481df0cc852388bf99",
+    "tests/test_apg_adaptive_git_ledger.py": "1493024c239421b84de1bc0f8b2fad18fd25d72615cd33f4e886ca3ddeef300c",
+    "tests/test_apg_independent_review.py": "f1a1a230ae70bcfbe9d65f97863f39bd2970e2fb2fb298dee8a3f09e35715583"
+  },
+  "preimage_sha256": {
+    "PROJECT_BRIEF.md": "92e1576520fb114414591c858c3f6daf05e1d002e4daa01ed82162e7a25b1fbe"
+  },
+  "product_delivery": false,
+  "receipt": ".governance/receipts/20260902T045606.907376Z-plan-change-apg-adaptive-git-ledger-replay-20260902-47ae35320dac.json",
+  "schema_version": "1.0",
+  "scope": "APG-only project-level adaptive Git checkpoint ledger contract and deterministic offline replay",
+  "validation": {
+    "append": {
+      "command": "python -X utf8 scripts/apg_adaptive_git_controller.py --state '{\"success_node\":\"validation-passed\",\"verified_stages\":[\"intake-ready\",\"plan-ready\"],\"evidence_complete\":true,\"tests_passed\":true,\"scope_clean\":true}'",
+      "exit_status": 0,
+      "input": "validation-passed with plan-ready verified",
+      "literal_output": "git_status=CHECKPOINT_RECOMMENDED; ledger_status=APPEND_CANDIDATE; write_action=PREVIEW_ONLY; append_candidate=true"
+    },
+    "baseline": {
+      "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+      "exit_status": 0,
+      "input": "APG suite before ledger projection transaction",
+      "literal_output": "................................... / Ran 35 tests / OK"
+    },
+    "dedup": {
+      "command": "python -X utf8 scripts/apg_adaptive_git_ledger_preview.py --events '<recorded event>' --candidate '<same checkpoint>'",
+      "exit_status": 0,
+      "input": "existing checkpoint_id with an ALREADY_RECOMMENDED candidate",
+      "literal_output": "status=REUSE_EXISTING; deduplicated=true; append_candidate=false; write_action=PREVIEW_ONLY"
+    },
+    "freeze": {
+      "command": "python -X utf8 scripts/apg_adaptive_git_controller.py --state '{\"success_node\":\"implementation-slice\",\"verified_stages\":[\"plan-ready\"],\"failure\":\"tests-failed\"}'",
+      "exit_status": 0,
+      "input": "tests-failed after plan-ready",
+      "literal_output": "git_status=FREEZE; revert_point=plan-ready; ledger_status=NO_CHECKPOINT_APPEND; append_candidate=false"
+    },
+    "independent_review": {
+      "command": "python -X utf8 scripts/apg_independent_review.py --root .",
+      "exit_status": 0,
+      "input": "APG offline review fixture",
+      "literal_output": "status=PASS; blocker_codes=[]; external_actions_executed=false"
+    },
+    "modified": {
+      "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+      "exit_status": 0,
+      "input": "APG suite after ledger projection transaction",
+      "literal_output": "....................................... / Ran 39 tests / OK"
+    },
+    "rollback": {
+      "command": "sh artifacts/apg-adaptive-git-ledger-replay/ROLLBACK.sh <target-root> <preimage-root>",
+      "exit_status": 0,
+      "input": "independent disposable copy with preserved receipt",
+      "literal_output": "rollback-restored; removed=true; restored=true; preserved={\"preserved\":true}",
+      "restored_behavior": "ledger transaction files absent; preimage controller/review/tests restored; preserved receipt retained; source MODIFIED_FILE remains changed"
+    }
+  },
+  "write_action": "PREVIEW_ONLY"
+}

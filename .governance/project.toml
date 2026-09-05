@@ -1,0 +1,13 @@
+schema_version = "1.0"
+project_id = "opencoding-apg-test-fixture"
+root = "."
+project_types = ["apg-test-harness"]
+lifecycle = "test"
+public_surfaces = ["apg-release-deployment-orchestration"]
+data_risk = "synthetic-fixture"
+user_exposure = "isolated"
+release_model = "apg-publication-deployment-validation"
+test_burden = "high"
+operational_dependencies = []
+owners = ["project-owner"]
+evidence_refs = ["apg-test-objective-20260828", "readiness.zhi-xing-planet-p3c-v1", "OWNER-AUTHORIZE-APG-TEST-SCOPE-20260828-001", "USER-CONFIRM-OPENCODING-LOCAL-AND-GITHUB-RENAME-20260902-001"]

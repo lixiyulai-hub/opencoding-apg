@@ -1,0 +1,17 @@
+{
+  "change_id": "opencoding-beginner-orchestration-20260904",
+  "schema_version": "1.0",
+  "scope": "APG-only 离线初心者平台/方案推荐、能力矩阵、动态文档预览与任务波次",
+  "classification": "routine",
+  "controller_receipt": ".governance/receipts/20260904T073715.688014Z-plan-change-opencoding-beginner-orchestration-20260904-6927c7ec3680.json",
+  "execution_performed": false,
+  "product_delivery": false,
+  "external_actions": {"credentials": false, "deployment": false, "git": false, "host": false, "network": false, "payment": false, "provider": false, "publication": false, "runtime": false},
+  "implemented_preview": ["中文大白话平台追问（Windows/macOS/iOS/Android/Web）", "系统直接给客户端/后端/数据库/API 方案，不要求小白选框架", "server/database/api/auth/payment/notifications/admin/storage 能力矩阵", "按需动态 Markdown 文档包（含 AGENTS.md、memory.md、PRG.md、plan.md 的内存预览）", "依赖驱动任务波次与 requeue", "方案确认状态、Gate、hash 占位、receipt 和 rollback 字段"],
+  "verification": {"py_compile": "PASS", "unittest_discover": {"command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'", "tests": 46, "status": "PASS"}, "independent_review": "PASS", "doctor": "PASS", "audit": "WARN(read_only_proof.passed=true; changed_paths=[])"},
+  "postimage_sha256": {"scripts/apg_beginner_executor_preview.py": "5f91f1dca18996e7ef47d0d0d38b3a7c0ec59efe1e3fbd652d4e654010bba6ba", "tests/test_apg_beginner_executor.py": "c92b47a10c2aba60f75c1c3f823f53774dc08bf98d133b418e03e316081dbdc2", "docs/apg/APG_BEGINNER_EXECUTOR_OFFLINE_CONTRACT.md": "d7bea79bf3c2077562f39bcff21a7ce745647a880596456ad81cd0488b40dd03", "docs/apg/APG_BEGINNER_CAPABILITY_MATRIX.md": "b9919e5a46aa00af3e131446dd474fb4f0e107a0a613a5a0ee719fc04e0a11a5", "docs/apg/APG_BEGINNER_DYNAMIC_DOCUMENT_PACKAGE.md": "59902b69879a77aadc1484bedfdd771815521ce9d833583de3bb70c6095a3437", "docs/apg/APG_BEGINNER_TASK_WAVES.md": "e199e159060acafaac078ffb8e7199261ee1d3ee580a0908a8a4f0076e40e21c", "README.md": "72df3871ede14bdf94a44683956a6c6758c2f589c2ab3d2797e328ae950d4464", "README_CN.md": "3db7ce83149c5ce3c60b43f2c1a2716e771ee86c4b4a4202bd87949933cf0fa7"},
+  "preimage_sha256": "not-captured-before-existing-dirty-worktree",
+  "gate": {"state": "open-for-offline-auto", "human_gate": false, "consequential_gate": "真实外部服务、费用、密钥、部署、GitHub 发布前必须一次人工确认"},
+  "rollback_ref": "artifacts/opencoding-beginner-orchestration-20260904/ROLLBACK.sh",
+  "continuation": "resume.after-bounded-loop-continues-without-stop-condition"
+}

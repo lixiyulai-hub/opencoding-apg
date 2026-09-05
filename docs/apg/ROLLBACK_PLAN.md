@@ -1,0 +1,1 @@
+# Rollback Plan\n\nPreview only: restore baseline paths from receipt; remove only materialized preview paths.\n

@@ -1,0 +1,46 @@
+--- README.md.before
++++ README.md
+@@ -64,7 +64,7 @@
+ 
+ ```powershell
+ # 1. 进入项目根目录
+-Set-Location E:\儿童知行星球
++Set-Location <your-project-root>
+ 
+ # 2. 阅读入口文档
+ Get-Content .\README.md
+@@ -92,7 +92,7 @@
+ 
+ **适用**：需求澄清、AI coding 任务拆解、离线执行准备、证据链、回滚和人工 Gate 编排。
+ 
+-**不适用**：本仓库不实现“儿童知行星球”下游产品；不连接 Provider、Host、凭据、网络或部署环境；不把离线验证结果写成产品已经发布。
++**不适用**：本仓库不实现任何特定下游产品；不连接 Provider、Host、凭据、网络或部署环境；不把离线验证结果写成产品已经发布。
+ 
+ ### 与大型热门 GitHub 项目的 README 对照
+ 
+@@ -150,7 +150,7 @@
+ ### Quick start
+ 
+ ```powershell
+-Set-Location E:\儿童知行星球
++Set-Location <your-project-root>
+ Get-Content .\README.md
+ Get-ChildItem .\docs\apg
+ python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+--- README_CN.md.before
++++ README_CN.md
+@@ -35,7 +35,7 @@
+ ## 从哪里开始？
+ 
+ ```powershell
+-Set-Location E:\儿童知行星球
++Set-Location <your-project-root>
+ Get-Content .\README.md
+ Get-ChildItem .\docs\apg
+ python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+@@ -49,4 +49,4 @@
+ 
+ ## 项目边界 / Project boundary
+ 
+-本仓库只验证 OpenCoding/APG 治理流程，不代表“儿童知行星球”下游产品已经实现或发布。技术兼容标识继续保留：`adaptive-project-governance`、`Adaptive Project Governance`、`APG`、`$adaptive-project-governance`。
++本仓库只验证 OpenCoding/APG 治理流程，不代表任何特定下游产品已经实现或发布。技术兼容标识继续保留：`adaptive-project-governance`、`Adaptive Project Governance`、`APG`、`$adaptive-project-governance`。

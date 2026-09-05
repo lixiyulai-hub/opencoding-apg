@@ -1,0 +1,49 @@
+<mxfile host="drawio-skill" agent="diagram-ir" version="3.0.0">
+  <diagram id="system" name="System">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="idea" value="一句中文想法&amp;#xa;A rough idea" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#2563EB;fontColor=#0F172A;fontSize=16;fontStyle=1;spacing=8;" vertex="1" parent="1" data-model-id="idea" data-kind="actor" data-properties="{}" data-source-properties="{}" data-source-label="一句中文想法&amp;#xa;A rough idea" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
+          <mxGeometry x="60" y="80" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="clarify" value="Grill Me 解释式追问&amp;#xa;Guided questions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#2563EB;fontColor=#0F172A;fontSize=15;spacing=8;" vertex="1" parent="1" data-model-id="clarify" data-kind="service" data-properties="{}" data-source-properties="{}" data-source-label="Grill Me 解释式追问&amp;#xa;Guided questions" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
+          <mxGeometry x="290" y="80" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="pack" value="Markdown 知识包&amp;#xa;Project knowledge pack" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" vertex="1" parent="1" data-model-id="pack" data-kind="service" data-properties="{}" data-source-properties="{}" data-source-label="Markdown 知识包&amp;#xa;Project knowledge pack" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
+          <mxGeometry x="520" y="80" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="tasks" value="任务与执行顺序&amp;#xa;Tasks and order" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" vertex="1" parent="1" data-model-id="tasks" data-kind="service" data-properties="{}" data-source-properties="{}" data-source-label="任务与执行顺序&amp;#xa;Tasks and order" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
+          <mxGeometry x="60" y="230" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="check" value="离线验证与证据&amp;#xa;Offline checks and evidence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" vertex="1" parent="1" data-model-id="check" data-kind="service" data-properties="{}" data-source-properties="{}" data-source-label="离线验证与证据&amp;#xa;Offline checks and evidence" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
+          <mxGeometry x="290" y="230" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="result" value="回滚方案与报告&amp;#xa;Rollback and report" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" vertex="1" parent="1" data-model-id="result" data-kind="database" data-properties="{}" data-source-properties="{}" data-source-label="回滚方案与报告&amp;#xa;Rollback and report" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
+          <mxGeometry x="520" y="230" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="gate" value="人工确认 Gate&amp;#xa;Secrets · money · network · deploy · release" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF2F2;strokeColor=#DC2626;fontColor=#7F1D1D;fontSize=14;spacing=8;" vertex="1" parent="1" data-model-id="gate" data-kind="gateway" data-properties="{}" data-source-properties="{}" data-source-label="人工确认 Gate&amp;#xa;Secrets · money · network · deploy · release" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
+          <mxGeometry x="60" y="380" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-system-0" value="先说清楚 / Clarify" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="idea" target="clarify" data-model-id="idea-clarify" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="先说清楚 / Clarify">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-system-1" value="整理 / Organize" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="clarify" target="pack" data-model-id="clarify-pack" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="整理 / Organize">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-system-2" value="拆解 / Break down" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="pack" target="tasks" data-model-id="pack-tasks" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="拆解 / Break down">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-system-3" value="执行 / Check" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="tasks" target="check" data-model-id="tasks-check" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="执行 / Check">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-system-4" value="复盘 / Report" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="check" target="result" data-model-id="check-result" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="复盘 / Report">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-system-5" value="必要时暂停 / Pause when needed" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="tasks" target="gate" data-model-id="tasks-gate" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="必要时暂停 / Pause when needed">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,102 @@
+# APG Release Approval Simulation Verification
+
+This artifact records owner release authorization as a local APG test input. No real publication or deployment was performed.
+
+## Changed branch/field
+- Branch: `apg-release-approval-simulation`
+- Progress field: `.governance/progress/active.json.current_stage` = `apg-release-approval-simulation`
+- Delivery field: `.governance/progress/active.json.target_delivery_phase` = `apg-test-release-authorized-but-blocked`
+
+## Transaction paths and hashes
+- `E:\儿童知行星球\docs\apg\APG_RELEASE_APPROVAL_SIMULATION.md` SHA256 `e893dd99dd039dde7c6107d56125cd81d1301f737cd148fc4d5365cfab41fe23`
+- `E:\儿童知行星球\artifacts\apg-release-approval\RELEASE_AUTHORIZATION.json` SHA256 `50d423a809d0e34b0d274514f40cdf88fec4450db24010362350bbec570b5000`
+- `E:\儿童知行星球\.governance\progress\active.json` SHA256 `fa48dc6d5071a7e4dc76841497d7fde115e79be417d1dc7f28a6f0155baa66e6`
+- `artifacts/apg-release-approval/VERIFICATION.txt` is this reopened verification record; its post-write SHA256 is collected by the final verification command.
+
+## Receipt and Gate
+- Plan-change receipt: `.governance/receipts/20260830T150123.662701Z-plan-change-zhi-xing-planet-apg-release-approval-simulation-20260830-*.json`
+- Gate outcome: owner release authorization recorded; attempted external publication path is `BLOCK`.
+
+## Preserved rollback artifacts
+- `E:/儿童知行星球/artifacts/apg-deployment-preview/MODIFIED_FILE` remains changed.
+- `E:/儿童知行星球/artifacts/apg-deployment-preview/DIFF_FILE` retained.
+- `E:/儿童知行星球/artifacts/apg-deployment-preview/ROLLBACK.sh` retained and executable.
+- `E:/儿童知行星球/artifacts/apg-deployment-preview/VERIFICATION.txt` retained.
+
+## Exact commands, inputs, literal outputs/results and exit statuses
+### BASELINE
+Command: `echo {"release_approval":true,"rollback_evidence":true} | python scripts/apg_deployment_preview.py`
+Input: `{"release_approval":true,"rollback_evidence":true}`
+Exit status: `0`
+Literal output/result:
+```text
+{"blocker_codes":[],"deployment_action_executed":false,"evidence":{"credentials_required":false,"deployment_requested":false,"network_required":false,"pilot_requested":false,"provider_required":false,"publication_requested":false,"real_data_required":false,"release_approval":true,"rollback_evidence":true,"runtime_requested":false},"external_actions":[],"preview_only":true,"publication_action_executed":false,"release_action_executed":false,"schema_version":"1.0","status":"ready-for-preview"}
+```
+
+### MODIFIED
+Command: `echo {"release_approval":true,"rollback_evidence":true,"publication_requested":true,"deployment_requested":true,"provider_required":true,"network_required":true,"credentials_required":true,"real_data_required":true} | python scripts/apg_deployment_preview.py`
+Input: `{"release_approval":true,"rollback_evidence":true,"publication_requested":true,"deployment_requested":true,"provider_required":true,"network_required":true,"credentials_required":true,"real_data_required":true}`
+Exit status: `3`
+Literal output/result:
+```text
+{"blocker_codes":["provider_required","network_required","credentials_required","real_data_required","deployment_requested","publication_requested"],"deployment_action_executed":false,"evidence":{"credentials_required":true,"deployment_requested":true,"network_required":true,"pilot_requested":false,"provider_required":true,"publication_requested":true,"real_data_required":true,"release_approval":true,"rollback_evidence":true,"runtime_requested":false},"external_actions":[],"preview_only":true,"publication_action_executed":false,"release_action_executed":false,"schema_version":"1.0","status":"BLOCK"}
+```
+
+### INDEPENDENT REVIEW
+Command: `python scripts/apg_independent_review.py --root .`
+Exit status: `0`
+Literal output/result:
+```text
+{"artifact_sha256":{"artifacts/apg-deployment-preview/DIFF_FILE":"a6e9c5848ffd1105322a8c9962e971a4fc000d995e9ae0c3869dabec9ca94221","artifacts/apg-deployment-preview/MODIFIED_FILE":"444ffe70cb000517ed0420e2735fc4e2ebc5d61b0c923625df1ad00fe7fdb331","artifacts/apg-deployment-preview/ROLLBACK.sh":"e89f0663f9a55ffa57a39b3bf321704238c1cc72f957059a588a9f2e0052d40b","docs/apg/APG_DEPLOYMENT_PREVIEW.md":"06f80b4290370ab995cee88bf184f7a6d2e31fe7822555693b3f152730e14171","docs/apg/APG_GATE_FAILURE_MATRIX.md":"5fb15fd5f58b9f75a0d6ab2dad617725a8ad5eb802930e4b40fe1bff36480d8b","scripts/apg_deployment_preview.py":"fcecd57f829802177df513b2c396def7f0ea2f795f9bde0539374de4cf985528","tests/test_apg_release_orchestration.py":"5248e91f312c0fe0f0dd4581156572b8a1ca1f825eb92c8209ccf80d34a57be7"},"blocker_codes":[],"external_actions_executed":false,"present_artifacts":{"artifacts/apg-deployment-preview/DIFF_FILE":true,"artifacts/apg-deployment-preview/MODIFIED_FILE":true,"artifacts/apg-deployment-preview/ROLLBACK.sh":true,"docs/apg/APG_DEPLOYMENT_PREVIEW.md":true,"docs/apg/APG_GATE_FAILURE_MATRIX.md":true,"scripts/apg_deployment_preview.py":true,"tests/test_apg_release_orchestration.py":true},"preview_cases":{"complete":{"blocker_codes":[],"exit_status":0,"status":"ready-for-preview"},"missing_approval":{"blocker_codes":["missing_release_approval"],"exit_status":3,"status":"BLOCK"}},"provider_network_credentials_used":false,"real_data_used":false,"review_scope":"offline-apg-deployment-preview","schema_version":"1.0","status":"PASS"}
+```
+
+### UNIT TESTS
+Command: `python -X utf8 -m unittest discover -s tests -p 'test_*.py'`
+Exit status: `0`
+Literal output/result:
+```text
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.429s
+
+OK
+```
+
+### ROLLBACK
+Command: `sh artifacts/apg-independent-review/ROLLBACK.sh <pre-state> <target>`
+Input: `pre=before\n; target-before=after\n`
+Exit status: `0`
+Literal output/result:
+```text
+stdout=rollback-restored target=before\n exit=0
+```
+
+## Restored behavior/status
+- Baseline complete-evidence input remained `ready-for-preview` with no external actions.
+- Modified release request returned deterministic `BLOCK` with `provider_required`, `network_required`, `credentials_required`, `real_data_required`, `deployment_requested`, and `publication_requested`.
+- Release, publication, deployment, provider, network, credentials, and real-data execution flags remained false/empty.
+- Disposable rollback restored the target to `before\n`; existing modified fixture remained changed.
+- This is release authorization evidence for APG testing only; external publication remains unexecuted.
+
+## Final governance commands
+### DOCTOR
+Command: `python -m project_governance doctor . --json`
+Exit status: `0`
+Literal output/result:
+```text
+{"actor":"controller","approvals":[],"authorized_scope":["."],"checks":[],"classification":"pass","command":"doctor","evidence_refs":[],"findings":[],"inputs":{},"outputs":{"checks":[{"id":"root-containment","message":"target root is contained","status":"pass"},{"id":"schema-support-project","message":"schema is supported","status":"pass"},{"id":"schema-support-policy","message":"schema is supported","status":"pass"},{"id":"policy-profile-coherence","message":"policy and profile are coherent","status":"pass"},{"id":"quality-gates","message":"quality gates match the governance level","status":"pass"},{"id":"adapter-drift","message":"managed adapters are current","status":"pass"},{"id":"missing-tools","message":"configured tools are available","status":"pass"},{"id":"baseline","message":"baseline is current","status":"pass"},{"id":"receipts","message":"receipts are canonical and retained (14 records)","status":"pass"},{"id":"current-state","message":"optional current-state projection is absent","status":"pass"},{"id":"regression-ledger","message":"regression ledger is canonical (0 records)","status":"pass"},{"id":"interrupted-recovery","message":"no interrupted transaction evidence","status":"pass"},{"id":"generated-files","message":"unexpected generated files: .governance/progress","status":"warn","suggestion":"remove or approve generated files"},{"id":"conditional-documents","message":"conditional documents match policy","status":"pass"}],"read_only_proof":{"changed_paths":[],"passed":true},"receipt_state":{"current_state":{"file_count":0,"latest_receipt_ref":".governance/receipts/20260830T150123.662701Z-plan-change-zhi-xing-planet-apg-release-approval-simulation-20260830-da7282be1d78.json","matched_files":0,"source_digest_match":false,"source_receipt":"","status":"absent"},"latest_receipt_ref":".governance/receipts/20260830T150123.662701Z-plan-change-zhi-xing-planet-apg-release-approval-simulation-20260830-da7282be1d78.json","oldest_receipt_ref":".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json","receipt_canonical":14,"receipt_invalid":0,"receipt_total":14}},"policy_digest":"93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7","schema_version":"1.0","target_fingerprint":"835afdc3c3ebd837adfd49b2f82bfbb9a144532af6b7c8cb562fa5f6211fec35","timestamp_utc":"2026-08-30T15:11:54.364367Z"}
+```
+### AUDIT
+Command: `python -m project_governance audit . --json`
+Exit status: `0`
+Literal output/result:
+```text
+{"actor":"controller","approvals":[],"authorized_scope":["."],"checks":[{"duration_ms":0,"evidence_refs":[".governance/baseline.json",".governance/changes/adaptive-project-governance-fix-codex-adapter-drift-20260829.json",".governance/changes/zhi-xing-planet-apg-deployment-preview-gates-20260828.json",".governance/changes/zhi-xing-planet-apg-independent-review-20260830.json",".governance/changes/zhi-xing-planet-apg-release-approval-simulation-20260830.json",".governance/changes/zhi-xing-planet-apg-release-deployment-test-scope-20260828.json",".governance/changes/zhi-xing-planet-delivery-preparation-boundary-audit-20260828.json",".governance/changes/zhi-xing-planet-governance-consistency-repair-20260829.json",".governance/changes/zhi-xing-planet-integration-readiness-prep-20260828.json",".governance/changes/zhi-xing-planet-mvp-foundation-implementation-20260828.json",".governance/changes/zhi-xing-planet-mvp-verification-gates-20260828.json",".governance/policy.toml",".governance/progress/active.json",".governance/project.toml",".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json",".governance/receipts/20260828T155650.058735Z-plan-change-adaptive-project-governance-fix-codex-adapter-drift-20260829-54483d8e7074.json",".governance/receipts/20260828T215649.196289Z-plan-change-zhi-xing-planet-governance-consistency-repair-20260829-6b6f87d1ded9.json",".governance/receipts/20260828T231411.115045Z-plan-change-zhi-xing-planet-mvp-foundation-implementation-20260828-b06121b12297.json",".governance/receipts/20260828T232408.795599Z-plan-change-zhi-xing-planet-mvp-verification-gates-20260828-cf0d94f0dae6.json",".governance/receipts/20260828T232746.817385Z-plan-change-zhi-xing-planet-delivery-preparation-boundary-audit-20260828-da1299132e92.json",".governance/receipts/20260828T233212.715492Z-plan-change-zhi-xing-planet-integration-readiness-prep-20260828-9d8620abc590.json",".governance/receipts/20260828T234726.742948Z-plan-change-zhi-xing-planet-apg-release-deployment-test-scope-20260828-dbc115d1dc6e.json",".governance/receipts/20260828T235120.340474Z-plan-change-zhi-xing-planet-apg-deployment-preview-gates-20260828-f6af759f9fe3.json",".governance/receipts/20260830T142700.708949Z-plan-change-zhi-xing-planet-apg-independent-review-20260830-4a59de370534.json",".governance/receipts/20260830T150123.662701Z-plan-change-zhi-xing-planet-apg-release-approval-simulation-20260830-da7282be1d78.json",".governance/receipts/p3e-apply-manifest.json",".governance/receipts/p3e-apply-receipt.json",".governance/receipts/p3e-apply-result.json","AGENTS.md","ARCHITECTURE.md","QUALITY_GATES.md","services/domain/Cargo.toml"],"gate_id":"audit.discovery","message":"[REDACTED]","phase":"audit","status":"warn"},{"duration_ms":0,"evidence_refs":[],"gate_id":"audit.read-only","message":"[REDACTED]","phase":"audit","status":"pass"}],"classification":"warn","command":"audit","evidence_refs":[".governance/baseline.json",".governance/changes/adaptive-project-governance-fix-codex-adapter-drift-20260829.json",".governance/changes/zhi-xing-planet-apg-deployment-preview-gates-20260828.json",".governance/changes/zhi-xing-planet-apg-independent-review-20260830.json",".governance/changes/zhi-xing-planet-apg-release-approval-simulation-20260830.json",".governance/changes/zhi-xing-planet-apg-release-deployment-test-scope-20260828.json",".governance/changes/zhi-xing-planet-delivery-preparation-boundary-audit-20260828.json",".governance/changes/zhi-xing-planet-governance-consistency-repair-20260829.json",".governance/changes/zhi-xing-planet-integration-readiness-prep-20260828.json",".governance/changes/zhi-xing-planet-mvp-foundation-implementation-20260828.json",".governance/changes/zhi-xing-planet-mvp-verification-gates-20260828.json",".governance/policy.toml",".governance/progress/active.json",".governance/project.toml",".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json",".governance/receipts/20260828T155650.058735Z-plan-change-adaptive-project-governance-fix-codex-adapter-drift-20260829-54483d8e7074.json",".governance/receipts/20260828T215649.196289Z-plan-change-zhi-xing-planet-governance-consistency-repair-20260829-6b6f87d1ded9.json",".governance/receipts/20260828T231411.115045Z-plan-change-zhi-xing-planet-mvp-foundation-implementation-20260828-b06121b12297.json",".governance/receipts/20260828T232408.795599Z-plan-change-zhi-xing-planet-mvp-verification-gates-20260828-cf0d94f0dae6.json",".governance/receipts/20260828T232746.817385Z-plan-change-zhi-xing-planet-delivery-preparation-boundary-audit-20260828-da1299132e92.json",".governance/receipts/20260828T233212.715492Z-plan-change-zhi-xing-planet-integration-readiness-prep-20260828-9d8620abc590.json",".governance/receipts/20260828T234726.742948Z-plan-change-zhi-xing-planet-apg-release-deployment-test-scope-20260828-dbc115d1dc6e.json",".governance/receipts/20260828T235120.340474Z-plan-change-zhi-xing-planet-apg-deployment-preview-gates-20260828-f6af759f9fe3.json",".governance/receipts/20260830T142700.708949Z-plan-change-zhi-xing-planet-apg-independent-review-20260830-4a59de370534.json",".governance/receipts/20260830T150123.662701Z-plan-change-zhi-xing-planet-apg-release-approval-simulation-20260830-da7282be1d78.json",".governance/receipts/p3e-apply-manifest.json",".governance/receipts/p3e-apply-receipt.json",".governance/receipts/p3e-apply-result.json","AGENTS.md","ARCHITECTURE.md","QUALITY_GATES.md","services/domain/Cargo.toml"],"findings":[{"baselinable":true,"category":"profile","confidence":"high","evidence_refs":[],"message":"[REDACTED]","path":".","rule_id":"evidence.data-risk","severity":"warning"}],"inputs":{"environment_summary":{"platform":"win32","python":"3.11.7"},"target":"."},"outputs":{"changed_paths":[],"commands":[],"level":"G2","level_reasons":["evidence:meaningful-contract-or-dependency"],"level_warnings":["unknown:data_risk","unknown:release_model","unknown:test_burden","unknown:user_exposure"],"profile":{"data_risk":"unknown","evidence_refs":[".governance/baseline.json",".governance/changes/adaptive-project-governance-fix-codex-adapter-drift-20260829.json",".governance/changes/zhi-xing-planet-apg-deployment-preview-gates-20260828.json",".governance/changes/zhi-xing-planet-apg-independent-review-20260830.json",".governance/changes/zhi-xing-planet-apg-release-approval-simulation-20260830.json",".governance/changes/zhi-xing-planet-apg-release-deployment-test-scope-20260828.json",".governance/changes/zhi-xing-planet-delivery-preparation-boundary-audit-20260828.json",".governance/changes/zhi-xing-planet-governance-consistency-repair-20260829.json",".governance/changes/zhi-xing-planet-integration-readiness-prep-20260828.json",".governance/changes/zhi-xing-planet-mvp-foundation-implementation-20260828.json",".governance/changes/zhi-xing-planet-mvp-verification-gates-20260828.json",".governance/policy.toml",".governance/progress/active.json",".governance/project.toml",".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json",".governance/receipts/20260828T155650.058735Z-plan-change-adaptive-project-governance-fix-codex-adapter-drift-20260829-54483d8e7074.json",".governance/receipts/20260828T215649.196289Z-plan-change-zhi-xing-planet-governance-consistency-repair-20260829-6b6f87d1ded9.json",".governance/receipts/20260828T231411.115045Z-plan-change-zhi-xing-planet-mvp-foundation-implementation-20260828-b06121b12297.json",".governance/receipts/20260828T232408.795599Z-plan-change-zhi-xing-planet-mvp-verification-gates-20260828-cf0d94f0dae6.json",".governance/receipts/20260828T232746.817385Z-plan-change-zhi-xing-planet-delivery-preparation-boundary-audit-20260828-da1299132e92.json",".governance/receipts/20260828T233212.715492Z-plan-change-zhi-xing-planet-integration-readiness-prep-20260828-9d8620abc590.json",".governance/receipts/20260828T234726.742948Z-plan-change-zhi-xing-planet-apg-release-deployment-test-scope-20260828-dbc115d1dc6e.json",".governance/receipts/20260828T235120.340474Z-plan-change-zhi-xing-planet-apg-deployment-preview-gates-20260828-f6af759f9fe3.json",".governance/receipts/20260830T142700.708949Z-plan-change-zhi-xing-planet-apg-independent-review-20260830-4a59de370534.json",".governance/receipts/20260830T150123.662701Z-plan-change-zhi-xing-planet-apg-release-approval-simulation-20260830-da7282be1d78.json",".governance/receipts/p3e-apply-manifest.json",".governance/receipts/p3e-apply-receipt.json",".governance/receipts/p3e-apply-result.json","AGENTS.md","ARCHITECTURE.md","QUALITY_GATES.md","services/domain/Cargo.toml"],"lifecycle":"unknown","operational_dependencies":[],"owners":[],"project_id":"儿童知行星球","project_types":["api/backend"],"public_surfaces":["api"],"release_model":"unknown","root":".","test_burden":"unknown","user_exposure":"unknown"},"read_only_proof":{"changed_paths":[],"content_hash_limit_bytes":8388608,"mode":"bounded-content-and-subtree-metadata","passed":true,"pruned_directory_names":[".cache",".douyin-candidate-cache",".git",".gradle",".local-models",".media-cache",".mypy_cache",".pytest_cache",".resolver-research",".ruff_cache",".sheen-ai-data",".tmp",".tox",".venv",".voice-cache","DerivedData","Pods","__pycache__","backups","build","cache","checkpoints","coverage","dist","models","node_modules","out","target","target-*","third_party","tmp","vendor","venv","weights"],"stable_pruned_directory_names":[".git"]},"required_documents":["AGENTS.md","PROJECT_BRIEF.md","ARCHITECTURE.md","QUALITY_GATES.md","docs/decisions/"],"truncated":false},"policy_digest":"","schema_version":"1.0","target_fingerprint":"835afdc3c3ebd837adfd49b2f82bfbb9a144532af6b7c8cb562fa5f6211fec35","timestamp_utc":"2026-08-30T15:11:54.641792Z"}
+```
+### CHECK
+Command: `python -m project_governance check . --phase full --json`
+Exit status: `0`
+Literal output/result:
+```text
+{"actor":"controller","approvals":[],"authorized_scope":[".governance/receipts"],"checks":[],"classification":"check","command":"check","evidence_refs":[],"findings":[],"inputs":{"phase":"full"},"outputs":{"exit_code":0,"gate_execution_evidence":{"entries":[],"entry_count":0,"performed":false,"phase":"full","policy_sha256":"93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7","schema_version":"1.0","selection_mode":"phase"}},"policy_digest":"93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7","schema_version":"1.0","target_fingerprint":"835afdc3c3ebd837adfd49b2f82bfbb9a144532af6b7c8cb562fa5f6211fec35","timestamp_utc":"2026-08-30T15:11:55.001376Z"}
+```

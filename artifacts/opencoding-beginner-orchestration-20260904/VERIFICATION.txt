@@ -1,0 +1,33 @@
+OpenCoding APG 初心者需求编排验证（离线）
+change_id=opencoding-beginner-orchestration-20260904
+product_delivery=false
+
+INSPECT
+command=Get-Content AGENTS.md; inspect declared paths and request
+result=项目规则已读取；根 AGENTS.md、receipts、snapshots、Ledger 和无关改动保留。
+
+VALIDATE
+command=python -X utf8 -m py_compile scripts/apg_beginner_executor_preview.py tests/test_apg_beginner_executor.py
+exit_status=0
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+literal_output=.............................................. / Ran 46 tests / OK
+exit_status=0
+
+VERIFY
+command=python -X utf8 scripts/apg_independent_review.py --root .
+literal_output=status=PASS; blocker_codes=[]; external_actions_executed=false
+exit_status=0
+
+REPORT
+command=python -X utf8 scripts/apg_beginner_executor_preview.py "给家长和孩子用的学习工具，需要登录、同步记录、提醒和后台管理"
+result=生成平台建议、客户端/后端/数据库方案、server/database/api/auth/notifications/admin 能力矩阵、13 份动态 Markdown 文档预览、7 波任务图和 plan_confirmation；external_actions 全 false。
+
+GOVERNANCE
+command=python -X utf8 C:/Users/Administrator/.codex/skills/adaptive-project-governance/scripts/project_governance.py doctor . --json
+result=classification=pass; read_only_proof.passed=true; receipts=46 canonical
+command=python -X utf8 C:/Users/Administrator/.codex/skills/adaptive-project-governance/scripts/project_governance.py audit . --json
+result=classification=warn; read_only_proof.passed=true; changed_paths=[]
+
+BOUNDARY
+No remote Git, GitHub, network, Provider, Host, credentials, runtime, deployment, payment, publication, or real data used.
+唯一后续人工 Gate：若要真实服务器、数据库、API、支付、通知、部署或 GitHub 发布，必须先由用户确认并另行执行。

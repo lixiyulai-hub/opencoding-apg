@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "program_id": "opencoding-product-v1-20260905",
+  "status": "implementation_started",
+  "model": "gpt-5.6-luna",
+  "reasoning_effort": "high",
+  "progress_rule": "Product total = accepted milestones / 12 * 100. Each milestone has equal weight, is binary and requires integration evidence. Planning/dispatch progress is separate and never contributes to product completion.",
+  "current_stage": "W1-foundation",
+  "immediate_transaction": "implement-and-review-three-isolated-foundation-worktrees",
+  "following_stage": "W2-local-product-loop",
+  "ordered_successors": [
+    "W1-review-and-integrate-foundations",
+    "W2-cli-session-preview-apply-and-real-local-execution",
+    "W3-local-web-workbench-and-installer",
+    "W4-controlled-host-and-external-connectors",
+    "W5-platform-matrix-user-acceptance-and-publication"
+  ],
+  "milestones": [
+    {"id":"M01","wave":"W1","title":"安全事务与审批边界","status":"pending","acceptance":["preview零写入","路径逃逸与别名拒绝","摘要绑定与漂移拒绝","部分失败恢复","回滚不覆盖用户后续改动"],"owner":"W1-A"},
+    {"id":"M02","wave":"W1","title":"真正多轮中文需求与持久会话","status":"pending","acceptance":["问题答案回流","改答案产生新版本","暂停恢复","否定冲突未知可解释","秘密不入持久记录"],"owner":"W1-B"},
+    {"id":"M03","wave":"W1","title":"具体平台技术方案与八项能力判断","status":"pending","acceptance":["覆盖Windows/macOS/iOS/Android/Web/小程序/CLI","具体选型与理由替代维护成本","未知不高置信度","八项能力与未来激活Gate"],"owner":"W1-B"},
+    {"id":"M04","wave":"W1","title":"差异化按需项目文档","status":"pending","acceptance":["AGENTS/memory/PRG/plan职责不同","按需接口数据权限集成文档","不伪造验证","通过事务真正写入样例项目"],"owner":"W1-C + W2 integration"},
+    {"id":"M05","wave":"W1","title":"业务任务图与冲突可控波次","status":"pending","acceptance":["具体产物与验收","循环和缺依赖拒绝","同波写入冲突处理","需求修改触发重编排"],"owner":"W1-C"},
+    {"id":"M06","wave":"W2","title":"中文可启动入口与完整本地闭环","status":"pending","acceptance":["无需隐藏全局skill","输入到确认到真实文件","中文错误与下一步","新手无需阅读JSON"],"owner":"W2-entry"},
+    {"id":"M07","wave":"W2","title":"实际执行持久调度与Requeue","status":"pending","acceptance":["运行真实本地任务","首次失败冻结依赖","超时取消","崩溃恢复","幂等重试与完整证据"],"owner":"W2-executor"},
+    {"id":"M08","wave":"W3","title":"本地Web工作台与安装交付","status":"pending","acceptance":["桌面手机布局实测","浏览器完整旅程","暂停恢复和方案差异","回环权限防护","干净环境安装启动"],"owner":"W3-workbench"},
+    {"id":"M09","wave":"W4","title":"至少一个真实AI coding Host适配器","status":"pending","acceptance":["受控读取写入与调用","模型及成本可见","真实回传退出及产物","沙箱边界实测","无Host时明确未接通"],"owner":"W4-host"},
+    {"id":"M10","wave":"W4","title":"服务器数据库API登录支付通知后台存储连接器","status":"pending","acceptance":["八类实际实现及契约测试","当前方案精确确认","凭据安全与撤销","服务可用时分别live验证","无账号不得标记实接成功"],"owner":"W4-integrations"},
+    {"id":"M11","wave":"W5","title":"跨平台与独立小白端到端验收","status":"pending","acceptance":["默认测试非零","支持平台实测矩阵","至少五名未参与开发的新手旅程记录","一个可运行成果及真实失败恢复","安全独立复核"],"owner":"W5-review"},
+    {"id":"M12","wave":"W5","title":"基于证据的文档公开交付","status":"pending","acceptance":["README与能力状态一致","上游致谢保留","许可证与贡献和安全入口确认","无用户项目隐私泄漏","公开发布单独Gate"],"owner":"W5-release"}
+  ],
+  "human_gate": {
+    "current": null,
+    "later": "Before real service activation or publication, confirm exact provider/host/target/data/cost/action digest. This is not the immediate next task.",
+    "mock_is_live_evidence": false
+  }
+}

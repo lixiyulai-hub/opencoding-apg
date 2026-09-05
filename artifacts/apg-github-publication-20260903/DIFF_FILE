@@ -1,0 +1,160 @@
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..e825ae9
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,19 @@
++﻿# Adaptive Project Governance (APG)
++
++Turn one idea into an automatically advancing, verifiable project plan.
++
++APG is a beginner-friendly, idea-to-result coordinator for AI coding. It clarifies natural-language requests, creates project Markdown knowledge packs, orchestrates tasks, and preserves evidence, Gates, and rollback.
++
++## Flow
++
++Idea -> Grill Me -> Markdown knowledge pack -> Task graph -> Offline adapter -> Validate / report
++
++![APG governance flow](docs/diagrams/APG_GITHUB_INTRO.svg)
++
++- Editable draw.io source: docs/diagrams/APG_GITHUB_INTRO.drawio
++- Chinese overview: README_CN.md
++- Validation summary: docs/validation/APG_PROJECT_VALIDATION_20260902.md
++
++The published files document APG governance and validation fixtures only. They do not claim publication of the downstream child product.
++
++Grill Me attribution: https://github.com/mattpocock/skills
+diff --git a/README_CN.md b/README_CN.md
+index 3dc0d9a..9c070b2 100644
+--- a/README_CN.md
++++ b/README_CN.md
+@@ -1,39 +1,25 @@
+ # APG：让小白轻松面对 AI Coding
+ 
+-Adaptive Project Governance（APG）不是儿童产品源码，而是一个面向普通用户和初学者的 **idea-to-result 项目治理与 AI coding 协调器**。用户只需用自然语言提出 Coding 项目需求，APG 会主动整理、追问、规划、拆分并编排后续工作。
++把一句想法，变成一套能自动推进的项目计划。
++
++APG 面向普通用户和 AI coding 初学者：用中文说出想做什么，Grill Me 会追问关键问题，APG 自动整理需求、任务、验证、证据和回滚。
+ 
+ ## 核心体验
+ 
+-- **Grill Me 自然语言澄清**：主动追问目标、用户、平台、约束、风险和验收，不要求小白先懂项目管理。
+-- **自动生成项目 Markdown 文献**：按项目类型建立 `PROJECT_BRIEF.md`、`PRODUCT_PLAN.md`、`UX_FLOW.md`、`ARCHITECTURE.md`、`STACK_DECISION.md`、`TASK_GRAPH.md`、`QUALITY_PLAN.md`、`DEPLOYMENT_PLAN.md`，以及按需生成的 PRG plan、memory、agents、design 等文档。
+-- **需求拆分与执行编排**：将需求拆成依赖、任务波次、Gate、证据和回滚步骤，安全的例行工作自动推进，关键外部动作保留明确 Gate。
+-- **最终落地导向**：从一句想法开始，经过澄清、文档化、拆分、验证和复核，形成可执行的交付路径。
++- 自然语言澄清：解释为什么提问，不要求先懂项目管理。
++- Markdown 知识包：生成项目专属目标、需求、架构、任务、质量和回滚文档。
++- 自动编排：例行工作自动推进；Git、网络、凭据、部署、公开发布和不可逆动作保留一次 consequential Gate。
+ 
+ ## 可视化流程
+ 
+-![APG idea-to-result 治理流程图](docs/diagrams/APG_GOVERNANCE_RELEASE_FLOW.svg)
+-
+-- [查看可编辑 draw.io 图稿](docs/diagrams/APG_GOVERNANCE_RELEASE_FLOW.drawio)
+-- [查看完整中文说明](docs/README.md)
+-
+-## 本仓库的验证范围
+-
+-本仓库同时用于验证 APG 的治理、Gate、证据、回滚、部署预览和发布编排能力。仓库中的验证 Release 只代表 APG 项目验证结果，不代表任何下游产品已经实现、部署或上线。
+-
+-## English (secondary)
+-
+-APG is a beginner-friendly idea-to-result coordinator for AI coding: it Grill Me-clarifies natural-language requests, creates project-specific Markdown plans and memory/agent/design artifacts, decomposes requirements, orchestrates execution waves, and preserves Gates, evidence, and rollback.
++![APG idea-to-result flow](docs/diagrams/APG_GITHUB_INTRO.svg)
+ 
+-## 下一阶段正式目标
++中文想法 → Grill Me → Markdown 知识包 → 任务图 → 离线 Adapter → 验证/报告
+ 
+-已确认 APG 下一阶段聚焦 **初心者交互体验与执行器连接**：
++- 可编辑图稿：docs/diagrams/APG_GITHUB_INTRO.drawio
++- 验证摘要：docs/validation/APG_PROJECT_VALIDATION_20260902.md
++- 上游归属：docs/attribution/GRILL_ME_UPSTREAM.md
+ 
+-- 让小白用中文自然语言开始项目；
+-- 用 Grill Me 问清真正关键的需求；
+-- 自动形成项目专属 Markdown 资料；
+-- 拆分需求并安排执行波次；
+-- 定义与 AI coding 执行器的适配器契约；
+-- 先离线模拟和契约测试，再考虑受控本地执行；
+-- 外部 Host、Provider、凭据、网络、运行时、Git、部署和发布继续保持独立 Gate。
++## 验证边界
+ 
+-这项确认是 APG 的正式产品方向，不等于已经连接或调用任何执行器。
++本仓库内容用于验证 APG 的治理、Gate、证据、回滚和发布编排能力，不代表儿童知行星球下游产品已经实现、部署或上线。
+diff --git a/docs/attribution/GRILL_ME_UPSTREAM.md b/docs/attribution/GRILL_ME_UPSTREAM.md
+new file mode 100644
+index 0000000..2c8927f
+--- /dev/null
++++ b/docs/attribution/GRILL_ME_UPSTREAM.md
+@@ -0,0 +1,7 @@
++﻿# Grill Me Upstream Attribution
++
++APG's Grill Me name and questioning interaction are attributed to the original public upstream project:
++
++https://github.com/mattpocock/skills
++
++This repository is an APG-only, Chinese-first governance and offline-contract fixture. It does not claim endorsement by the upstream project.
+diff --git a/docs/diagrams/APG_GITHUB_INTRO.drawio b/docs/diagrams/APG_GITHUB_INTRO.drawio
+new file mode 100644
+index 0000000..47a68b7
+--- /dev/null
++++ b/docs/diagrams/APG_GITHUB_INTRO.drawio
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<mxfile host="app.diagrams.net" modified="2026-09-02T01:10:00.000Z" agent="APG local preview" version="24.7.17" type="device">
++  <diagram id="apg-github-intro" name="APG GitHub Intro">
++    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
++      <root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="idea" value="一句中文想法" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#2563EB;fontColor=#0F172A;fontSize=16;fontStyle=1;spacing=8;" parent="1" vertex="1"><mxGeometry x="40" y="170" width="180" height="76" as="geometry"/></mxCell><mxCell id="grill" value="Grill Me
++解释式追问" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#2563EB;fontColor=#0F172A;fontSize=16;fontStyle=1;spacing=8;" parent="1" vertex="1"><mxGeometry x="250" y="170" width="180" height="76" as="geometry"/></mxCell><mxCell id="pack" value="Markdown
++知识包" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" parent="1" vertex="1"><mxGeometry x="460" y="170" width="180" height="76" as="geometry"/></mxCell><mxCell id="graph" value="需求与
++任务图" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" parent="1" vertex="1"><mxGeometry x="670" y="170" width="180" height="76" as="geometry"/></mxCell><mxCell id="adapter" value="离线
++Adapter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" parent="1" vertex="1"><mxGeometry x="880" y="170" width="180" height="76" as="geometry"/></mxCell><mxCell id="report" value="验证 · 报告
++· Requeue" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" parent="1" vertex="1"><mxGeometry x="1090" y="170" width="180" height="76" as="geometry"/></mxCell><mxCell id="gate" value="唯一 consequential Gate
++密钥 / 金钱 / 网络 / 部署 / Git" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF2F2;strokeColor=#DC2626;fontColor=#7F1D1D;fontSize=14;spacing=8;" parent="1" vertex="1"><mxGeometry x="670" y="300" width="300" height="70" as="geometry"/></mxCell><mxCell id="e-idea-grill" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#64748B;" edge="1" parent="1" source="idea" target="grill"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e-grill-pack" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#64748B;" edge="1" parent="1" source="grill" target="pack"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e-pack-graph" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#64748B;" edge="1" parent="1" source="pack" target="graph"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e-graph-adapter" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#64748B;" edge="1" parent="1" source="graph" target="adapter"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e-adapter-report" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#64748B;" edge="1" parent="1" source="adapter" target="report"><mxGeometry relative="1" as="geometry"/></mxCell><mxCell id="e-graph-gate" value="必要时暂停一次" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;strokeWidth=2;strokeColor=#DC2626;fontColor=#991B1B;" edge="1" parent="1" source="graph" target="gate"><mxGeometry relative="1" as="geometry"/></mxCell></root>
++    </mxGraphModel>
++  </diagram>
++</mxfile>
+diff --git a/docs/diagrams/APG_GITHUB_INTRO.svg b/docs/diagrams/APG_GITHUB_INTRO.svg
+new file mode 100644
+index 0000000..7af3f28
+--- /dev/null
++++ b/docs/diagrams/APG_GITHUB_INTRO.svg
+@@ -0,0 +1,15 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="520" viewBox="0 0 1400 520" role="img" aria-labelledby="title desc">
++<title id="title">APG：一句中文想法到自动项目计划</title><desc id="desc">APG 中文初心者流程图，展示 Grill Me、Markdown 知识包、任务图、离线 Adapter、验证报告和唯一 consequential Gate。</desc>
++<defs><filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#0f172a" flood-opacity=".12"/></filter><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#64748b"/></marker></defs>
++<rect width="1400" height="520" fill="#f8fafc"/>
++<text x="70" y="58" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="30" font-weight="700" fill="#0f172a">把一句想法，变成一套能自动推进的项目计划</text>
++<text x="70" y="92" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="16" fill="#475569">APG · 中文优先 · 自动拆分需求、任务、证据与回滚</text>
++<g filter="url(#shadow)"><rect x="70" y="180" rx="16" width="170" height="82" fill="#e8f1ff" stroke="#2563eb" stroke-width="3"/><text x="155" y="216" text-anchor="middle" font-family="Arial,Microsoft YaHei,sans-serif" font-size="17" font-weight="700" fill="#0f172a">一句中文想法</text></g><line x1="270" y1="220" x2="290" y2="220" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)"/><g filter="url(#shadow)"><rect x="300" y="180" rx="16" width="170" height="82" fill="#e8f1ff" stroke="#2563eb" stroke-width="3"/><text x="385" y="216" text-anchor="middle" font-family="Arial,Microsoft YaHei,sans-serif" font-size="17" font-weight="700" fill="#0f172a">Grill Me
++解释式追问</text></g><line x1="500" y1="220" x2="520" y2="220" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)"/><g filter="url(#shadow)"><rect x="530" y="180" rx="16" width="170" height="82" fill="#f0fdf4" stroke="#16a34a" stroke-width="3"/><text x="615" y="216" text-anchor="middle" font-family="Arial,Microsoft YaHei,sans-serif" font-size="17" font-weight="700" fill="#0f172a">Markdown
++知识包</text></g><line x1="730" y1="220" x2="750" y2="220" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)"/><g filter="url(#shadow)"><rect x="760" y="180" rx="16" width="170" height="82" fill="#f0fdf4" stroke="#16a34a" stroke-width="3"/><text x="845" y="216" text-anchor="middle" font-family="Arial,Microsoft YaHei,sans-serif" font-size="17" font-weight="700" fill="#0f172a">需求与
++任务图</text></g><line x1="960" y1="220" x2="980" y2="220" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)"/><g filter="url(#shadow)"><rect x="990" y="180" rx="16" width="170" height="82" fill="#f0fdf4" stroke="#16a34a" stroke-width="3"/><text x="1075" y="216" text-anchor="middle" font-family="Arial,Microsoft YaHei,sans-serif" font-size="17" font-weight="700" fill="#0f172a">离线
++Adapter</text></g><line x1="1190" y1="220" x2="1210" y2="220" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)"/><g filter="url(#shadow)"><rect x="1220" y="180" rx="16" width="170" height="82" fill="#f0fdf4" stroke="#16a34a" stroke-width="3"/><text x="1305" y="216" text-anchor="middle" font-family="Arial,Microsoft YaHei,sans-serif" font-size="17" font-weight="700" fill="#0f172a">验证 · 报告
++· Requeue</text></g><path d="M845 262 C845 355 845 355 845 386" fill="none" stroke="#dc2626" stroke-width="3" stroke-dasharray="8 7" marker-end="url(#arrow)"/>
++<g filter="url(#shadow)"><rect x="650" y="386" rx="16" width="390" height="76" fill="#fef2f2" stroke="#dc2626" stroke-width="3"/><text x="845" y="416" text-anchor="middle" font-family="Arial,Microsoft YaHei,sans-serif" font-size="16" font-weight="700" fill="#7f1d1d"><tspan x="845">唯一 consequential Gate</tspan><tspan x="845" dy="22" font-size="14" font-weight="400">密钥 · 金钱 · 网络 · 部署 · Git/公开发布</tspan></text></g>
++<text x="70" y="490" font-family="Arial,'Microsoft YaHei',sans-serif" font-size="15" fill="#475569">普通路径自动推进；只有外部影响事项才暂停一次。</text>
++</svg>
+\ No newline at end of file
+diff --git a/docs/validation/APG_PROJECT_VALIDATION_20260902.md b/docs/validation/APG_PROJECT_VALIDATION_20260902.md
+new file mode 100644
+index 0000000..19b3f16
+--- /dev/null
++++ b/docs/validation/APG_PROJECT_VALIDATION_20260902.md
+@@ -0,0 +1,17 @@
++﻿# APG Project Validation Summary (2026-09-02)
++
++This publication contains APG-only governance and validation evidence. It is not a release of the downstream child product.
++
++## Results
++
++- Unit tests: python -X utf8 -m unittest discover -s tests -p test_*.py -> 42 tests, OK.
++- Independent review: status=PASS; no blockers; no external actions.
++- Doctor: PASS; managed adapters current; receipts canonical.
++- Git safety preview: PREVIEW_ONLY; source fixture has no project-local repository; read-only proof passed.
++- Rollback exercises: PASS on disposable copies.
++
++## Validated capabilities
++
++- Governance initialization, plan-change routing, progress binding, and evidence retention.
++- Offline PRG, Grill Me, beginner executor, adaptive Git checkpoint, Controller Bridge, checkpoint Ledger, local persistence, idempotent replay, and failure freeze.
++- Publication boundaries remain explicit: no provider, network, credentials, runtime, deployment, release, or downstream product execution is implied.

@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "change_id": "opencoding-readme-publication-20260904",
+  "repository": "lixiyulai-hub/opencoding-apg",
+  "branch": "main",
+  "remote_head_before": "e73b09b632ff7b3b65c8269e4f52b6785496369f",
+  "commit": "12d7520cb53af53c5d5cc72a7b7a5c167df5d901",
+  "remote_head_after": "12d7520cb53af53c5d5cc72a7b7a5c167df5d901",
+  "changed_paths": ["README.md", "README_CN.md"],
+  "local_sha256": {
+    "README.md": "72df3871ede14bdf94a44683956a6c6758c2f589c2ab3d2797e328ae950d4464",
+    "README_CN.md": "3db7ce83149c5ce3c60b43f2c1a2716e771ee86c4b4a4202bd87949933cf0fa7"
+  },
+  "remote_sha256": {
+    "README.md": "72df3871ede14bdf94a44683956a6c6758c2f589c2ab3d2797e328ae950d4464",
+    "README_CN.md": "3db7ce83149c5ce3c60b43f2c1a2716e771ee86c4b4a4202bd87949933cf0fa7"
+  },
+  "push": {"exit_status": 0, "transport": "git push origin main"},
+  "releases": {"new_release_created": false, "existing": ["APG Validation 2026-08-30", "Adaptive Project Governance 0.3.0"]},
+  "rollback": {"disposable_clone": true, "revert_preview": "README_RESTORED=True; README_CN_RESTORED=True", "pre_publish_head": "e73b09b632ff7b3b65c8269e4f52b6785496369f"},
+  "validation": {
+    "unittest": "python -B -X utf8 -m unittest discover -s tests -p 'test_*.py' => 46 passed",
+    "independent_review": "PASS",
+    "doctor": "PASS",
+    "audit": "WARN; read_only_proof.passed=true; changed_paths=[]",
+    "external_actions": {"github_publication": true, "provider": false, "host": false, "runtime": false, "deployment": false, "child_product": false}
+  },
+  "receipt": ".governance/receipts/20260904T075546.539368Z-plan-change-opencoding-readme-publication-20260904-9c6a7a075248.json"
+}

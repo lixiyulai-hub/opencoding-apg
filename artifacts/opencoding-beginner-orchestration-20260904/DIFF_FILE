@@ -1,0 +1,11 @@
+APG-only bounded local change: opencoding-beginner-orchestration-20260904
+~ scripts/apg_beginner_executor_preview.py (platform discovery, solution recommendation, capability matrix, dynamic document preview, task waves, API inference)
+~ tests/test_apg_beginner_executor.py (46-test contract coverage)
+~ docs/apg/APG_BEGINNER_EXECUTOR_OFFLINE_CONTRACT.md
++ docs/apg/APG_BEGINNER_CAPABILITY_MATRIX.md
++ docs/apg/APG_BEGINNER_DYNAMIC_DOCUMENT_PACKAGE.md
++ docs/apg/APG_BEGINNER_TASK_WAVES.md
+~ README.md
+~ README_CN.md
++ artifacts/opencoding-beginner-orchestration-20260904/{RESULT.json,MODIFIED_FILE,DIFF_FILE,VERIFICATION.txt,ROLLBACK.sh}
+External actions: none; execution_performed=false.

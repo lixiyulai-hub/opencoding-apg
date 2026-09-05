@@ -1,0 +1,81 @@
+# Deployment Preview Verification
+
+This record covers the APG offline deployment-preview fixture only. No provider, network, credential, real data, runtime, deployment, publication, pilot, or Git action was used.
+
+## Artifact paths and hashes
+- `E:\儿童知行星球\artifacts\apg-deployment-preview\MODIFIED_FILE` SHA256 `444ffe70cb000517ed0420e2735fc4e2ebc5d61b0c923625df1ad00fe7fdb331`
+- `E:\儿童知行星球\artifacts\apg-deployment-preview\DIFF_FILE` SHA256 `a6e9c5848ffd1105322a8c9962e971a4fc000d995e9ae0c3869dabec9ca94221`
+- `E:\儿童知行星球\artifacts\apg-deployment-preview\ROLLBACK.sh` SHA256 `e89f0663f9a55ffa57a39b3bf321704238c1cc72f957059a588a9f2e0052d40b`
+- Original source `E:\儿童知行星球\PROJECT_BRIEF.md` SHA256 `92e1576520fb114414591c858c3f6daf05e1d002e4daa01ed82162e7a25b1fbe` (unchanged).
+
+## Exact verification commands
+### BASELINE
+Command: `echo {"release_approval":true,"rollback_evidence":true} | python scripts/apg_deployment_preview.py`
+Input: `{"release_approval":true,"rollback_evidence":true}`
+Exit status: `0`
+Literal output/result:
+```text
+{"blocker_codes":[],"deployment_action_executed":false,"evidence":{"credentials_required":false,"deployment_requested":false,"network_required":false,"pilot_requested":false,"provider_required":false,"publication_requested":false,"real_data_required":false,"release_approval":true,"rollback_evidence":true,"runtime_requested":false},"external_actions":[],"preview_only":true,"publication_action_executed":false,"release_action_executed":false,"schema_version":"1.0","status":"ready-for-preview"}
+```
+
+### MODIFIED
+Command: `echo {"rollback_evidence":true} | python scripts/apg_deployment_preview.py`
+Input: `{"rollback_evidence":true}`
+Exit status: `3`
+Literal output/result:
+```text
+{"blocker_codes":["missing_release_approval"],"deployment_action_executed":false,"evidence":{"credentials_required":false,"deployment_requested":false,"network_required":false,"pilot_requested":false,"provider_required":false,"publication_requested":false,"real_data_required":false,"release_approval":false,"rollback_evidence":true,"runtime_requested":false},"external_actions":[],"preview_only":true,"publication_action_executed":false,"release_action_executed":false,"schema_version":"1.0","status":"BLOCK"}
+```
+
+### UNIT TESTS
+Command: `python -X utf8 -m unittest discover -s tests -p 'test_*.py'`
+Exit status: `0`
+Literal output/result:
+```text
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.101s
+
+OK
+```
+
+### ROLLBACK
+Command: `sh artifacts/apg-deployment-preview/ROLLBACK.sh C:\Users\ADMINI~1\AppData\Local\Temp\apg-rollback-6ivflysq\pre.txt C:\Users\ADMINI~1\AppData\Local\Temp\apg-rollback-6ivflysq\target.txt`
+Input: `pre=before target-before=after`
+Exit status: `0`
+Literal output/result:
+```text
+stdout=rollback-restored
+target=before
+exit=0
+```
+
+### DOCTOR
+Command: `python -m project_governance doctor . --json`
+Exit status: `0`
+Literal output/result:
+```text
+{"actor":"controller","approvals":[],"authorized_scope":["."],"checks":[],"classification":"pass","command":"doctor","evidence_refs":[],"findings":[],"inputs":{},"outputs":{"checks":[{"id":"root-containment","message":"target root is contained","status":"pass"},{"id":"schema-support-project","message":"schema is supported","status":"pass"},{"id":"schema-support-policy","message":"schema is supported","status":"pass"},{"id":"policy-profile-coherence","message":"policy and profile are coherent","status":"pass"},{"id":"quality-gates","message":"quality gates match the governance level","status":"pass"},{"id":"adapter-drift","message":"managed adapters are current","status":"pass"},{"id":"missing-tools","message":"configured tools are available","status":"pass"},{"id":"baseline","message":"baseline is current","status":"pass"},{"id":"receipts","message":"receipts are canonical and retained (12 records)","status":"pass"},{"id":"current-state","message":"optional current-state projection is absent","status":"pass"},{"id":"regression-ledger","message":"regression ledger is canonical (0 records)","status":"pass"},{"id":"interrupted-recovery","message":"no interrupted transaction evidence","status":"pass"},{"id":"generated-files","message":"unexpected generated files: .governance/progress","status":"warn","suggestion":"remove or approve generated files"},{"id":"conditional-documents","message":"conditional documents match policy","status":"pass"}],"read_only_proof":{"changed_paths":[],"passed":true},"receipt_state":{"current_state":{"file_count":0,"latest_receipt_ref":".governance/receipts/20260828T235120.340474Z-plan-change-zhi-xing-planet-apg-deployment-preview-gates-20260828-f6af759f9fe3.json","matched_files":0,"source_digest_match":false,"source_receipt":"","status":"absent"},"latest_receipt_ref":".governance/receipts/20260828T235120.340474Z-plan-change-zhi-xing-planet-apg-deployment-preview-gates-20260828-f6af759f9fe3.json","oldest_receipt_ref":".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json","receipt_canonical":12,"receipt_invalid":0,"receipt_total":12}},"policy_digest":"93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7","schema_version":"1.0","target_fingerprint":"5c03b430d0d6817b69967b8249d469d381b1833ba02394b9d5a1eee7c6f06a5a","timestamp_utc":"2026-08-28T23:59:35.556782Z"}
+```
+
+### AUDIT
+Command: `python -m project_governance audit . --json`
+Exit status: `0`
+Literal output/result:
+```text
+{"actor":"controller","approvals":[],"authorized_scope":["."],"checks":[{"duration_ms":0,"evidence_refs":[".governance/baseline.json",".governance/changes/adaptive-project-governance-fix-codex-adapter-drift-20260829.json",".governance/changes/zhi-xing-planet-apg-deployment-preview-gates-20260828.json",".governance/changes/zhi-xing-planet-apg-release-deployment-test-scope-20260828.json",".governance/changes/zhi-xing-planet-delivery-preparation-boundary-audit-20260828.json",".governance/changes/zhi-xing-planet-governance-consistency-repair-20260829.json",".governance/changes/zhi-xing-planet-integration-readiness-prep-20260828.json",".governance/changes/zhi-xing-planet-mvp-foundation-implementation-20260828.json",".governance/changes/zhi-xing-planet-mvp-verification-gates-20260828.json",".governance/policy.toml",".governance/progress/active.json",".governance/project.toml",".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json",".governance/receipts/20260828T155650.058735Z-plan-change-adaptive-project-governance-fix-codex-adapter-drift-20260829-54483d8e7074.json",".governance/receipts/20260828T215649.196289Z-plan-change-zhi-xing-planet-governance-consistency-repair-20260829-6b6f87d1ded9.json",".governance/receipts/20260828T231411.115045Z-plan-change-zhi-xing-planet-mvp-foundation-implementation-20260828-b06121b12297.json",".governance/receipts/20260828T232408.795599Z-plan-change-zhi-xing-planet-mvp-verification-gates-20260828-cf0d94f0dae6.json",".governance/receipts/20260828T232746.817385Z-plan-change-zhi-xing-planet-delivery-preparation-boundary-audit-20260828-da1299132e92.json",".governance/receipts/20260828T233212.715492Z-plan-change-zhi-xing-planet-integration-readiness-prep-20260828-9d8620abc590.json",".governance/receipts/20260828T234726.742948Z-plan-change-zhi-xing-planet-apg-release-deployment-test-scope-20260828-dbc115d1dc6e.json",".governance/receipts/20260828T235120.340474Z-plan-change-zhi-xing-planet-apg-deployment-preview-gates-20260828-f6af759f9fe3.json",".governance/receipts/p3e-apply-manifest.json",".governance/receipts/p3e-apply-receipt.json",".governance/receipts/p3e-apply-result.json","AGENTS.md","ARCHITECTURE.md","QUALITY_GATES.md","services/domain/Cargo.toml"],"gate_id":"audit.discovery","message":"[REDACTED]","phase":"audit","status":"warn"},{"duration_ms":0,"evidence_refs":[],"gate_id":"audit.read-only","message":"[REDACTED]","phase":"audit","status":"pass"}],"classification":"warn","command":"audit","evidence_refs":[".governance/baseline.json",".governance/changes/adaptive-project-governance-fix-codex-adapter-drift-20260829.json",".governance/changes/zhi-xing-planet-apg-deployment-preview-gates-20260828.json",".governance/changes/zhi-xing-planet-apg-release-deployment-test-scope-20260828.json",".governance/changes/zhi-xing-planet-delivery-preparation-boundary-audit-20260828.json",".governance/changes/zhi-xing-planet-governance-consistency-repair-20260829.json",".governance/changes/zhi-xing-planet-integration-readiness-prep-20260828.json",".governance/changes/zhi-xing-planet-mvp-foundation-implementation-20260828.json",".governance/changes/zhi-xing-planet-mvp-verification-gates-20260828.json",".governance/policy.toml",".governance/progress/active.json",".governance/project.toml",".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json",".governance/receipts/20260828T155650.058735Z-plan-change-adaptive-project-governance-fix-codex-adapter-drift-20260829-54483d8e7074.json",".governance/receipts/20260828T215649.196289Z-plan-change-zhi-xing-planet-governance-consistency-repair-20260829-6b6f87d1ded9.json",".governance/receipts/20260828T231411.115045Z-plan-change-zhi-xing-planet-mvp-foundation-implementation-20260828-b06121b12297.json",".governance/receipts/20260828T232408.795599Z-plan-change-zhi-xing-planet-mvp-verification-gates-20260828-cf0d94f0dae6.json",".governance/receipts/20260828T232746.817385Z-plan-change-zhi-xing-planet-delivery-preparation-boundary-audit-20260828-da1299132e92.json",".governance/receipts/20260828T233212.715492Z-plan-change-zhi-xing-planet-integration-readiness-prep-20260828-9d8620abc590.json",".governance/receipts/20260828T234726.742948Z-plan-change-zhi-xing-planet-apg-release-deployment-test-scope-20260828-dbc115d1dc6e.json",".governance/receipts/20260828T235120.340474Z-plan-change-zhi-xing-planet-apg-deployment-preview-gates-20260828-f6af759f9fe3.json",".governance/receipts/p3e-apply-manifest.json",".governance/receipts/p3e-apply-receipt.json",".governance/receipts/p3e-apply-result.json","AGENTS.md","ARCHITECTURE.md","QUALITY_GATES.md","services/domain/Cargo.toml"],"findings":[{"baselinable":true,"category":"profile","confidence":"high","evidence_refs":[],"message":"[REDACTED]","path":".","rule_id":"evidence.data-risk","severity":"warning"}],"inputs":{"environment_summary":{"platform":"win32","python":"3.11.7"},"target":"."},"outputs":{"changed_paths":[],"commands":[],"level":"G2","level_reasons":["evidence:meaningful-contract-or-dependency"],"level_warnings":["unknown:data_risk","unknown:release_model","unknown:test_burden","unknown:user_exposure"],"profile":{"data_risk":"unknown","evidence_refs":[".governance/baseline.json",".governance/changes/adaptive-project-governance-fix-codex-adapter-drift-20260829.json",".governance/changes/zhi-xing-planet-apg-deployment-preview-gates-20260828.json",".governance/changes/zhi-xing-planet-apg-release-deployment-test-scope-20260828.json",".governance/changes/zhi-xing-planet-delivery-preparation-boundary-audit-20260828.json",".governance/changes/zhi-xing-planet-governance-consistency-repair-20260829.json",".governance/changes/zhi-xing-planet-integration-readiness-prep-20260828.json",".governance/changes/zhi-xing-planet-mvp-foundation-implementation-20260828.json",".governance/changes/zhi-xing-planet-mvp-verification-gates-20260828.json",".governance/policy.toml",".governance/progress/active.json",".governance/project.toml",".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json",".governance/receipts/20260828T155650.058735Z-plan-change-adaptive-project-governance-fix-codex-adapter-drift-20260829-54483d8e7074.json",".governance/receipts/20260828T215649.196289Z-plan-change-zhi-xing-planet-governance-consistency-repair-20260829-6b6f87d1ded9.json",".governance/receipts/20260828T231411.115045Z-plan-change-zhi-xing-planet-mvp-foundation-implementation-20260828-b06121b12297.json",".governance/receipts/20260828T232408.795599Z-plan-change-zhi-xing-planet-mvp-verification-gates-20260828-cf0d94f0dae6.json",".governance/receipts/20260828T232746.817385Z-plan-change-zhi-xing-planet-delivery-preparation-boundary-audit-20260828-da1299132e92.json",".governance/receipts/20260828T233212.715492Z-plan-change-zhi-xing-planet-integration-readiness-prep-20260828-9d8620abc590.json",".governance/receipts/20260828T234726.742948Z-plan-change-zhi-xing-planet-apg-release-deployment-test-scope-20260828-dbc115d1dc6e.json",".governance/receipts/20260828T235120.340474Z-plan-change-zhi-xing-planet-apg-deployment-preview-gates-20260828-f6af759f9fe3.json",".governance/receipts/p3e-apply-manifest.json",".governance/receipts/p3e-apply-receipt.json",".governance/receipts/p3e-apply-result.json","AGENTS.md","ARCHITECTURE.md","QUALITY_GATES.md","services/domain/Cargo.toml"],"lifecycle":"unknown","operational_dependencies":[],"owners":[],"project_id":"儿童知行星球","project_types":["api/backend"],"public_surfaces":["api"],"release_model":"unknown","root":".","test_burden":"unknown","user_exposure":"unknown"},"read_only_proof":{"changed_paths":[],"content_hash_limit_bytes":8388608,"mode":"bounded-content-and-subtree-metadata","passed":true,"pruned_directory_names":[".cache",".douyin-candidate-cache",".git",".gradle",".local-models",".media-cache",".mypy_cache",".pytest_cache",".resolver-research",".ruff_cache",".sheen-ai-data",".tmp",".tox",".venv",".voice-cache","DerivedData","Pods","__pycache__","backups","build","cache","checkpoints","coverage","dist","models","node_modules","out","target","target-*","third_party","tmp","vendor","venv","weights"],"stable_pruned_directory_names":[".git"]},"required_documents":["AGENTS.md","PROJECT_BRIEF.md","ARCHITECTURE.md","QUALITY_GATES.md","docs/decisions/"],"truncated":false},"policy_digest":"","schema_version":"1.0","target_fingerprint":"5c03b430d0d6817b69967b8249d469d381b1833ba02394b9d5a1eee7c6f06a5a","timestamp_utc":"2026-08-28T23:59:35.795716Z"}
+```
+
+### CHECK
+Command: `python -m project_governance check . --phase full --json`
+Exit status: `0`
+Literal output/result:
+```text
+{"actor":"controller","approvals":[],"authorized_scope":[".governance/receipts"],"checks":[],"classification":"check","command":"check","evidence_refs":[],"findings":[],"inputs":{"phase":"full"},"outputs":{"exit_code":0,"gate_execution_evidence":{"entries":[],"entry_count":0,"performed":false,"phase":"full","policy_sha256":"93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7","schema_version":"1.0","selection_mode":"phase"}},"policy_digest":"93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7","schema_version":"1.0","target_fingerprint":"5c03b430d0d6817b69967b8249d469d381b1833ba02394b9d5a1eee7c6f06a5a","timestamp_utc":"2026-08-28T23:59:36.123352Z"}
+```
+
+## Restored behavior/status
+- Disposable rollback target matched the pre-state (`before\n`) after running the executable rollback script.
+- `MODIFIED_FILE` remains changed and retains the fixture marker; the original `PROJECT_BRIEF.md` remains unchanged.
+- Complete local evidence produced `ready-for-preview`; missing approval produced `BLOCK` with `missing_release_approval`.
+- Unit tests, doctor, audit, and full check all exited `0`; audit remains a read-only warning for unknown legacy profile fields and doctor reports only the known generated-files warning for `.governance/progress`.

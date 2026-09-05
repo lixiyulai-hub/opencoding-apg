@@ -1,0 +1,100 @@
+# APG GitHub Publication Verification
+
+Remote publication completed for APG validation evidence only. No child product release, deployment, pilot, provider, credential, real-data, or runtime action occurred.
+
+## Branch/fields
+- Branch: `apg-github-evidence-published`
+- `.governance/progress/active.json.current_stage`: `apg-github-evidence-published`
+- `.governance/progress/active.json.target_delivery_phase`: `apg-test-passed-github-evidence-published`
+- Total source-bound progress: `100/100`
+
+## Local transaction paths and hashes
+- `E:\儿童知行星球\docs\apg\APG_GITHUB_UPDATE.md` SHA256 `d5d29bc947058640d1fceb0c79c865a8b148e09c9c3602e327107370da9de786`
+- `E:\儿童知行星球\artifacts\apg-github-publication\REMOTE_UPDATE.json` SHA256 `18780cf632e612c269fd4bc4966bc7a2f94cb5ea0ec3b91c1884aed3a533b52b`
+- `E:\儿童知行星球\.governance\progress\active.json` SHA256 `7c397cdefc2e88b643072362d16c67fdd5175ed150ee3655fd41c5a249dc664e`
+- Plan-change receipt: `.governance/receipts/20260830T184140.958863Z-plan-change-zhi-xing-planet-apg-github-evidence-publish-20260831-*.json`
+- Remote commit: `cb24225a799c359ddf1a3f947b9be1da3f847ec0` (parent `320b79aff044a691f38d97421aa1fa9024237573`).
+
+## Exact commands, literal outputs/results and exit statuses
+### UNIT TESTS
+Command: `python -X utf8 -m unittest discover -s tests -p 'test_*.py'`
+Exit status: `0`
+Literal output/result:
+```text
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.946s
+
+OK
+```
+
+### DOCTOR
+Command: `python -m project_governance doctor . --json`
+Exit status: `0`
+Literal output/result:
+```text
+{"actor":"controller","approvals":[],"authorized_scope":["."],"checks":[],"classification":"pass","command":"doctor","evidence_refs":[],"findings":[],"inputs":{},"outputs":{"checks":[{"id":"root-containment","message":"target root is contained","status":"pass"},{"id":"schema-support-project","message":"schema is supported","status":"pass"},{"id":"schema-support-policy","message":"schema is supported","status":"pass"},{"id":"policy-profile-coherence","message":"policy and profile are coherent","status":"pass"},{"id":"quality-gates","message":"quality gates match the governance level","status":"pass"},{"id":"adapter-drift","message":"managed adapters are current","status":"pass"},{"id":"missing-tools","message":"configured tools are available","status":"pass"},{"id":"baseline","message":"baseline is current","status":"pass"},{"id":"receipts","message":"receipts are canonical and retained (17 records)","status":"pass"},{"id":"current-state","message":"optional current-state projection is absent","status":"pass"},{"id":"regression-ledger","message":"regression ledger is canonical (0 records)","status":"pass"},{"id":"interrupted-recovery","message":"no interrupted transaction evidence","status":"pass"},{"id":"generated-files","message":"unexpected generated files: .governance/progress","status":"warn","suggestion":"remove or approve generated files"},{"id":"conditional-documents","message":"conditional documents match policy","status":"pass"}],"read_only_proof":{"changed_paths":[],"passed":true},"receipt_state":{"current_state":{"file_count":0,"latest_receipt_ref":".governance/receipts/20260830T184140.958863Z-plan-change-zhi-xing-planet-apg-github-evidence-publish-20260831-f47b7a6f2fa7.json","matched_files":0,"source_digest_match":false,"source_receipt":"","status":"absent"},"latest_receipt_ref":".governance/receipts/20260830T184140.958863Z-plan-change-zhi-xing-planet-apg-github-evidence-publish-20260831-f47b7a6f2fa7.json","oldest_receipt_ref":".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json","receipt_canonical":17,"receipt_invalid":0,"receipt_total":17}},"policy_digest":"93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7","schema_version":"1.0","target_fingerprint":"b8bdd1331b37380291582136f6d52639cb71d383fb8fb50c56455e5a5190b309","timestamp_utc":"2026-08-30T18:52:25.438506Z"}
+```
+
+### AUDIT
+Command: `python -m project_governance audit . --json`
+Exit status: `0`
+Literal output/result:
+```text
+{"actor":"controller","approvals":[],"authorized_scope":["."],"checks":[{"duration_ms":0,"evidence_refs":[".governance/baseline.json",".governance/changes/adaptive-project-governance-fix-codex-adapter-drift-20260829.json",".governance/changes/zhi-xing-planet-apg-deployment-preview-gates-20260828.json",".governance/changes/zhi-xing-planet-apg-final-validation-result-20260831.json",".governance/changes/zhi-xing-planet-apg-github-evidence-publish-20260831.json",".governance/changes/zhi-xing-planet-apg-github-publish-preparation-20260831.json",".governance/changes/zhi-xing-planet-apg-independent-review-20260830.json",".governance/changes/zhi-xing-planet-apg-release-approval-simulation-20260830.json",".governance/changes/zhi-xing-planet-apg-release-deployment-test-scope-20260828.json",".governance/changes/zhi-xing-planet-delivery-preparation-boundary-audit-20260828.json",".governance/changes/zhi-xing-planet-governance-consistency-repair-20260829.json",".governance/changes/zhi-xing-planet-integration-readiness-prep-20260828.json",".governance/changes/zhi-xing-planet-mvp-foundation-implementation-20260828.json",".governance/changes/zhi-xing-planet-mvp-verification-gates-20260828.json",".governance/policy.toml",".governance/progress/active.json",".governance/project.toml",".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json",".governance/receipts/20260828T155650.058735Z-plan-change-adaptive-project-governance-fix-codex-adapter-drift-20260829-54483d8e7074.json",".governance/receipts/20260828T215649.196289Z-plan-change-zhi-xing-planet-governance-consistency-repair-20260829-6b6f87d1ded9.json",".governance/receipts/20260828T231411.115045Z-plan-change-zhi-xing-planet-mvp-foundation-implementation-20260828-b06121b12297.json",".governance/receipts/20260828T232408.795599Z-plan-change-zhi-xing-planet-mvp-verification-gates-20260828-cf0d94f0dae6.json",".governance/receipts/20260828T232746.817385Z-plan-change-zhi-xing-planet-delivery-preparation-boundary-audit-20260828-da1299132e92.json",".governance/receipts/20260828T233212.715492Z-plan-change-zhi-xing-planet-integration-readiness-prep-20260828-9d8620abc590.json",".governance/receipts/20260828T234726.742948Z-plan-change-zhi-xing-planet-apg-release-deployment-test-scope-20260828-dbc115d1dc6e.json",".governance/receipts/20260828T235120.340474Z-plan-change-zhi-xing-planet-apg-deployment-preview-gates-20260828-f6af759f9fe3.json",".governance/receipts/20260830T142700.708949Z-plan-change-zhi-xing-planet-apg-independent-review-20260830-4a59de370534.json",".governance/receipts/20260830T150123.662701Z-plan-change-zhi-xing-planet-apg-release-approval-simulation-20260830-da7282be1d78.json",".governance/receipts/20260830T164725.980684Z-plan-change-zhi-xing-planet-apg-final-validation-result-20260831-138d9c5464f1.json",".governance/receipts/20260830T181925.737020Z-plan-change-zhi-xing-planet-apg-github-publish-preparation-20260831-f5ef613872b3.json",".governance/receipts/20260830T184140.958863Z-plan-change-zhi-xing-planet-apg-github-evidence-publish-20260831-f47b7a6f2fa7.json",".governance/receipts/p3e-apply-manifest.json",".governance/receipts/p3e-apply-receipt.json",".governance/receipts/p3e-apply-result.json","AGENTS.md","ARCHITECTURE.md","QUALITY_GATES.md","services/domain/Cargo.toml"],"gate_id":"audit.discovery","message":"[REDACTED]","phase":"audit","status":"warn"},{"duration_ms":0,"evidence_refs":[],"gate_id":"audit.read-only","message":"[REDACTED]","phase":"audit","status":"pass"}],"classification":"warn","command":"audit","evidence_refs":[".governance/baseline.json",".governance/changes/adaptive-project-governance-fix-codex-adapter-drift-20260829.json",".governance/changes/zhi-xing-planet-apg-deployment-preview-gates-20260828.json",".governance/changes/zhi-xing-planet-apg-final-validation-result-20260831.json",".governance/changes/zhi-xing-planet-apg-github-evidence-publish-20260831.json",".governance/changes/zhi-xing-planet-apg-github-publish-preparation-20260831.json",".governance/changes/zhi-xing-planet-apg-independent-review-20260830.json",".governance/changes/zhi-xing-planet-apg-release-approval-simulation-20260830.json",".governance/changes/zhi-xing-planet-apg-release-deployment-test-scope-20260828.json",".governance/changes/zhi-xing-planet-delivery-preparation-boundary-audit-20260828.json",".governance/changes/zhi-xing-planet-governance-consistency-repair-20260829.json",".governance/changes/zhi-xing-planet-integration-readiness-prep-20260828.json",".governance/changes/zhi-xing-planet-mvp-foundation-implementation-20260828.json",".governance/changes/zhi-xing-planet-mvp-verification-gates-20260828.json",".governance/policy.toml",".governance/progress/active.json",".governance/project.toml",".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json",".governance/receipts/20260828T155650.058735Z-plan-change-adaptive-project-governance-fix-codex-adapter-drift-20260829-54483d8e7074.json",".governance/receipts/20260828T215649.196289Z-plan-change-zhi-xing-planet-governance-consistency-repair-20260829-6b6f87d1ded9.json",".governance/receipts/20260828T231411.115045Z-plan-change-zhi-xing-planet-mvp-foundation-implementation-20260828-b06121b12297.json",".governance/receipts/20260828T232408.795599Z-plan-change-zhi-xing-planet-mvp-verification-gates-20260828-cf0d94f0dae6.json",".governance/receipts/20260828T232746.817385Z-plan-change-zhi-xing-planet-delivery-preparation-boundary-audit-20260828-da1299132e92.json",".governance/receipts/20260828T233212.715492Z-plan-change-zhi-xing-planet-integration-readiness-prep-20260828-9d8620abc590.json",".governance/receipts/20260828T234726.742948Z-plan-change-zhi-xing-planet-apg-release-deployment-test-scope-20260828-dbc115d1dc6e.json",".governance/receipts/20260828T235120.340474Z-plan-change-zhi-xing-planet-apg-deployment-preview-gates-20260828-f6af759f9fe3.json",".governance/receipts/20260830T142700.708949Z-plan-change-zhi-xing-planet-apg-independent-review-20260830-4a59de370534.json",".governance/receipts/20260830T150123.662701Z-plan-change-zhi-xing-planet-apg-release-approval-simulation-20260830-da7282be1d78.json",".governance/receipts/20260830T164725.980684Z-plan-change-zhi-xing-planet-apg-final-validation-result-20260831-138d9c5464f1.json",".governance/receipts/20260830T181925.737020Z-plan-change-zhi-xing-planet-apg-github-publish-preparation-20260831-f5ef613872b3.json",".governance/receipts/20260830T184140.958863Z-plan-change-zhi-xing-planet-apg-github-evidence-publish-20260831-f47b7a6f2fa7.json",".governance/receipts/p3e-apply-manifest.json",".governance/receipts/p3e-apply-receipt.json",".governance/receipts/p3e-apply-result.json","AGENTS.md","ARCHITECTURE.md","QUALITY_GATES.md","services/domain/Cargo.toml"],"findings":[{"baselinable":true,"category":"profile","confidence":"high","evidence_refs":[],"message":"[REDACTED]","path":".","rule_id":"evidence.data-risk","severity":"warning"}],"inputs":{"environment_summary":{"platform":"win32","python":"3.11.7"},"target":"."},"outputs":{"changed_paths":[],"commands":[],"level":"G2","level_reasons":["evidence:meaningful-contract-or-dependency"],"level_warnings":["unknown:data_risk","unknown:release_model","unknown:test_burden","unknown:user_exposure"],"profile":{"data_risk":"unknown","evidence_refs":[".governance/baseline.json",".governance/changes/adaptive-project-governance-fix-codex-adapter-drift-20260829.json",".governance/changes/zhi-xing-planet-apg-deployment-preview-gates-20260828.json",".governance/changes/zhi-xing-planet-apg-final-validation-result-20260831.json",".governance/changes/zhi-xing-planet-apg-github-evidence-publish-20260831.json",".governance/changes/zhi-xing-planet-apg-github-publish-preparation-20260831.json",".governance/changes/zhi-xing-planet-apg-independent-review-20260830.json",".governance/changes/zhi-xing-planet-apg-release-approval-simulation-20260830.json",".governance/changes/zhi-xing-planet-apg-release-deployment-test-scope-20260828.json",".governance/changes/zhi-xing-planet-delivery-preparation-boundary-audit-20260828.json",".governance/changes/zhi-xing-planet-governance-consistency-repair-20260829.json",".governance/changes/zhi-xing-planet-integration-readiness-prep-20260828.json",".governance/changes/zhi-xing-planet-mvp-foundation-implementation-20260828.json",".governance/changes/zhi-xing-planet-mvp-verification-gates-20260828.json",".governance/policy.toml",".governance/progress/active.json",".governance/project.toml",".governance/receipts/20260828T152204.099861Z-init-d1c4191779fe.json",".governance/receipts/20260828T155650.058735Z-plan-change-adaptive-project-governance-fix-codex-adapter-drift-20260829-54483d8e7074.json",".governance/receipts/20260828T215649.196289Z-plan-change-zhi-xing-planet-governance-consistency-repair-20260829-6b6f87d1ded9.json",".governance/receipts/20260828T231411.115045Z-plan-change-zhi-xing-planet-mvp-foundation-implementation-20260828-b06121b12297.json",".governance/receipts/20260828T232408.795599Z-plan-change-zhi-xing-planet-mvp-verification-gates-20260828-cf0d94f0dae6.json",".governance/receipts/20260828T232746.817385Z-plan-change-zhi-xing-planet-delivery-preparation-boundary-audit-20260828-da1299132e92.json",".governance/receipts/20260828T233212.715492Z-plan-change-zhi-xing-planet-integration-readiness-prep-20260828-9d8620abc590.json",".governance/receipts/20260828T234726.742948Z-plan-change-zhi-xing-planet-apg-release-deployment-test-scope-20260828-dbc115d1dc6e.json",".governance/receipts/20260828T235120.340474Z-plan-change-zhi-xing-planet-apg-deployment-preview-gates-20260828-f6af759f9fe3.json",".governance/receipts/20260830T142700.708949Z-plan-change-zhi-xing-planet-apg-independent-review-20260830-4a59de370534.json",".governance/receipts/20260830T150123.662701Z-plan-change-zhi-xing-planet-apg-release-approval-simulation-20260830-da7282be1d78.json",".governance/receipts/20260830T164725.980684Z-plan-change-zhi-xing-planet-apg-final-validation-result-20260831-138d9c5464f1.json",".governance/receipts/20260830T181925.737020Z-plan-change-zhi-xing-planet-apg-github-publish-preparation-20260831-f5ef613872b3.json",".governance/receipts/20260830T184140.958863Z-plan-change-zhi-xing-planet-apg-github-evidence-publish-20260831-f47b7a6f2fa7.json",".governance/receipts/p3e-apply-manifest.json",".governance/receipts/p3e-apply-receipt.json",".governance/receipts/p3e-apply-result.json","AGENTS.md","ARCHITECTURE.md","QUALITY_GATES.md","services/domain/Cargo.toml"],"lifecycle":"unknown","operational_dependencies":[],"owners":[],"project_id":"儿童知行星球","project_types":["api/backend"],"public_surfaces":["api"],"release_model":"unknown","root":".","test_burden":"unknown","user_exposure":"unknown"},"read_only_proof":{"changed_paths":[],"content_hash_limit_bytes":8388608,"mode":"bounded-content-and-subtree-metadata","passed":true,"pruned_directory_names":[".cache",".douyin-candidate-cache",".git",".gradle",".local-models",".media-cache",".mypy_cache",".pytest_cache",".resolver-research",".ruff_cache",".sheen-ai-data",".tmp",".tox",".venv",".voice-cache","DerivedData","Pods","__pycache__","backups","build","cache","checkpoints","coverage","dist","models","node_modules","out","target","target-*","third_party","tmp","vendor","venv","weights"],"stable_pruned_directory_names":[".git"]},"required_documents":["AGENTS.md","PROJECT_BRIEF.md","ARCHITECTURE.md","QUALITY_GATES.md","docs/decisions/"],"truncated":false},"policy_digest":"","schema_version":"1.0","target_fingerprint":"b8bdd1331b37380291582136f6d52639cb71d383fb8fb50c56455e5a5190b309","timestamp_utc":"2026-08-30T18:52:25.752496Z"}
+```
+
+### CHECK
+Command: `python -m project_governance check . --phase full --json`
+Exit status: `0`
+Literal output/result:
+```text
+{"actor":"controller","approvals":[],"authorized_scope":[".governance/receipts"],"checks":[],"classification":"check","command":"check","evidence_refs":[],"findings":[],"inputs":{"phase":"full"},"outputs":{"exit_code":0,"gate_execution_evidence":{"entries":[],"entry_count":0,"performed":false,"phase":"full","policy_sha256":"93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7","schema_version":"1.0","selection_mode":"phase"}},"policy_digest":"93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7","schema_version":"1.0","target_fingerprint":"b8bdd1331b37380291582136f6d52639cb71d383fb8fb50c56455e5a5190b309","timestamp_utc":"2026-08-30T18:52:26.192648Z"}
+```
+
+### REMOTE HEAD
+Command: `gh api repos/lixiyulai-hub/adaptive-project-governance/git/ref/heads/main --jq .object.sha`
+Exit status: `0`
+Literal output/result:
+```text
+cb24225a799c359ddf1a3f947b9be1da3f847ec0
+```
+
+### REMOTE COMMIT
+Command: `gh api repos/lixiyulai-hub/adaptive-project-governance/commits/cb24225a799c359ddf1a3f947b9be1da3f847ec0 --jq {sha:.sha,message:.commit.message,parents:[.parents[].sha],tree:.commit.tree.sha}`
+Exit status: `0`
+Literal output/result:
+```text
+{"message":"docs: publish APG project validation result","parents":["320b79aff044a691f38d97421aa1fa9024237573"],"sha":"cb24225a799c359ddf1a3f947b9be1da3f847ec0","tree":"67287dabcfec5d631643db3bb4e1a996addd0c25"}
+```
+
+### REMOTE MARKDOWN
+Command: `gh api repos/lixiyulai-hub/adaptive-project-governance/contents/docs/validation/APG_PROJECT_VALIDATION_20260831.md?ref=main --jq {path:.path,sha:.sha,size:.size}`
+Exit status: `0`
+Literal output/result:
+```text
+{"path":"docs/validation/APG_PROJECT_VALIDATION_20260831.md","sha":"9321b37139751c9852d945d18f37010b8009bc0a","size":1570}
+```
+
+### REMOTE JSON
+Command: `gh api repos/lixiyulai-hub/adaptive-project-governance/contents/docs/validation/APG_PROJECT_VALIDATION_20260831.json?ref=main --jq {path:.path,sha:.sha,size:.size}`
+Exit status: `0`
+Literal output/result:
+```text
+{"path":"docs/validation/APG_PROJECT_VALIDATION_20260831.json","sha":"336df513565f094ea272f1b00527e2c3d688c94d","size":1226}
+```
+
+### GIT PUSH NOTE
+Command: `git push origin main (clone working copy)`
+Exit status: `128`
+Literal output/result:
+```text
+Exit 128: HTTPS connection to github.com failed twice; repository update was completed via GitHub Git Database API using the same authorized scope.
+```
+
+## Restored behavior/status
+- Remote `main` now points to `cb24225a799c359ddf1a3f947b9be1da3f847ec0`.
+- Only two APG validation evidence files were published. No tag or GitHub Release was created.
+- Local tests, Doctor, Audit, and Full check completed with exit status `0`.
+- GitHub publication was performed through the Git Database API after `git push` HTTPS connectivity failed; the remote commit and file SHAs were verified afterward.
+- The APG test result remains `PASS`; this is not a child-learning product release.

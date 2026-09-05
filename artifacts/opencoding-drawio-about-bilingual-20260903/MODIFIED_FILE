@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "repository": "lixiyulai-hub/opencoding-apg",
+  "branch": "main",
+  "remote_head_before": "f0be5ebb3988d9ce20a5d81f9242d41992b8a00f",
+  "remote_head_after": "f416a97ec5d3b032f0b0ca8ad6cc2c5100cab624",
+  "commit": "f416a97ec5d3b032f0b0ca8ad6cc2c5100cab624",
+  "changed_paths": [
+    "README.md",
+    "README_CN.md",
+    "docs/diagrams/OpenCoding_INTRO.drawio",
+    "docs/diagrams/OpenCoding_INTRO.svg"
+  ],
+  "drawio_skill_source": "Agents365-ai/drawio-skill 3.2.0 temporary checkout at .tmp/drawio-skill",
+  "drawio_validation": "0 errors, 0 warnings; score 0 crossings, 0 overlaps",
+  "drawio_review": "PASS",
+  "github_about_before": "OpenCoding 帮助不会写代码、刚开始学 AI coding 的人，把一个模糊想法整理成清楚、可执行、可验证的项目计划。。 Chinese-first, beginner-friendly idea-to-result governance.",
+  "github_about_after": "中文优先的 AI coding 项目治理助手，帮助小白把想法变成清楚、可执行、可验证的计划。 / A Chinese-first guide that helps beginners turn ideas into clear, checkable AI coding plans.",
+  "tests": "42 tests OK",
+  "release_count": 2,
+  "new_release_created": false,
+  "rollback_test": "PASS"
+}

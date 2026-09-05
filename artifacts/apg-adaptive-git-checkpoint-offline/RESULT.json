@@ -1,0 +1,37 @@
+{
+  "change_id": "apg-adaptive-git-checkpoint-offline-20260902",
+  "checkpoint_stages": [
+    "intake-ready",
+    "plan-ready",
+    "implementation-slice",
+    "validation-passed",
+    "release-candidate"
+  ],
+  "external_actions_executed": false,
+  "git_action": "PREVIEW_ONLY",
+  "path_sha256": {
+    "artifacts/apg-adaptive-git-checkpoint-offline/DIFF_FILE": "d3e8edb86dfc5d774f33c5bf79322781a6dc246f634574938f58a17e6b4c47a0",
+    "artifacts/apg-adaptive-git-checkpoint-offline/MODIFIED_FILE": "642fd6dd2cf1737d86454258b45ff5e411c37dc9efcfd9eee64db194557b6547",
+    "artifacts/apg-adaptive-git-checkpoint-offline/RESULT.json": "self-excluded",
+    "artifacts/apg-adaptive-git-checkpoint-offline/ROLLBACK.sh": "dc6f4daeeda14c7b305e5c2faf5fee87c361b6bef40fee4413c6fe5eb97cf973",
+    "artifacts/apg-adaptive-git-checkpoint-offline/VERIFICATION.txt": "076ecad28cfc1bdcbdf266f5a4ed0ddaa66073cf212d043504bd27e0906f29dc",
+    "docs/apg/APG_ADAPTIVE_GIT_CHECKPOINT_CONTRACT.md": "7e3c27e15728ecd0120fb5c09ba01162f0df7105b5686379f3be3a3a2b1ac4e2",
+    "docs/apg/APG_GIT_CHECKPOINT_POLICY.md": "339fcabee1a8219930675add1223a78bc203bbb73dc3e76607658bdcf5a8dbe4",
+    "scripts/apg_adaptive_git_preview.py": "05d36094aea5d5f91acf8b34003532ba2261e3898dd12f001ad88ae386c2eb20",
+    "scripts/apg_independent_review.py": "b4dfa675c6662e9a1b2da7a17e3bb8a4c3ed40d5722cb0edd0d6b5e471507976",
+    "tests/test_apg_adaptive_git.py": "636250820ed42bc98caafba80954fca2db806fed76d6398af20b71ad8c737927",
+    "tests/test_apg_independent_review.py": "c8c88e1ccc1be9ca5ddd3798c27ea5782c945129eea60f782d357af6eb38e86b"
+  },
+  "product_delivery": false,
+  "schema_version": "1.0",
+  "scope": "APG-only active adaptive Git checkpoint and revert advisor",
+  "validation": {
+    "baseline_tests": 26,
+    "modified_exit_status": 1,
+    "modified_tests": 31,
+    "rollback": {
+      "exit_status": 0,
+      "result": "rollback-restored"
+    }
+  }
+}

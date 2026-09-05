@@ -1,0 +1,114 @@
+diff --git a/README.md b/README.md
+index b033801..ca3a4eb 100644
+--- a/README.md
++++ b/README.md
+@@ -1,21 +1,41 @@
+-﻿# OpenCoding (APG)
+-
+-OpenCoding 是正式品牌；`adaptive-project-governance` 与 `APG` 保留为兼容技术标识。
+-
+-Turn one idea into an automatically advancing, verifiable project plan.
+-
+-OpenCoding is a beginner-friendly, idea-to-result coordinator for AI coding. It clarifies natural-language requests, creates project Markdown knowledge packs, orchestrates tasks, and preserves evidence, Gates, and rollback.
+-
+-## Flow
+-
+-Idea -> Grill Me -> Markdown knowledge pack -> Task graph -> Offline adapter -> Validate / report
+-
+-![APG governance flow](docs/diagrams/APG_GITHUB_INTRO.svg)
+-
+-- Editable draw.io source: docs/diagrams/APG_GITHUB_INTRO.drawio
+-- Chinese overview: README_CN.md
+-- Validation summary: docs/validation/APG_PROJECT_VALIDATION_20260902.md
+-
+-The published files document OpenCoding/APG governance and validation fixtures only. They do not claim publication of the downstream child product.
+-
+-Grill Me attribution: https://github.com/mattpocock/skills
++# OpenCoding（APG）
++
++## 中文介绍
++
++OpenCoding 帮助不会写代码、刚开始学 AI coding 的人，把一个模糊想法整理成清楚、可执行、可验证的项目计划。
++
++你可以用自然语言描述想法，OpenCoding 会帮助你：
++
++- 通过 Grill Me 追问关键需求，减少遗漏和反复修改；
++- 自动整理项目说明、知识包、任务清单和任务顺序；
++- 把大目标拆成小步骤，明确每一步要做什么、如何检查；
++- 先用离线流程演练，再生成验证结果、证据和回滚方案；
++- 在涉及密钥、金钱、网络、部署或发布时停在人工确认点。
++
++一句话：**让小白也能把一个想法，变成一套清楚、稳妥、能检查的 AI coding 项目计划。**
++
++本仓库是 APG-only 治理与验证夹具，不实现儿童知行星球下游产品。
++
++## English
++
++OpenCoding helps people who do not know how to code yet, or are new to AI coding, turn a rough idea into a clear, executable, and verifiable project plan.
++
++With a natural-language idea, OpenCoding can:
++
++- ask focused questions through Grill Me to clarify requirements;
++- organize project notes, knowledge packs, tasks, and task order;
++- break a large goal into small steps with checks for each step;
++- rehearse the workflow offline before producing evidence and rollback steps;
++- stop for human confirmation before secrets, money, network, deployment, or release actions.
++
++In one sentence: **OpenCoding helps beginners turn an idea into a clear, controlled, and checkable AI coding plan.**
++
++This repository is an APG-only governance and validation fixture. It does not implement the downstream child product.
++
++## 名称与兼容标识 / Names and compatibility
++
++- 正式品牌 / Brand: OpenCoding
++- GitHub 仓库 / Repository: `lixiyulai-hub/opencoding-apg`
++- 技术兼容别名 / Technical aliases: `adaptive-project-governance`, `Adaptive Project Governance`, `APG`
++
++历史脚本、测试、ledger、receipts、snapshots 和 change IDs 保持原名，以保证可重放和证据链连续。
+diff --git a/README_CN.md b/README_CN.md
+index b8445e7..35a96ae 100644
+--- a/README_CN.md
++++ b/README_CN.md
+@@ -1,27 +1,15 @@
+-# OpenCoding（APG）：让小白轻松面对 AI Coding
+-
+-正式品牌：OpenCoding。`adaptive-project-governance` 与 `APG` 保留为兼容技术标识。
+-
+-把一句想法，变成一套能自动推进的项目计划。
+-
+-OpenCoding 面向普通用户和 AI coding 初学者：用中文说出想做什么，Grill Me 会追问关键问题，OpenCoding 自动整理需求、任务、验证、证据和回滚。
+-
+-## 核心体验
+-
+-- 自然语言澄清：解释为什么提问，不要求先懂项目管理。
+-- Markdown 知识包：生成项目专属目标、需求、架构、任务、质量和回滚文档。
+-- 自动编排：例行工作自动推进；Git、网络、凭据、部署、公开发布和不可逆动作保留一次 consequential Gate。
+-
+-## 可视化流程
+-
+-![APG idea-to-result flow](docs/diagrams/APG_GITHUB_INTRO.svg)
+-
+-中文想法 → Grill Me → Markdown 知识包 → 任务图 → 离线 Adapter → 验证/报告
+-
+-- 可编辑图稿：docs/diagrams/APG_GITHUB_INTRO.drawio
+-- 验证摘要：docs/validation/APG_PROJECT_VALIDATION_20260902.md
+-- 上游归属：docs/attribution/GRILL_ME_UPSTREAM.md
+-
+-## 验证边界
+-
+-本仓库内容用于验证 OpenCoding/APG 的治理、Gate、证据、回滚和发布编排能力，不代表儿童知行星球下游产品已经实现、部署或上线。
++# OpenCoding（APG）中文介绍
++
++OpenCoding 帮助不会写代码、刚开始学习 AI coding 的人，把一个模糊想法变成清楚、可执行、可验证的项目计划。
++
++它可以帮助你：
++
++- 用 Grill Me 追问关键需求，减少遗漏；
++- 自动整理项目说明、知识包、任务清单和执行顺序；
++- 把大目标拆成容易理解的小步骤；
++- 为每一步准备检查、证据和回滚方案；
++- 在密钥、金钱、网络、部署或发布之前停下来确认。
++
++一句话：**让小白也能有条理地开始 AI coding 项目。**
++
++本仓库用于验证 OpenCoding/APG 的治理流程，不代表儿童知行星球下游产品已经实现或上线。

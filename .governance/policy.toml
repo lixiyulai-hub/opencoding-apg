@@ -1,0 +1,8 @@
+schema_version = "1.0"
+policy_version = "0.1.0"
+level = "G1"
+reasons = ["default:isolated-project"]
+required_documents = ["AGENTS.md", "PROJECT_BRIEF.md", "ARCHITECTURE.md", "QUALITY_GATES.md", "docs/decisions/"]
+adapters = ["codex"]
+non_baselinable_rules = ["scope-violation", "missing-evidence"]
+gates = []

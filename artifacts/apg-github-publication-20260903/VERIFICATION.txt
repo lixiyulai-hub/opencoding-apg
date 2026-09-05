@@ -1,0 +1,59 @@
+APG GitHub publication verification
+change_id=apg-github-publication-20260903
+repository=lixiyulai-hub/adaptive-project-governance
+branch=main
+gate=Gate-G1 confirmed
+release_created=false
+
+REMOTE
+before_head=6243ae942ca61facb17ce34f79e626aaa8cbdeb0
+after_head=f232458d3f5e3f8f627cfaa7cc9adbcdd33350c1
+remote_commit_message=publish APG public preview files
+
+PUBLISHED_PATHS
+README.md
+README_CN.md
+docs/validation/APG_PROJECT_VALIDATION_20260902.md
+docs/attribution/GRILL_ME_UPSTREAM.md
+docs/diagrams/APG_GITHUB_INTRO.drawio
+docs/diagrams/APG_GITHUB_INTRO.svg
+
+BASELINE
+command=python -X utf8 -m unittest discover -s tests -p test_*.py
+literal_output=.......................................... / Ran 42 tests / OK
+exit_status=0
+
+PUSH_ATTEMPT
+command=git push -u origin main
+literal_output=fatal: unable to access GitHub: Recv failure: Connection was reset
+exit_status=128
+
+FALLBACK_PUBLICATION
+command=python -X utf8 .tmp/github_api_publish.py
+literal_output=single Git Data API commit created and main ref updated to f232458d3f5e3f8f627cfaa7cc9adbcdd33350c1
+exit_status=0
+
+REMOTE_VERIFY
+command=gh api repos/lixiyulai-hub/adaptive-project-governance/git/ref/heads/main
+literal_output=main=f232458d3f5e3f8f627cfaa7cc9adbcdd33350c1; six paths present in tree; no new Release
+exit_status=0
+
+ROLLBACK
+command=sh artifacts/apg-github-publication-20260903/ROLLBACK.sh <disposable-clone> 6243ae942ca61facb17ce34f79e626aaa8cbdeb0
+literal_output=rollback-restored; disposable clone reset to preimage; remote main unchanged
+exit_status=0
+restored_behavior=status clean at preimage in disposable clone; source worktree and receipts preserved
+
+EXTERNAL_ACTIONS
+clone=true; git_commit_local=true; git_push=false; github_api_commit=true; release=false; network=true; provider=true; host=false; runtime=false; deployment=false
+
+ARTIFACTS
+RESULT.json, MODIFIED_FILE, DIFF_FILE, VERIFICATION.txt, ROLLBACK.sh
+
+PATH_SHA256
+artifacts/apg-github-publication-20260903/RESULT.json=e754bb7514e4d18ac2860e779c086f76aa2c9143e16e726d47b5428cf03ddf2d
+artifacts/apg-github-publication-20260903/MODIFIED_FILE=49161e1039ba9c2a4d1033447cc5bf1598d87c2ffde0825e25dcf65d3ed5b00a
+artifacts/apg-github-publication-20260903/DIFF_FILE=e904a4d8a448b5ca9ba0fbdd569447af161ab562272811526999ac62e976ccc0
+artifacts/apg-github-publication-20260903/VERIFICATION.txt=d84a7b070356746d9716cfb6d9e67c83912c37ba8d62ad39b189da22a4436f7c
+artifacts/apg-github-publication-20260903/ROLLBACK.sh=953263b7a3995bfee464a04ce504bfa314f38850a9b0cb2526393fd32dcd203c
+plan-change-receipt=73c4cdf111f101be11e43716ce34b592d564ea4d18c771a1942e5e5270f03386

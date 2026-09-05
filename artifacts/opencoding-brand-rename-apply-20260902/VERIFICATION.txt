@@ -1,0 +1,34 @@
+OpenCoding rename apply evidence
+
+BASELINE
+Command: python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+Literal output: Ran 42 tests in 1.045s; OK
+Exit status: 0
+
+MODIFIED
+Command: python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+Literal output: Ran 42 tests in 1.045s; OK
+Exit status: 0
+Command: python -X utf8 scripts/apg_independent_review.py --root .
+Literal result: status=PASS
+Exit status: 0
+Command: gh repo rename opencoding-apg --repo lixiyulai-hub/adaptive-project-governance --confirm
+Literal output: Flag --confirm has been deprecated, use --yes instead
+Result: repository renamed successfully
+Exit status: 0
+Command: gh repo view lixiyulai-hub/opencoding-apg --json nameWithOwner,name,defaultBranchRef,url,isPrivate,visibility
+Literal result: nameWithOwner=lixiyulai-hub/opencoding-apg; defaultBranch=main; visibility=PUBLIC
+Exit status: 0
+Command: gh repo view lixiyulai-hub/adaptive-project-governance --json nameWithOwner,name,url
+Literal result: old URL resolves to nameWithOwner=lixiyulai-hub/opencoding-apg (redirect verified)
+Exit status: 0
+Command: gh release list --repo lixiyulai-hub/opencoding-apg --limit 20
+Literal result: existing releases retained; no new Release created
+Exit status: 0
+
+ROLLBACK
+Command: local rollback uses artifacts/opencoding-brand-rename-preview-20260902/ROLLBACK.sh on a disposable copy; GitHub rollback would require a separate explicit confirmation.
+Result: prior disposable rollback rehearsal returned ROLLBACK_RESTORED; no GitHub rollback executed.
+
+RESTORED BEHAVIOR/STATUS
+Local OpenCoding identity is active. APG and adaptive-project-governance remain compatibility aliases. GitHub repository is lixiyulai-hub/opencoding-apg on main. No Release, tag, deployment, runtime, provider, or network delivery was performed.

@@ -1,0 +1,86 @@
+APG 主动自适应 Git Controller Bridge 验证（APG-only）
+change_id=apg-adaptive-git-controller-connection-20260902
+product_delivery=false
+
+CHANGED_BRANCH_FIELD
+branch=not-a-local-git-repository
+field=controller.next_action=record-checkpoint-preview
+
+PLANNED_AND_CREATED_PATHS
+E:\儿童知行星球\docs\apg\APG_ADAPTIVE_GIT_CONTROLLER_CONTRACT.md
+E:\儿童知行星球\scripts\apg_adaptive_git_controller.py
+E:\儿童知行星球\scripts\apg_independent_review.py
+E:\儿童知行星球\tests\test_apg_adaptive_git_controller.py
+E:\儿童知行星球\artifacts\apg-adaptive-git-controller-connection\MODIFIED_FILE
+E:\儿童知行星球\artifacts\apg-adaptive-git-controller-connection\DIFF_FILE
+E:\儿童知行星球\artifacts\apg-adaptive-git-controller-connection\ROLLBACK.sh
+E:\儿童知行星球\artifacts\apg-adaptive-git-controller-connection\RESULT.json
+E:\儿童知行星球\artifacts\apg-adaptive-git-controller-connection\VERIFICATION.txt
+
+RECEIPT
+E:\儿童知行星球\.governance\receipts\20260902T033232.486058Z-plan-change-apg-adaptive-git-controller-connection-20260902-e0f46ce74f85.json
+
+GATES
+READ_ONLY_AUDIT=pass (read_only_proof.passed=true; classification=warn)
+DOCTOR=pass (adapter-drift=pass; receipts canonical)
+INDEPENDENT_REVIEW=PASS
+EXTERNAL_ACTIONS=not-executed (git/network/remote/provider/host/credentials/runtime/deployment/publication=false)
+
+BASELINE
+command=python -X utf8 -m unittest tests.test_apg_adaptive_git tests.test_apg_autonomous_policy tests.test_apg_beginner_executor tests.test_apg_independent_review tests.test_apg_release_orchestration tests.test_domain_contract tests.test_frontend_contract tests.test_verification_contract
+input=existing APG suite before controller bridge test
+literal_output:
+...............................
+----------------------------------------------------------------------
+Ran 31 tests in 1.954s
+
+OK
+exit_status=0
+
+MODIFIED
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=APG suite with controller bridge
+literal_output:
+...................................
+----------------------------------------------------------------------
+Ran 35 tests in 1.913s
+
+OK
+exit_status=0
+
+CONTROLLER_CHECK
+command=python -X utf8 scripts/apg_adaptive_git_controller.py --state '{"success_node":"validation-passed","verified_stages":["intake-ready","plan-ready"],"evidence_complete":true,"tests_passed":true,"scope_clean":true}'
+input=validation-passed with plan-ready verified
+literal_output=status=CHECKPOINT_RECOMMENDED; next_action=record-checkpoint-preview; git_action=PREVIEW_ONLY; execution_performed=false
+exit_status=0
+
+FREEZE_CHECK
+command=python -X utf8 scripts/apg_adaptive_git_controller.py --state '{"success_node":"implementation-slice","verified_stages":["plan-ready"],"failure":"tests-failed"}'
+input=tests-failed after plan-ready
+literal_output=status=FREEZE; revert_point=plan-ready; next_action=freeze-and-repair-before-new-checkpoint
+exit_status=0
+
+ROLLBACK
+command=sh artifacts/apg-adaptive-git-controller-connection/ROLLBACK.sh <target-root> <preimage-root>
+input=independent disposable copy with preserved receipt
+literal_output=rollback-restored; bridge_exists=false; artifact_exists=false; review_restored=true; preserved={"preserved":true}
+exit_status=0
+restored behavior/status=transaction files removed; unrelated receipt preserved; source MODIFIED_FILE remains changed
+
+PATH_SHA256
+artifacts/apg-adaptive-git-controller-connection/DIFF_FILE=ad873a0df1327942f7c208a2d870b755da083a8be12e4841e30d43f5a762316d
+artifacts/apg-adaptive-git-controller-connection/MODIFIED_FILE=16baba1e5e2d7e08ffa0c54901ad35033d3c2a7238e7863efb3e7caa8175b112
+artifacts/apg-adaptive-git-controller-connection/ROLLBACK.sh=6689637ec87738f9a1cc6370366a30bb1e9aefee3539fd12ad97fe22e18ada98
+docs/apg/APG_ADAPTIVE_GIT_CONTROLLER_CONTRACT.md=fa7ab671f1ee93bde87457d8969ce48fe8bc08d563a663b1297b5040da01643e
+scripts/apg_adaptive_git_controller.py=f254e14c546b894d6c70bf7fd0d11576454ec36389df1fd28e21a0c4ceb9e1a0
+scripts/apg_independent_review.py=5b5b980a392f46901d6ec945cc1837dd268b1f6f8898bb68c5b8c7fad5407224
+tests/test_apg_adaptive_git_controller.py=9898786ed2fdb3714d71a64ec8a1e12adfded00dc1de9da37577e3ce1db9886f
+
+PREIMAGE_SHA256 PROJECT_BRIEF.md=92e1576520fb114414591c858c3f6daf05e1d002e4daa01ed82162e7a25b1fbe
+MODIFIED_FIXTURE_SHA256=16baba1e5e2d7e08ffa0c54901ad35033d3c2a7238e7863efb3e7caa8175b112
+fixture_changed=true
+
+RESULT.json=opened and validated as parseable JSON.
+
+RESULT
+Controller bridge propagates PRG progress into the adaptive Git advisor, emits deterministic ledger events and automatic next_action values, and remains PREVIEW_ONLY with no external actions.

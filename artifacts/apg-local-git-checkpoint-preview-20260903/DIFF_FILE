@@ -1,0 +1,10 @@
+--- PROJECT_BRIEF.md
++++ artifacts\apg-local-git-checkpoint-preview-20260903\MODIFIED_FILE
+@@ -10,4 +10,7 @@
+ 
+ ## Evidence tasks
+ - Confirm users, ownership, lifecycle, and release model.
+-- Replace unknown data and exposure classifications with evidence.+- Replace unknown data and exposure classifications with evidence.
++
++APG local Git checkpoint preview fixture marker
++changed_field=git_checkpoint.transaction=PREVIEW_ONLY

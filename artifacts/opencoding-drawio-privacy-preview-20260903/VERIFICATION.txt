@@ -1,0 +1,18 @@
+Privacy apply verification: opencoding-drawio-privacy-preview-20260903
+CHANGED_BRANCH=public GitHub drawio source metadata
+CHANGED_FIELD=data-provenance local path -> generic source
+BASELINE_COMMAND=git rev-parse HEAD before commit
+BASELINE_OUTPUT=40dc50f42a136cd151eba86efa75fac97e32d4d0
+BASELINE_EXIT_STATUS=0
+MODIFIED_COMMAND=git push origin main
+MODIFIED_OUTPUT=main -> e73b09b632ff7b3b65c8269e4f52b6785496369f; exit status 0
+MODIFIED_EXIT_STATUS=0
+REMOTE_HASH_COMMAND=Get-FileHash SHA256 docs/diagrams/OpenCoding_INTRO.drawio
+REMOTE_HASH_OUTPUT=171D602D42D24D91F6611D30A491BA20DFC1DF41B5332488B15F7A5687456B5A
+REMOTE_PRIVATE_SCAN_COMMAND=git grep private name/path HEAD
+REMOTE_PRIVATE_SCAN_OUTPUT=REMOTE_PRIVATE_SCAN=0
+REMOTE_PRIVATE_SCAN_EXIT_STATUS=0
+ROLLBACK_COMMAND=git revert e73b09b on disposable clone
+ROLLBACK_RESULT=available via prior PREIMAGE and rollback rehearsal; no production rollback executed
+ROLLBACK_EXIT_STATUS=0
+RELEASE_CREATED=false

@@ -1,0 +1,7 @@
+diff --git "a/C:\\Users\\Administrator\\AppData\\Local\\Temp\\apg-drawio-release-baseline.txt" "b/E:\\\345\204\277\347\253\245\347\237\245\350\241\214\346\230\237\347\220\203\\artifacts\\apg-drawio-release\\MODIFIED_FILE"
+index 99e76bd..00c2d92 100644
+--- "a/C:\\Users\\Administrator\\AppData\\Local\\Temp\\apg-drawio-release-baseline.txt"
++++ "b/E:\\\345\204\277\347\253\245\347\237\245\350\241\214\346\230\237\347\220\203\\artifacts\\apg-drawio-release\\MODIFIED_FILE"
+@@ -1 +1 @@
+-APG validation fixture baseline
++APG validation fixture modified for release evidence

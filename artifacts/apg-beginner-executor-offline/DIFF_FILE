@@ -1,0 +1,10 @@
+APG-only change: apg-beginner-executor-offline-20260901
+AGENTS.md: regenerated only the Codex managed block; retained one unmanaged Status Snapshot section.
++ docs/apg/APG_BEGINNER_EXECUTOR_OFFLINE_CONTRACT.md
++ docs/apg/APG_GRILL_ME_UPSTREAM_ATTRIBUTION.md
++ scripts/apg_beginner_executor_preview.py
+~ scripts/apg_independent_review.py
++ tests/test_apg_beginner_executor.py
+~ tests/test_apg_independent_review.py
++ artifacts/apg-beginner-executor-offline/{RESULT.json,MODIFIED_FILE,DIFF_FILE,VERIFICATION.txt,ROLLBACK.sh}
+External actions: none.

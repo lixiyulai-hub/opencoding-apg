@@ -1,0 +1,15 @@
+repository: lixiyulai-hub/opencoding-apg
+branch: main
+commit: d6fae11f172c7c0c7c705a542229e22718438ef6
+parent: f232458d3f5e3f8f627cfaa7cc9adbcdd33350c1
+changed_paths:
+  - README.md
+  - README_CN.md
+  - docs/README.md
+  - docs/validation/APG_PROJECT_VALIDATION_20260902.md
+  - agents/openai.yaml
+  - SKILL.md
+compatibility_aliases: adaptive-project-governance, Adaptive Project Governance, APG, $adaptive-project-governance
+remote_head_verified: true
+releases_unchanged: apg-validation-20260830, v0.3.0
+push_exit_status: 0

@@ -1,0 +1,76 @@
+TRANSACTION: opencoding-drawio-local-sync-audit-20260903
+DATE: 2026-09-03
+MODE: local offline apply; preview/apply separated; no Git mutation
+changed_branch: not-a-local-git-repository
+changed_field: docs/diagrams/OpenCoding_INTRO.drawio
+
+REQUIRED ARTIFACTS (reopened):
+1. artifacts/opencoding-drawio-local-sync-audit-20260903/MODIFIED_FILE
+2. artifacts/opencoding-drawio-local-sync-audit-20260903/DIFF_FILE
+3. artifacts/opencoding-drawio-local-sync-audit-20260903/VERIFICATION.txt
+4. artifacts/opencoding-drawio-local-sync-audit-20260903/ROLLBACK.sh (executable; tested)
+
+BASELINE
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=baseline workspace before local diagram synchronization
+literal_output=..........................................
+----------------------------------------------------------------------
+Ran 42 tests in 0.944s
+
+OK
+exit_status=0
+baseline_drawio_sha256=12115168395F46FBEDA2CE508788DC59C2FA2139E05A391733A1F302D4C116FD
+
+MODIFIED
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=modified workspace with sanitized local OpenCoding diagram
+literal_output=..........................................
+----------------------------------------------------------------------
+Ran 42 tests in 0.961s
+
+OK
+exit_status=0
+modified_drawio_sha256=171D602D42D24D91F6611D30A491BA20DFC1DF41B5332488B15F7A5687456B5A
+local_target_sha256=171D602D42D24D91F6611D30A491BA20DFC1DF41B5332488B15F7A5687456B5A
+
+XML_AND_PRIVACY
+command=python -X utf8 -c "from pathlib import Path; import hashlib, xml.etree.ElementTree as ET; p=Path('docs/diagrams/OpenCoding_INTRO.drawio'); t=p.read_text(encoding='utf-8'); ET.parse(p); refs=sum(t.count(x) for x in ('儿童知行星球','E:\\儿童知行星球','E:/儿童知行星球','path\&quot;')); print('xml_parse=PASS'); print('private_ref_count='+str(refs)); print('sha256='+hashlib.sha256(p.read_bytes()).hexdigest().upper())"
+input=modified local diagram
+literal_output=xml_parse=PASS; private_ref_count=0; sha256=171D602D42D24D91F6611D30A491BA20DFC1DF41B5332488B15F7A5687456B5A
+exit_status=0
+
+INDEPENDENT_REVIEW
+command=python -X utf8 scripts/apg_independent_review.py --root .
+input=modified workspace with sanitized local OpenCoding diagram
+literal_output=status=PASS; blocker_codes=[]; external_actions_executed=false
+exit_status=0
+
+DOCTOR
+command=python -X utf8 C:\Users\Administrator\.codex\skills\adaptive-project-governance\scripts\project_governance.py doctor . --json
+input=modified workspace
+literal_output=classification=pass; adapter-drift=pass; receipts=pass (45 canonical, invalid=0); generated-files=warn (.governance/progress is retained Ledger evidence)
+exit_status=0
+
+AUDIT
+command=python -X utf8 C:\Users\Administrator\.codex\skills\adaptive-project-governance\scripts\project_governance.py audit . --json
+input=modified workspace
+literal_output=classification=warn; read_only_proof.passed=true; changed_paths=[]; finding=evidence.data-risk; profile warnings=unknown:data_risk,unknown:release_model,unknown:test_burden,unknown:user_exposure
+exit_status=0
+interpretation=non-blocking discovery warning; project.toml already records synthetic-fixture/isolated/test profile, while audit discovery does not consume those governance declarations
+
+ROLLBACK
+command=C:\Windows\System32\bash.exe -lc "'/mnt/e/儿童知行星球/artifacts/opencoding-drawio-local-sync-audit-20260903/ROLLBACK.sh' '/mnt/e/儿童知行星球/.tmp/opencoding-drawio-local-sync-rollback-20260903/OpenCoding_INTRO.drawio' '/mnt/e/儿童知行星球/artifacts/opencoding-drawio-local-sync-audit-20260903/PREIMAGE.drawio'; sha256sum '/mnt/e/儿童知行星球/.tmp/opencoding-drawio-local-sync-rollback-20260903/OpenCoding_INTRO.drawio'; echo rollback-restored"
+input=disposable rollback copy mutated to MODIFIED_FILE
+literal_output=12115168395f46fbeda2ce508788dc59c2fa2139e05a391733a1f302d4c116fd  /mnt/e/儿童知行星球/.tmp/opencoding-drawio-local-sync-rollback-20260903/OpenCoding_INTRO.drawio
+rollback-restored
+exit_status=0
+restored_behavior=rollback copy hash equals baseline 12115168395F46FBEDA2CE508788DC59C2FA2139E05A391733A1F302D4C116FD; root and MODIFIED_FILE remain changed/sanitized; receipts and unrelated files preserved
+
+SCOPE_AND_BOUNDARIES
+remote_head=e73b09b632ff7b3b65c8269e4f52b6785496369f
+remote_tree_private_scan=0
+remote_history_private_refs=present in pre-cleanup commits 40dc50f, 20ddfe3, f416a97, f0be5eb, d6fae11, f232458
+external_actions_executed=false
+GitHub_push=false
+Release_created=false
+network=false; provider=false; credentials=false; runtime=false; deployment=false

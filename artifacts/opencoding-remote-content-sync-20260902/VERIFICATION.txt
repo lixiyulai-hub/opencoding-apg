@@ -1,0 +1,23 @@
+OpenCoding remote content sync verification
+Date: 2026-09-03
+
+Changed branch/field: lixiyulai-hub/opencoding-apg main public-facing branding files.
+Paths: artifacts/opencoding-remote-content-sync-20260902/MODIFIED_FILE, DIFF_FILE, VERIFICATION.txt, ROLLBACK.sh
+
+BASELINE command: python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+BASELINE literal output: Ran 42 tests in 1.317s; OK
+BASELINE exit status: 0
+
+MODIFIED command: git -C .tmp/opencoding-apg-remote commit -m "docs: synchronize OpenCoding branding"
+MODIFIED literal result: [main d6fae11] docs: synchronize OpenCoding branding; 6 files changed, 56 insertions(+), 42 deletions(-)
+MODIFIED push command: git -C .tmp/opencoding-apg-remote push origin main
+MODIFIED literal result: f232458..d6fae11 main -> main
+MODIFIED exit status: 0
+
+REMOTE verification: git ls-remote origin refs/heads/main -> d6fae11f172c7c0c7c705a542229e22718438ef6; exit 0
+RELEASE verification: gh release list -R lixiyulai-hub/opencoding-apg -> apg-validation-20260830, v0.3.0; no new Release; exit 0
+
+ROLLBACK command: bash artifacts/opencoding-remote-content-sync-20260902/ROLLBACK.sh <disposable-copy> d6fae11f172c7c0c7c705a542229e22718438ef6
+ROLLBACK literal result: revert commit applied on disposable copy; restored HEAD f232458d3f5e3f8f627cfaa7cc9adbcdd33350c1
+ROLLBACK exit status: 0
+Restored behavior/status: disposable copy returned to pre-sync commit; published main remains d6fae11f172c7c0c7c705a542229e22718438ef6.

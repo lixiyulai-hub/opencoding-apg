@@ -1,0 +1,60 @@
+{
+  "status": "PASS",
+  "change_id": "opencoding-public-readme-project-privacy-20260902",
+  "repository": "lixiyulai-hub/opencoding-apg",
+  "branch": "main",
+  "remote_head_before": "20ddfe3cc3130648c8771549708b73432e5b9202",
+  "commit": "40dc50f42a136cd151eba86efa75fac97e32d4d0",
+  "remote_head_after": "40dc50f42a136cd151eba86efa75fac97e32d4d0",
+  "changed_paths": [
+    "README.md",
+    "README_CN.md"
+  ],
+  "commit_paths": [
+    "README.md",
+    "README_CN.md"
+  ],
+  "privacy_scan": {
+    "local_matches": 0,
+    "remote_matches": 0,
+    "removed_references": [
+      "儿童知行星球",
+      "E:\\儿童知行星球"
+    ]
+  },
+  "local_sha256": {
+    "README.md": "14c8f60ba587b0be49a0c08c0dc03a7932a82ca658e81161e4f831fe020732f7",
+    "README_CN.md": "9ad3ab9472cdbf65ddfc8c0f5d1b9b3bf1f18a1b3ea0c24a2656a56366b38d44"
+  },
+  "public_sha256": {
+    "README.md": "14c8f60ba587b0be49a0c08c0dc03a7932a82ca658e81161e4f831fe020732f7",
+    "README_CN.md": "9ad3ab9472cdbf65ddfc8c0f5d1b9b3bf1f18a1b3ea0c24a2656a56366b38d44"
+  },
+  "push": {
+    "command": "git -C .tmp/opencoding-apg-remote push origin main",
+    "literal_result": "20ddfe3..40dc50f main -> main",
+    "exit_status": 0
+  },
+  "tests": {
+    "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+    "literal_result": "Ran 42 tests in 0.951s; OK",
+    "exit_status": 0
+  },
+  "independent_review": {
+    "command": "python -X utf8 scripts/apg_independent_review.py --root .",
+    "literal_result": "status=PASS; provider_network_credentials_used=false; external_actions_executed=false",
+    "exit_status": 0
+  },
+  "releases": {
+    "command": "gh release list -R lixiyulai-hub/opencoding-apg --limit 20",
+    "literal_result": "APG Validation 2026-08-30; Adaptive Project Governance 0.3.0; no new Release",
+    "exit_status": 0
+  },
+  "rollback": {
+    "command": "bash artifacts/opencoding-public-readme-project-privacy-20260902/ROLLBACK.sh .tmp/opencoding-public-readme-rollback-test-20260902 40dc50f42a136cd151eba86efa75fac97e32d4d0",
+    "literal_result": "disposable copy reverted commit; both README hashes matched pre-push baseline",
+    "exit_status": 0,
+    "restored_behavior": "PASS"
+  },
+  "receipt": ".governance/receipts/20260903T000118.077850Z-plan-change-opencoding-public-readme-project-privacy-20260902-7c9d972307fe.json"
+}

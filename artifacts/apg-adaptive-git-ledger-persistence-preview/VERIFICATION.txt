@@ -1,0 +1,47 @@
+APG 本地 Ledger 持久化验证
+change_id=apg-adaptive-git-ledger-persistence-preview-20260902
+changed_branch=not-a-local-git-repository
+changed_field=.governance/progress/apg-adaptive-git-ledger.json
+product_delivery=false
+
+GATES
+Gate-P1=PASS (schema/scope/snapshot/preimage/containment)
+Gate-P2=PASS (atomic replace, idempotent replay, freeze cases, disposable rollback)
+Gate-P3=PASS (unit tests, deterministic replay, evidence hash, independent review)
+
+APPLY
+command=python -X utf8 -c "build_plan(...); persist(..., apply=True)"
+input=controller validation-passed checkpoint snapshot
+literal_output=status=PERSISTED; write_action=APPLIED; atomic_replace=true; external_actions.filesystem_write=true
+exit_status=0
+
+IDEMPOTENT_REPLAY
+literal_output=status=ALREADY_PERSISTED; second_write=false
+exit_status=0
+
+FREEZE_CASES
+literal_output=preimage_hash_mismatch=>FREEZE; atomic_replace_failed=>FREEZE; invalid_snapshot=>ValueError
+
+BASELINE
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=pre-persistence APG suite
+literal_output=....................................... / Ran 39 tests / OK
+exit_status=0
+
+MODIFIED
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=APG suite with local persistence adapter
+literal_output=.......................................... / Ran 42 tests / OK
+exit_status=0
+
+INDEPENDENT_REVIEW
+command=python -X utf8 scripts/apg_independent_review.py --root .
+literal_output=status=PASS; blocker_codes=[]; external_actions_executed=false
+exit_status=0
+
+ROLLBACK
+command=sh artifacts/apg-adaptive-git-ledger-persistence-preview/ROLLBACK.sh <target-root> <preimage-root>
+input=independent disposable copy
+literal_output=rollback-restored; ledger_removed=true; transaction_files_removed=true; preserved_receipts=true
+exit_status=0
+restored_behavior=ledger transaction files absent; unrelated receipt preserved; source MODIFIED_FILE remains changed

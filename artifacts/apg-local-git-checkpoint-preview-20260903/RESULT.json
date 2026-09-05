@@ -1,0 +1,71 @@
+{
+  "artifact_paths": [
+    "docs\\apg\\APG_LOCAL_GIT_CHECKPOINT_TRANSACTION_PREVIEW.md",
+    "artifacts\\apg-local-git-checkpoint-preview-20260903\\RESULT.json",
+    "artifacts\\apg-local-git-checkpoint-preview-20260903\\MODIFIED_FILE",
+    "artifacts\\apg-local-git-checkpoint-preview-20260903\\DIFF_FILE",
+    "artifacts\\apg-local-git-checkpoint-preview-20260903\\VERIFICATION.txt",
+    "artifacts\\apg-local-git-checkpoint-preview-20260903\\ROLLBACK.sh"
+  ],
+  "change_id": "apg-local-git-checkpoint-preview-20260903",
+  "changed_branch": "not-a-local-git-repository",
+  "changed_field": "git_checkpoint.transaction=PREVIEW_ONLY",
+  "execution_performed": false,
+  "external_actions": {
+    "credentials": false,
+    "deployment": false,
+    "git": false,
+    "host": false,
+    "network": false,
+    "provider": false,
+    "publication": false,
+    "remote": false,
+    "runtime": false
+  },
+  "fixed_branch": "apg-local-checkpoint",
+  "fixture_changed": true,
+  "future_write_paths": [
+    ".git/HEAD",
+    ".git/index",
+    ".git/objects/",
+    ".git/refs/heads/apg-local-checkpoint",
+    ".git/logs/HEAD",
+    ".git/logs/refs/heads/apg-local-checkpoint",
+    ".git/COMMIT_EDITMSG"
+  ],
+  "gate": {
+    "id": "Gate-G1",
+    "kind": "consequential",
+    "owner_confirmation_required": true,
+    "status": "not-consumed"
+  },
+  "git_action": "PREVIEW_ONLY",
+  "preconditions": {
+    "config_present": false,
+    "head_present": false,
+    "local_identity_configured": false,
+    "project_git": "absent",
+    "status_code": 128
+  },
+  "preview_digest": "1983706db84398758fc11371b064a7547b615482af493dacd6b7f92dac47da5e",
+  "product_delivery": false,
+  "receipt": ".governance/receipts/20260902T165530.693184Z-plan-change-apg-local-git-checkpoint-preview-20260903-12a60fb3be0c.json",
+  "resume_condition": "local-git-preflight-pass-and-owner-gate-g1-confirmed",
+  "rollback_command": "sh artifacts/apg-local-git-checkpoint-preview-20260903/ROLLBACK.sh <target-root> <preimage-root>",
+  "schema_version": "1.0",
+  "scope": "APG-only bounded local Git checkpoint transaction preview",
+  "source_hashes": {
+    "PROJECT_BRIEF_sha256": "92e1576520fb114414591c858c3f6daf05e1d002e4daa01ed82162e7a25b1fbe",
+    "git_safety_target_fingerprint": "69d56f2e1d89802c22028f2918cb1d9f060c9d14c9ad49589c474738b7622536",
+    "idempotency_marker_sha256": "1ac767c6d80a74d9777e5d052d26dc04a0d67382f17e9afd2a1ac528c19e6f94",
+    "ledger_sha256": "4409c75327f2db0a1f48e03edef7b048ea0af02c7b70fbffe33c4bbc639b6b8c"
+  },
+  "receipt_sha256": "140c01c3db5fe529f10f11a7e6e2db2d2f944a7e454e510c9d77550c7d2d4506",
+  "path_sha256": {
+    "docs/apg/APG_LOCAL_GIT_CHECKPOINT_TRANSACTION_PREVIEW.md": "2533e5e6376a77c12fbc16e898640bb726702ab4834ddb46f231adb4e99f3f3c",
+    "artifacts/apg-local-git-checkpoint-preview-20260903/MODIFIED_FILE": "f5e795f241448397d80a1b61a4856dfcf776a22ced67ed0614a95e607a7e4cf1",
+    "artifacts/apg-local-git-checkpoint-preview-20260903/DIFF_FILE": "8cea44e2a6c25aa603ad4d45671e749a67eb869716a3052c4703ad06bc6f7706",
+    "artifacts/apg-local-git-checkpoint-preview-20260903/VERIFICATION.txt": "65c1253c1ad47a97ba6df077abf932be94c6a46c493404be0fab4b7c1a32eb58",
+    "artifacts/apg-local-git-checkpoint-preview-20260903/ROLLBACK.sh": "4862778de46de8a8128f5b7b3a4469190211373e05e4b91feae3578639def1d7"
+  }
+}

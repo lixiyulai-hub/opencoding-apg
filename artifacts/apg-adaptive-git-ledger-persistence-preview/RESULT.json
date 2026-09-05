@@ -1,0 +1,56 @@
+{
+  "change_id": "apg-adaptive-git-ledger-persistence-preview-20260902",
+  "changed_branch": "not-a-local-git-repository",
+  "changed_field": ".governance/progress/apg-adaptive-git-ledger.json",
+  "external_actions_executed": true,
+  "external_action_scope": "local filesystem only",
+  "fixture_changed": true,
+  "product_delivery": false,
+  "scope": "APG-only local Ledger persistence",
+  "receipt": ".governance/receipts/20260902T083147.883582Z-plan-change-apg-adaptive-git-ledger-persistence-preview-20260902-ce488e4d1c73.json",
+  "schema_version": "1.0",
+  "write_action": "APPLIED",
+  "target_path": ".governance/progress/apg-adaptive-git-ledger.json",
+  "ledger_sha256": "4409c75327f2db0a1f48e03edef7b048ea0af02c7b70fbffe33c4bbc639b6b8c",
+  "path_sha256": {
+    "docs/apg/APG_ADAPTIVE_GIT_LEDGER_PERSISTENCE_CONTRACT.md": "dae09268ae57f08e5ae340c27dc12fe5a146f5a3f55936c294f544bbe4f1ee92",
+    "docs/apg/APG_ADAPTIVE_GIT_LEDGER_PERSISTENCE_PLAN.md": "0a5fd40707fff1955233ca11122226c45653f132ccf0ba15238d6eb28c3aa828",
+    "scripts/apg_adaptive_git_ledger_persistence_preview.py": "d812017901133417b42336fdfb8910c13e6d31b1d3c1d7c0ed91bac17f39fbdf",
+    "scripts/apg_independent_review.py": "b04e06ae771be459edc69353f48eaaa92432edc31dfd2b78982081cda395811b",
+    "tests/test_apg_adaptive_git_ledger_persistence.py": "6057d0a838866bb8c55a2bd4ff785d109ebe92c3a6d84ab1af7451635b47581e",
+    "tests/test_apg_independent_review.py": "6e8b0a1702f7bf787f93d65da11d00379f62f4e60b943e681042f61958fe8a43",
+    "artifacts/apg-adaptive-git-ledger-persistence-preview/MODIFIED_FILE": "9307bd0fd2fe0b8bb04f5e82fcfb69760c2c50b4397cadb7f7bca77349c847ee",
+    "artifacts/apg-adaptive-git-ledger-persistence-preview/DIFF_FILE": "f5801348703ef0e38156a31bc19bab7cddeb77eb0b53c850d87ae4f5b22b61ce",
+    "artifacts/apg-adaptive-git-ledger-persistence-preview/VERIFICATION.txt": "ce0e8c0433b3f580328339d665c0c30ce6916576de2b0b7bf40d948529e6510f",
+    "artifacts/apg-adaptive-git-ledger-persistence-preview/ROLLBACK.sh": "9ad829f7aa41d5dd1d326ae28efeb2c4073b0eb091353ebc321d183d309f0203",
+    ".governance/progress/apg-adaptive-git-ledger.json": "4409c75327f2db0a1f48e03edef7b048ea0af02c7b70fbffe33c4bbc639b6b8c"
+  },
+  "validation": {
+    "baseline": {
+      "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+      "exit_status": 0,
+      "literal_output": "....................................... / Ran 39 tests / OK"
+    },
+    "modified": {
+      "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+      "exit_status": 0,
+      "literal_output": ".......................................... / Ran 42 tests / OK"
+    },
+    "independent_review": {
+      "command": "python -X utf8 scripts/apg_independent_review.py --root .",
+      "exit_status": 0,
+      "literal_output": "status=PASS; blocker_codes=[]; external_actions_executed=false"
+    },
+    "rollback": {
+      "command": "sh artifacts/apg-adaptive-git-ledger-persistence-preview/ROLLBACK.sh <target-root> <preimage-root>",
+      "exit_status": 0,
+      "literal_output": "rollback-restored; ledger_removed=true; transaction_files_removed=true; preserved_receipts=true",
+      "restored_behavior": "ledger transaction files absent; unrelated receipt preserved; source MODIFIED_FILE remains changed"
+    }
+  },
+  "gates": {
+    "Gate-P1": "PASS",
+    "Gate-P2": "PASS",
+    "Gate-P3": "PASS"
+  }
+}

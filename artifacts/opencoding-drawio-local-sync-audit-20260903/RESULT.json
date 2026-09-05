@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0",
+  "transaction": "opencoding-drawio-local-sync-audit-20260903",
+  "changed_branch": "not-a-local-git-repository",
+  "changed_field": "docs/diagrams/OpenCoding_INTRO.drawio",
+  "paths": {
+    "target": "docs/diagrams/OpenCoding_INTRO.drawio",
+    "MODIFIED_FILE": "artifacts/opencoding-drawio-local-sync-audit-20260903/MODIFIED_FILE",
+    "DIFF_FILE": "artifacts/opencoding-drawio-local-sync-audit-20260903/DIFF_FILE",
+    "VERIFICATION.txt": "artifacts/opencoding-drawio-local-sync-audit-20260903/VERIFICATION.txt",
+    "ROLLBACK.sh": "artifacts/opencoding-drawio-local-sync-audit-20260903/ROLLBACK.sh"
+  },
+  "hashes": {
+    "baseline_sha256": "12115168395F46FBEDA2CE508788DC59C2FA2139E05A391733A1F302D4C116FD",
+    "modified_sha256": "171D602D42D24D91F6611D30A491BA20DFC1DF41B5332488B15F7A5687456B5A",
+    "local_target_sha256": "171D602D42D24D91F6611D30A491BA20DFC1DF41B5332488B15F7A5687456B5A",
+    "rollback_sha256": "12115168395F46FBEDA2CE508788DC59C2FA2139E05A391733A1F302D4C116FD",
+    "diff_sha256": "05B0E4B87F35287D0B61811B024346F71B6956D95791B90DA38FE8B24178B176"
+  },
+  "xml_parse": "PASS",
+  "private_ref_count": 0,
+  "tests": {
+    "baseline": {
+      "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+      "result": "Ran 42 tests / OK",
+      "exit_status": 0
+    },
+    "modified": {
+      "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+      "result": "Ran 42 tests / OK",
+      "exit_status": 0
+    }
+  },
+  "independent_review": {
+    "status": "PASS",
+    "blocker_codes": [],
+    "exit_status": 0
+  },
+  "doctor": {
+    "classification": "pass",
+    "adapter_drift": "pass",
+    "receipts": "45 canonical; invalid=0",
+    "generated_files": "warn: .governance/progress retained"
+  },
+  "audit": {
+    "classification": "warn",
+    "read_only_proof_passed": true,
+    "changed_paths": [],
+    "finding": "evidence.data-risk",
+    "profile_warnings": [
+      "unknown:data_risk",
+      "unknown:release_model",
+      "unknown:test_burden",
+      "unknown:user_exposure"
+    ]
+  },
+  "rollback": {
+    "status": "PASS",
+    "exit_status": 0,
+    "restored_hash": "12115168395F46FBEDA2CE508788DC59C2FA2139E05A391733A1F302D4C116FD",
+    "restored_matches_baseline": true,
+    "script_executable_tested": true
+  },
+  "external_actions": {
+    "github_push": false,
+    "release_created": false,
+    "network": false,
+    "provider": false,
+    "credentials": false,
+    "runtime": false,
+    "deployment": false,
+    "git_mutation": false
+  },
+  "remote": {
+    "repository": "lixiyulai-hub/opencoding-apg",
+    "head": "e73b09b632ff7b3b65c8269e4f52b6785496369f",
+    "tree_private_scan": 0,
+    "history_private_refs": "present in pre-cleanup commits; no history rewrite performed"
+  },
+  "artifact_sha256": {
+    "MODIFIED_FILE": "171D602D42D24D91F6611D30A491BA20DFC1DF41B5332488B15F7A5687456B5A",
+    "DIFF_FILE": "05B0E4B87F35287D0B61811B024346F71B6956D95791B90DA38FE8B24178B176",
+    "VERIFICATION.txt": "14588F05346B27F10202B0A363E326B9FE72FFD789D3F88AFD4350D880C9826B",
+    "ROLLBACK.sh": "151231749C144985AD54A141C1BC7894CAC5E3CBA390C38B214C87F4931386EC",
+    "PREIMAGE.drawio": "12115168395F46FBEDA2CE508788DC59C2FA2139E05A391733A1F302D4C116FD"
+  },
+  "final_verification_sha256": "14588F05346B27F10202B0A363E326B9FE72FFD789D3F88AFD4350D880C9826B"
+}

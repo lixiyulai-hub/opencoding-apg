@@ -1,0 +1,28 @@
+OpenCoding bilingual README GitHub sync verification
+Date: 2026-09-02
+
+Changed branch/field: lixiyulai-hub/opencoding-apg main README presentation.
+Paths: README.md, README_CN.md; local and remote commit f0be5ebb3988d9ce20a5d81f9242d41992b8a00f.
+
+BASELINE command: python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+BASELINE literal output: Ran 42 tests in 0.934s; OK
+BASELINE exit status: 0
+
+MODIFIED command: git -C .tmp/opencoding-apg-remote commit -m "docs: add Chinese-first OpenCoding introduction"
+MODIFIED literal result: [main f0be5eb] docs: add Chinese-first OpenCoding introduction; 2 files changed, 56 insertions(+), 48 deletions(-)
+MODIFIED exit status: 0
+
+PUSH command: git -C .tmp/opencoding-apg-remote push origin main
+PUSH literal result: d6fae11..f0be5eb main -> main
+PUSH exit status: 0
+
+REMOTE verification command: git ls-remote https://github.com/lixiyulai-hub/opencoding-apg.git refs/heads/main
+REMOTE literal result: f0be5ebb3988d9ce20a5d81f9242d41992b8a00f refs/heads/main
+REMOTE exit status: 0
+
+RELEASE verification: gh release list -R lixiyulai-hub/opencoding-apg -> apg-validation-20260830, v0.3.0; no new Release; exit 0
+
+ROLLBACK command: bash artifacts/opencoding-bilingual-readme-20260903/ROLLBACK.sh <disposable-copy>
+ROLLBACK literal result: README restored to preimage; README_CN.md removed
+ROLLBACK exit status: 0
+Restored behavior/status: disposable copy restored; published main remains f0be5ebb3988d9ce20a5d81f9242d41992b8a00f.

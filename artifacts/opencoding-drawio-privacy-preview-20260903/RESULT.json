@@ -1,0 +1,15 @@
+{
+  "change_id": "opencoding-drawio-privacy-apply-20260903",
+  "changed_branch": "public GitHub drawio source metadata",
+  "changed_field": "data-provenance local path -> generic source",
+  "changed_paths": [
+    "docs/diagrams/OpenCoding_INTRO.drawio"
+  ],
+  "pre_push_head": "40dc50f42a136cd151eba86efa75fac97e32d4d0",
+  "post_push_head": "e73b09b632ff7b3b65c8269e4f52b6785496369f",
+  "remote_drawio_sha256": "171D602D42D24D91F6611D30A491BA20DFC1DF41B5332488B15F7A5687456B5A",
+  "remote_private_scan": 0,
+  "push_exit_status": 0,
+  "release_created": false,
+  "rollback": "git revert e73b09b on disposable clone"
+}

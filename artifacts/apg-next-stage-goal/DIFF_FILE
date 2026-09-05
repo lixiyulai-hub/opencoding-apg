@@ -1,0 +1,7 @@
+diff --git "a/C:\\Users\\Administrator\\AppData\\Local\\Temp\\apg-next-stage-baseline.txt" "b/E:\\\345\204\277\347\253\245\347\237\245\350\241\214\346\230\237\347\220\203\\artifacts\\apg-next-stage-goal\\MODIFIED_FILE"
+index 78230a9..90aa730 100644
+--- "a/C:\\Users\\Administrator\\AppData\\Local\\Temp\\apg-next-stage-baseline.txt"
++++ "b/E:\\\345\204\277\347\253\245\347\237\245\350\241\214\346\230\237\347\220\203\\artifacts\\apg-next-stage-goal\\MODIFIED_FILE"
+@@ -1 +1 @@
+-APG next-stage goal baseline
++APG next-stage goal: beginner interaction + executor adapter contract

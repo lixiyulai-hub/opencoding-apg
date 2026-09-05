@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "repository": "lixiyulai-hub/opencoding-apg",
+  "branch": "main",
+  "remote_head_before": "d6fae11f172c7c0c7c705a542229e22718438ef6",
+  "local_commit": "f0be5ebb3988d9ce20a5d81f9242d41992b8a00f",
+  "remote_head_after": "f0be5ebb3988d9ce20a5d81f9242d41992b8a00f",
+  "parent": "d6fae11f172c7c0c7c705a542229e22718438ef6",
+  "changed_paths": [
+    "README.md",
+    "README_CN.md"
+  ],
+  "tests": "42 tests OK",
+  "independent_review": "PASS",
+  "push_attempts_successful": 1,
+  "push_exit_status": 0,
+  "remote_head_verified": true,
+  "release_count": 2,
+  "release_tags": [
+    "apg-validation-20260830",
+    "v0.3.0"
+  ],
+  "new_release_created": false,
+  "rollback_test": {
+    "status": "PASS",
+    "readme_restored": true,
+    "readme_cn_removed": true
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "result": "PASS",
+  "project": "儿童知行星球-apg-test-fixture",
+  "scope": "Adaptive Project Governance project validation only",
+  "passed_behaviors": [
+    "governance initialization and profile coherence",
+    "plan-change approval and evidence routing",
+    "progress binding with total_weight=100",
+    "deployment preview ready-path",
+    "deterministic Gate blocking for missing approval and unsafe release requirements",
+    "independent review",
+    "rollback rehearsal on disposable copy",
+    "release-boundary preservation"
+  ],
+  "diagnostics": {
+    "unit_tests": "PASS",
+    "doctor": "PASS_WITH_KNOWN_GENERATED_FILES_WARNING",
+    "audit": "WARN_READ_ONLY_LEGACY_PROFILE_FIELDS",
+    "full_check": "PASS"
+  },
+  "external_actions": {
+    "provider": false,
+    "network": false,
+    "credentials": false,
+    "real_data": false,
+    "runtime": false,
+    "deployment": false,
+    "publication": false,
+    "pilot": false,
+    "git": false
+  },
+  "evidence_refs": [
+    ".governance/receipts/20260830T142700.708949Z-plan-change-zhi-xing-planet-apg-independent-review-20260830-4a59de370534.json",
+    ".governance/receipts/20260830T150123.662701Z-plan-change-zhi-xing-planet-apg-release-approval-simulation-20260830-da7282be1d78.json",
+    ".governance/receipts/20260830T164725.980684Z-plan-change-zhi-xing-planet-apg-final-validation-result-20260831-*.json",
+    "docs/apg/APG_DEPLOYMENT_PREVIEW.md",
+    "docs/apg/APG_INDEPENDENT_REVIEW.md",
+    "docs/apg/APG_RELEASE_APPROVAL_SIMULATION.md",
+    "artifacts/apg-independent-review/VERIFICATION.txt",
+    "artifacts/apg-release-approval/VERIFICATION.txt"
+  ],
+  "conclusion": "APG validation passes for the exercised governance and release/deployment orchestration workflow. This conclusion is a project test result, not a product publication result."
+}

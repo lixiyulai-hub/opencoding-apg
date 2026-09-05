@@ -1,0 +1,14 @@
+2026-09-04 publication verification
+Repository: lixiyulai-hub/opencoding-apg
+Branch: main
+Remote HEAD: e73b09b632ff7b3b65c8269e4f52b6785496369f -> 12d7520cb53af53c5d5cc72a7b7a5c167df5d901
+Paths: README.md, README_CN.md only
+Remote SHA256 matches local: PASS
+Push exit status: 0
+New Release: none
+Rollback rehearsal on disposable clone: README_RESTORED=True; README_CN_RESTORED=True
+Tests: python -B -X utf8 -m unittest discover -s tests -p 'test_*.py' (46 passed)
+Independent Review: PASS
+Doctor: PASS
+Audit: WARN; read_only_proof.passed=true; changed_paths=[]
+No provider, host, runtime, deployment, server, database, payment, notification, or child-product action.

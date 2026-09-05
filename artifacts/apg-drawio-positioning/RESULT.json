@@ -1,0 +1,76 @@
+{
+  "transaction": "zhi-xing-planet-apg-beginner-positioning-cn-20260830",
+  "scope": "APG beginner-facing positioning and documentation only",
+  "commit": "597b6644d968257c2d82f903dafbbe86bb3bd265",
+  "tag": "apg-validation-20260830",
+  "release": "https://github.com/lixiyulai-hub/adaptive-project-governance/releases/tag/apg-validation-20260830",
+  "published_paths": [
+    "docs/README.md",
+    "README_CN.md",
+    "docs/diagrams/APG_GOVERNANCE_RELEASE_FLOW.drawio",
+    "docs/diagrams/APG_GOVERNANCE_RELEASE_FLOW.svg"
+  ],
+  "checks": [
+    {
+      "command": "python -X utf8 -m unittest discover -s tests -p test_*.py",
+      "cwd": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\apg-positioning-baseline-copy",
+      "stdout": "",
+      "stderr": "...............\n----------------------------------------------------------------------\nRan 15 tests in 0.914s\n\nOK\n",
+      "exit_status": 0
+    },
+    {
+      "command": "python -X utf8 -m unittest discover -s tests -p test_*.py",
+      "cwd": "E:\\儿童知行星球",
+      "stdout": "",
+      "stderr": "...............\n----------------------------------------------------------------------\nRan 15 tests in 0.521s\n\nOK\n",
+      "exit_status": 0
+    },
+    {
+      "command": "python C:\\Users\\Administrator\\drawio-skill\\skills\\drawio-skill\\scripts\\validate.py docs\\diagrams\\APG_GOVERNANCE_RELEASE_FLOW.drawio --score",
+      "cwd": "C:\\Users\\Administrator\\adaptive-project-governance-publish2",
+      "stdout": "0 error(s), 0 warning(s)\nscore: 0 (0 through-vertex, 0 crossings, 0 overlaps)\n",
+      "stderr": "",
+      "exit_status": 0
+    },
+    {
+      "command": "git diff --check",
+      "cwd": "C:\\Users\\Administrator\\adaptive-project-governance-publish2",
+      "stdout": "",
+      "stderr": "",
+      "exit_status": 0
+    },
+    {
+      "command": "git rev-parse HEAD",
+      "cwd": "C:\\Users\\Administrator\\adaptive-project-governance-publish2",
+      "stdout": "597b6644d968257c2d82f903dafbbe86bb3bd265\n",
+      "stderr": "",
+      "exit_status": 0
+    },
+    {
+      "command": "gh repo view lixiyulai-hub/adaptive-project-governance --json description",
+      "cwd": "C:\\Users\\Administrator\\adaptive-project-governance-publish2",
+      "stdout": "{\"description\":\"中文优先、面向小白的 APG AI Coding 项目协调器：用自然语言 Grill Me 问清需求，自动生成 PRG plan / memory / agents / design 等 Markdown 文档，拆分需求、编排执行、保留 Gate、证据与回滚。 Chinese-first, beginner-friendly idea-to-result governance.\"}\n",
+      "stderr": "",
+      "exit_status": 0
+    },
+    {
+      "command": "gh release view apg-validation-20260830 --repo lixiyulai-hub/adaptive-project-governance --json name,tagName,targetCommitish,url",
+      "cwd": "C:\\Users\\Administrator\\adaptive-project-governance-publish2",
+      "stdout": "{\"name\":\"APG Validation 2026-08-30\",\"tagName\":\"apg-validation-20260830\",\"targetCommitish\":\"main\",\"url\":\"https://github.com/lixiyulai-hub/adaptive-project-governance/releases/tag/apg-validation-20260830\"}\n",
+      "stderr": "",
+      "exit_status": 0
+    }
+  ],
+  "artifact_hashes": {
+    "MODIFIED_FILE": "8afa1ab9b2bd86f0185c9a28081813489de06aeac1745b88640052b728d263ad",
+    "DIFF_FILE": "773161603bc8d349005fd0359bb5c0b9dd748f5ba109e92feb7dfcb2edce17f7",
+    "ROLLBACK.sh": "be01ab86cb6d32f01cac0139f1673ee5499f18f46b471b8a7426879dc0cf7215"
+  },
+  "rollback_test": {
+    "command": "bash E:\\儿童知行星球\\artifacts\\apg-drawio-positioning/ROLLBACK.sh C:\\Users\\Administrator\\AppData\\Local\\Temp\\apg-positioning-rollback-test/modified C:\\Users\\Administrator\\AppData\\Local\\Temp\\apg-positioning-rollback-test/baseline",
+    "output": "restored=C:\\Users\\Administrator\\AppData\\Local\\Temp\\apg-positioning-rollback-test\\modified",
+    "exit_status": 0,
+    "restored_hash_match": true,
+    "modified_file_left_changed": true
+  }
+}

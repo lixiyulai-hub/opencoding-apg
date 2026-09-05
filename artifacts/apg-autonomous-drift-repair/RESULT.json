@@ -1,0 +1,59 @@
+{
+  "artifacts_reopened": [
+    "AGENTS.md",
+    ".governance/progress/active.json",
+    "docs/apg/APG_AUTONOMOUS_DRIFT_REPAIR.md",
+    "scripts/apg_independent_review.py",
+    "tests/test_apg_independent_review.py",
+    "artifacts/apg-autonomous-drift-repair/MODIFIED_FILE",
+    "artifacts/apg-autonomous-drift-repair/DIFF_FILE",
+    "artifacts/apg-autonomous-drift-repair/VERIFICATION.txt",
+    "artifacts/apg-autonomous-drift-repair/ROLLBACK.sh"
+  ],
+  "change_id": "apg-autonomous-drift-remediation-loop-authorized-20260901",
+  "doctor": {
+    "adapter_drift": "pass",
+    "exit_status": 0,
+    "progress_definition": "pass",
+    "progress_scope_status": "not-computable"
+  },
+  "evidence_hash_policy": "VERIFICATION.txt is excluded from the hash map to avoid self-referential mutation",
+  "external_actions_executed": {
+    "credentials": false,
+    "deployment": false,
+    "git": false,
+    "host": false,
+    "network": false,
+    "provider": false,
+    "publication": false,
+    "runtime": false
+  },
+  "hashes": {
+    ".governance/progress/active.json": "2e1e6566b997df5111e3ef0b17fbd8cf6a1cd5b6a5fde250cdf9eef3e88eca8f",
+    "AGENTS.md": "2ff0708a2d9fbfef106abeefa54fd89650cfb4344db818630beb6a7235149b35",
+    "artifacts/apg-autonomous-drift-repair/DIFF_FILE": "c4de4d0ef6ffdee75ac5e10112f61d98849ad77bd19939cc61143b7889d8d91e",
+    "artifacts/apg-autonomous-drift-repair/MODIFIED_FILE": "818a5385aeeb1ea1da145f949fc0670705c6bb80851a17d9704dbf2a8c599e0a",
+    "artifacts/apg-autonomous-drift-repair/ROLLBACK.sh": "c2bf178b51fd16773e80e5b197d6e8aea600898eb9e7133bb1f3c1c62356ad8a",
+    "docs/apg/APG_AUTONOMOUS_DRIFT_REPAIR.md": "f740336cfcfc48c9b9e69db51c68660c375d614994a439c90d36e07425c97166",
+    "scripts/apg_independent_review.py": "a94bdefeb77838f02a669ce128d5c993a2cddee1e66f22a77d8ab8aa01aa8ba1",
+    "tests/test_apg_independent_review.py": "7cd6f4aade7eab4447f889b7133d0ebf35f4e917f49de45839d00a7a9ce04a28"
+  },
+  "independent_review": {
+    "exit_status": 0,
+    "review_scope": "offline-apg-deployment-preview-and-autonomous-prg",
+    "status": "PASS"
+  },
+  "product_delivery": false,
+  "rollback": {
+    "command": "bash artifacts/apg-autonomous-drift-repair/ROLLBACK.sh <preimage-dir> <disposable-root>",
+    "exit_status": 0,
+    "result": "rollback-restored; transaction paths removed; unrelated receipt preserved; source MODIFIED_FILE remains changed"
+  },
+  "schema_version": "1.0",
+  "scope": "APG-only local drift remediation and independent review",
+  "tests": {
+    "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+    "exit_status": 0,
+    "result": "Ran 20 tests; OK"
+  }
+}

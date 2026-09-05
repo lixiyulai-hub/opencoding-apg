@@ -1,0 +1,21 @@
+{
+  "change_id": "opencoding-readme-completeness-20260902",
+  "changed_paths": [
+    "README.md",
+    "README_CN.md"
+  ],
+  "files": {
+    "README.md": {
+      "sha256": "33d673b00fee4484ad84c6cb733f3fd4c8d5d8a88fe90e1317d9584fff0e2b8b",
+      "bytes": 10396
+    },
+    "README_CN.md": {
+      "sha256": "5445bb47fe1561a2860a49ecb6d3d963d7f91d377ae01fa9cfae91ec1018ac8c",
+      "bytes": 2669
+    }
+  },
+  "baseline_sha256": {
+    "README.md": "e2dea0b6d6d2b77c15772901e26b984eef18064204bd066b7dc50f3b902b65d2",
+    "README_CN.md": "a4ba53414a556204b6e5eaf95a0845f3193fd26663f04384843afccf9f351b39"
+  }
+}

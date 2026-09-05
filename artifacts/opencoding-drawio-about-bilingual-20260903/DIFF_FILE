@@ -1,0 +1,94 @@
+diff --git a/README.md b/README.md
+index ca3a4eb..91d092c 100644
+--- a/README.md
++++ b/README.md
+@@ -16,6 +16,12 @@ OpenCoding 帮助不会写代码、刚开始学 AI coding 的人，把一个模
+ 
+ 本仓库是 APG-only 治理与验证夹具，不实现儿童知行星球下游产品。
+ 
++## 流程图 / Workflow diagram
++
++![OpenCoding beginner workflow](docs/diagrams/OpenCoding_INTRO.svg)
++
++- 可编辑 draw.io 源文件 / Editable source: `docs/diagrams/OpenCoding_INTRO.drawio`
++
+ ## English
+ 
+ OpenCoding helps people who do not know how to code yet, or are new to AI coding, turn a rough idea into a clear, executable, and verifiable project plan.
+diff --git a/README_CN.md b/README_CN.md
+index 35a96ae..a0292f4 100644
+--- a/README_CN.md
++++ b/README_CN.md
+@@ -13,3 +13,9 @@ OpenCoding 帮助不会写代码、刚开始学习 AI coding 的人，把一个
+ 一句话：**让小白也能有条理地开始 AI coding 项目。**
+ 
+ 本仓库用于验证 OpenCoding/APG 的治理流程，不代表儿童知行星球下游产品已经实现或上线。
++
++## 流程图
++
++![OpenCoding 小白入门流程图](docs/diagrams/OpenCoding_INTRO.svg)
++
++可编辑源文件：`docs/diagrams/OpenCoding_INTRO.drawio`
+diff --git a/docs/diagrams/OpenCoding_INTRO.drawio b/docs/diagrams/OpenCoding_INTRO.drawio
+new file mode 100644
+index 0000000..e62b585
+--- /dev/null
++++ b/docs/diagrams/OpenCoding_INTRO.drawio
+@@ -0,0 +1,49 @@
++<mxfile host="drawio-skill" agent="diagram-ir" version="3.0.0">
++  <diagram id="system" name="System">
++    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
++      <root>
++        <mxCell id="0" />
++        <mxCell id="1" parent="0" />
++        <mxCell id="idea" value="一句中文想法&amp;#xa;A rough idea" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#2563EB;fontColor=#0F172A;fontSize=16;fontStyle=1;spacing=8;" vertex="1" parent="1" data-model-id="idea" data-kind="actor" data-properties="{}" data-source-properties="{}" data-source-label="一句中文想法&amp;#xa;A rough idea" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
++          <mxGeometry x="60" y="80" width="160" height="70" as="geometry" />
++        </mxCell>
++        <mxCell id="clarify" value="Grill Me 解释式追问&amp;#xa;Guided questions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FF;strokeColor=#2563EB;fontColor=#0F172A;fontSize=15;spacing=8;" vertex="1" parent="1" data-model-id="clarify" data-kind="service" data-properties="{}" data-source-properties="{}" data-source-label="Grill Me 解释式追问&amp;#xa;Guided questions" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
++          <mxGeometry x="290" y="80" width="160" height="70" as="geometry" />
++        </mxCell>
++        <mxCell id="pack" value="Markdown 知识包&amp;#xa;Project knowledge pack" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" vertex="1" parent="1" data-model-id="pack" data-kind="service" data-properties="{}" data-source-properties="{}" data-source-label="Markdown 知识包&amp;#xa;Project knowledge pack" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
++          <mxGeometry x="520" y="80" width="160" height="70" as="geometry" />
++        </mxCell>
++        <mxCell id="tasks" value="任务与执行顺序&amp;#xa;Tasks and order" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" vertex="1" parent="1" data-model-id="tasks" data-kind="service" data-properties="{}" data-source-properties="{}" data-source-label="任务与执行顺序&amp;#xa;Tasks and order" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
++          <mxGeometry x="60" y="230" width="160" height="70" as="geometry" />
++        </mxCell>
++        <mxCell id="check" value="离线验证与证据&amp;#xa;Offline checks and evidence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" vertex="1" parent="1" data-model-id="check" data-kind="service" data-properties="{}" data-source-properties="{}" data-source-label="离线验证与证据&amp;#xa;Offline checks and evidence" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
++          <mxGeometry x="290" y="230" width="160" height="70" as="geometry" />
++        </mxCell>
++        <mxCell id="result" value="回滚方案与报告&amp;#xa;Rollback and report" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontColor=#14532D;fontSize=15;spacing=8;" vertex="1" parent="1" data-model-id="result" data-kind="database" data-properties="{}" data-source-properties="{}" data-source-label="回滚方案与报告&amp;#xa;Rollback and report" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
++          <mxGeometry x="520" y="230" width="160" height="70" as="geometry" />
++        </mxCell>
++        <mxCell id="gate" value="人工确认 Gate&amp;#xa;Secrets · money · network · deploy · release" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF2F2;strokeColor=#DC2626;fontColor=#7F1D1D;fontSize=14;spacing=8;" vertex="1" parent="1" data-model-id="gate" data-kind="gateway" data-properties="{}" data-source-properties="{}" data-source-label="人工确认 Gate&amp;#xa;Secrets · money · network · deploy · release" data-provenance="{&quot;path&quot;:&quot;E:\\儿童知行星球\\.tmp\\opencoding-intro.ir.json&quot;}">
++          <mxGeometry x="60" y="380" width="160" height="70" as="geometry" />
++        </mxCell>
++        <mxCell id="edge-system-0" value="先说清楚 / Clarify" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="idea" target="clarify" data-model-id="idea-clarify" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="先说清楚 / Clarify">
++          <mxGeometry relative="1" as="geometry" />
++        </mxCell>
++        <mxCell id="edge-system-1" value="整理 / Organize" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="clarify" target="pack" data-model-id="clarify-pack" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="整理 / Organize">
++          <mxGeometry relative="1" as="geometry" />
++        </mxCell>
++        <mxCell id="edge-system-2" value="拆解 / Break down" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="pack" target="tasks" data-model-id="pack-tasks" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="拆解 / Break down">
++          <mxGeometry relative="1" as="geometry" />
++        </mxCell>
++        <mxCell id="edge-system-3" value="执行 / Check" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="tasks" target="check" data-model-id="tasks-check" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="执行 / Check">
++          <mxGeometry relative="1" as="geometry" />
++        </mxCell>
++        <mxCell id="edge-system-4" value="复盘 / Report" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="check" target="result" data-model-id="check-result" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="复盘 / Report">
++          <mxGeometry relative="1" as="geometry" />
++        </mxCell>
++        <mxCell id="edge-system-5" value="必要时暂停 / Pause when needed" style="endArrow=classic;html=1;rounded=0;" edge="1" parent="1" source="tasks" target="gate" data-model-id="tasks-gate" data-kind="sync" data-properties="{}" data-source-properties="{}" data-source-label="必要时暂停 / Pause when needed">
++          <mxGeometry relative="1" as="geometry" />
++        </mxCell>
++      </root>
++    </mxGraphModel>
++  </diagram>
++</mxfile>
+diff --git a/docs/diagrams/OpenCoding_INTRO.svg b/docs/diagrams/OpenCoding_INTRO.svg
+new file mode 100644
+index 0000000..3d91053
+--- /dev/null
++++ b/docs/diagrams/OpenCoding_INTRO.svg
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="560" viewBox="0 0 1600 560"><rect width="1600" height="560" fill="#f8fafc"/><text x="60" y="55" font-family="Arial,Microsoft YaHei,sans-serif" font-size="30" font-weight="700" fill="#0f172a">OpenCoding：从一个想法到一份可检查的 AI coding 计划</text><text x="60" y="88" font-family="Arial,Microsoft YaHei,sans-serif" font-size="20" fill="#475569">OpenCoding: From a rough idea to a clear, checkable AI coding plan</text><g font-family="Arial,Microsoft YaHei,sans-serif" text-anchor="middle"><g stroke-width="3"><rect x="50" y="170" width="220" height="100" rx="18" fill="#e8f1ff" stroke="#2563eb"/><rect x="320" y="170" width="220" height="100" rx="18" fill="#e8f1ff" stroke="#2563eb"/><rect x="590" y="170" width="220" height="100" rx="18" fill="#f0fdf4" stroke="#16a34a"/><rect x="860" y="170" width="220" height="100" rx="18" fill="#f0fdf4" stroke="#16a34a"/><rect x="1130" y="170" width="220" height="100" rx="18" fill="#f0fdf4" stroke="#16a34a"/><rect x="1400" y="170" width="150" height="100" rx="18" fill="#f0fdf4" stroke="#16a34a"/></g><g fill="#0f172a" font-size="18" font-weight="700"><text x="160" y="210">一句中文想法</text><text x="160" y="240">A rough idea</text><text x="430" y="210">Grill Me 追问</text><text x="430" y="240">Guided questions</text><text x="700" y="210">Markdown 知识包</text><text x="700" y="240">Knowledge pack</text><text x="970" y="210">任务与顺序</text><text x="970" y="240">Tasks and order</text><text x="1240" y="210">离线验证与证据</text><text x="1240" y="240">Checks and evidence</text><text x="1475" y="210">回滚与报告</text><text x="1475" y="240">Rollback</text></g><g stroke="#64748b" stroke-width="4" fill="none" marker-end="url(#a)"><path d="M270 220H320"/><path d="M540 220H590"/><path d="M810 220H860"/><path d="M1080 220H1130"/><path d="M1350 220H1400"/></g><rect x="560" y="370" width="480" height="90" rx="16" fill="#fef2f2" stroke="#dc2626" stroke-width="3"/><text x="800" y="408" fill="#7f1d1d" font-size="18" font-weight="700">人工确认 Gate / Human confirmation Gate</text><text x="800" y="437" fill="#991b1b" font-size="16">密钥 · 金钱 · 网络 · 部署 · 发布</text><path d="M970 270V370" stroke="#dc2626" stroke-width="3" stroke-dasharray="8 8" marker-end="url(#r)"/></g><defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 z" fill="#64748b"/></marker><marker id="r" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 z" fill="#dc2626"/></marker></defs></svg>
+\ No newline at end of file

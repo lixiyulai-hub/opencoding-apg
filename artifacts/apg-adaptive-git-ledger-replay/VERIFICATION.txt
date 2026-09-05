@@ -1,0 +1,104 @@
+APG 项目级自适应 Git 检查点 Ledger 验证（APG-only）
+change_id=apg-adaptive-git-ledger-replay-20260902
+product_delivery=false
+
+CHANGED_BRANCH_FIELD
+branch=not-a-local-git-repository
+field=checkpoint_ledger.snapshot_digest
+
+PLANNED_AND_CREATED_PATHS
+E:\儿童知行星球\docs\apg\APG_ADAPTIVE_GIT_LEDGER_CONTRACT.md
+E:\儿童知行星球\scripts\apg_adaptive_git_ledger_preview.py
+E:\儿童知行星球\scripts\apg_adaptive_git_controller.py
+E:\儿童知行星球\scripts\apg_independent_review.py
+E:\儿童知行星球\tests\test_apg_adaptive_git_ledger.py
+E:\儿童知行星球\tests\test_apg_adaptive_git_controller.py
+E:\儿童知行星球\tests\test_apg_independent_review.py
+E:\儿童知行星球\artifacts\apg-adaptive-git-ledger-replay\MODIFIED_FILE
+E:\儿童知行星球\artifacts\apg-adaptive-git-ledger-replay\DIFF_FILE
+E:\儿童知行星球\artifacts\apg-adaptive-git-ledger-replay\ROLLBACK.sh
+E:\儿童知行星球\artifacts\apg-adaptive-git-ledger-replay\RESULT.json
+E:\儿童知行星球\artifacts\apg-adaptive-git-ledger-replay\VERIFICATION.txt
+
+RECEIPT
+E:\儿童知行星球\.governance\receipts\20260902T045606.907376Z-plan-change-apg-adaptive-git-ledger-replay-20260902-47ae35320dac.json
+
+GATES
+READ_ONLY_AUDIT=pass (read_only_proof.passed=true; classification=warn)
+DOCTOR=pass (adapter-drift=pass; receipts canonical)
+INDEPENDENT_REVIEW=PASS
+EXTERNAL_ACTIONS=not-executed (git/network/remote/provider/host/credentials/runtime/deployment/publication=false)
+
+BASELINE
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=APG suite before ledger projection transaction
+literal_output:
+...................................
+----------------------------------------------------------------------
+Ran 35 tests in 1.859s
+
+OK
+exit_status=0
+
+MODIFIED
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=APG suite after ledger projection transaction
+literal_output:
+.......................................
+----------------------------------------------------------------------
+Ran 39 tests in 1.958s
+
+OK
+exit_status=0
+
+APPEND_CHECK
+command=python -X utf8 scripts/apg_adaptive_git_controller.py --state '{"success_node":"validation-passed","verified_stages":["intake-ready","plan-ready"],"evidence_complete":true,"tests_passed":true,"scope_clean":true}'
+input=validation-passed with plan-ready verified
+literal_output=git_status=CHECKPOINT_RECOMMENDED; ledger_status=APPEND_CANDIDATE; write_action=PREVIEW_ONLY; append_candidate=true
+exit_status=0
+
+FREEZE_CHECK
+command=python -X utf8 scripts/apg_adaptive_git_controller.py --state '{"success_node":"implementation-slice","verified_stages":["plan-ready"],"failure":"tests-failed"}'
+input=tests-failed after plan-ready
+literal_output=git_status=FREEZE; revert_point=plan-ready; ledger_status=NO_CHECKPOINT_APPEND; append_candidate=false
+exit_status=0
+
+DEDUP_CHECK
+command=python -X utf8 scripts/apg_adaptive_git_ledger_preview.py --events '<recorded event>' --candidate '<same checkpoint>'
+input=existing checkpoint_id with an ALREADY_RECOMMENDED candidate
+literal_output=status=REUSE_EXISTING; deduplicated=true; append_candidate=false; write_action=PREVIEW_ONLY
+exit_status=0
+
+INDEPENDENT_REVIEW
+command=python -X utf8 scripts/apg_independent_review.py --root .
+input=APG offline review fixture
+literal_output=status=PASS; blocker_codes=[]; external_actions_executed=false
+exit_status=0
+
+ROLLBACK
+command=sh artifacts/apg-adaptive-git-ledger-replay/ROLLBACK.sh <target-root> <preimage-root>
+input=independent disposable copy with preserved receipt
+literal_output=rollback-restored; removed=true; restored=true; preserved={"preserved":true}
+exit_status=0
+restored behavior/status=ledger transaction files absent; preimage controller/review/tests restored; preserved receipt retained; source MODIFIED_FILE remains changed
+
+PATH_SHA256
+docs/apg/APG_ADAPTIVE_GIT_LEDGER_CONTRACT.md=414203dec7f43179c81b658ae8b0608c6abb8b49afdf592fce4169fd7294dfe1
+scripts/apg_adaptive_git_ledger_preview.py=d9c1969bdc3d30cf885c0c13b8a17d9db217b5a6f01f8bad0131759b427c2185
+scripts/apg_adaptive_git_controller.py=898d11bc3daa8e301c0840fd91b2ef6a1a572a765a5ebbbd29a935287a0b55a2
+scripts/apg_independent_review.py=70f652724ce25a866696b157b4ff0315119d105a32059a745876c50e2f4ab3ec
+tests/test_apg_adaptive_git_ledger.py=1493024c239421b84de1bc0f8b2fad18fd25d72615cd33f4e886ca3ddeef300c
+tests/test_apg_adaptive_git_controller.py=58e868bdeb78a95a5ddbd0c6b898f204c495ec37feeea6481df0cc852388bf99
+tests/test_apg_independent_review.py=f1a1a230ae70bcfbe9d65f97863f39bd2970e2fb2fb298dee8a3f09e35715583
+artifacts/apg-adaptive-git-ledger-replay/MODIFIED_FILE=b78fd962001f51877e23487bea85605eb27c61fad9e256f80273115281f668a9
+artifacts/apg-adaptive-git-ledger-replay/DIFF_FILE=e68d56df955f15a6b85a43a0028fd12d4ae3ec1bcbd0be4013b2a831b53f96fd
+artifacts/apg-adaptive-git-ledger-replay/ROLLBACK.sh=5d6381fb2e305cb8a2234b5a3f79d3b0fecc2204c6fbc9e4dd1922e4ced217f5
+
+PREIMAGE_SHA256 PROJECT_BRIEF.md=92e1576520fb114414591c858c3f6daf05e1d002e4daa01ed82162e7a25b1fbe
+MODIFIED_FIXTURE_SHA256=b78fd962001f51877e23487bea85605eb27c61fad9e256f80273115281f668a9
+fixture_changed=true
+
+RESULT.json=opened and validated as parseable JSON.
+
+RESULT
+Ledger projection appends only new validated checkpoints, suppresses duplicates, keeps FREEZE and WAIT out of successful checkpoint records, and remains deterministic and PREVIEW_ONLY.

@@ -1,0 +1,36 @@
+OpenCoding README completeness verification
+Date: 2026-09-02
+
+Changed branch/field: local main workspace; README onboarding/documentation fields.
+Paths: README.md, README_CN.md; evidence directory: artifacts/opencoding-readme-completeness-20260902/.
+
+BASELINE command: python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+BASELINE input: existing workspace before README write
+BASELINE literal output: Ran 42 tests in 0.939s; OK
+BASELINE exit status: 0
+BASELINE SHA256: README.md=e2dea0b6d6d2b77c15772901e26b984eef18064204bd066b7dc50f3b902b65d2; README_CN.md=a4ba53414a556204b6e5eaf95a0845f3193fd26663f04384843afccf9f351b39
+
+MODIFIED command: python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+MODIFIED input: updated README.md and README_CN.md
+MODIFIED literal output: Ran 42 tests in 1.076s; OK
+MODIFIED exit status: 0
+MODIFIED SHA256: README.md=33d673b00fee4484ad84c6cb733f3fd4c8d5d8a88fe90e1317d9584fff0e2b8b; README_CN.md=5445bb47fe1561a2860a49ecb6d3d963d7f91d377ae01fa9cfae91ec1018ac8c
+
+DOCTOR command: python -X utf8 .tmp/opencoding-apg-remote/scripts/project_governance.py doctor . --json
+DOCTOR literal result: exit 0; read_only_proof.passed=true; receipts canonical=39; pre-existing codex:drifted adapter check remains
+DOCTOR exit status: 0
+
+AUDIT command: python -X utf8 .tmp/opencoding-apg-remote/scripts/project_governance.py audit . --json
+AUDIT literal result: classification=warn; audit.read-only=pass; changed_paths=[]; read_only_proof.passed=true
+AUDIT exit status: 0
+
+INDEPENDENT REVIEW command: python -X utf8 scripts/apg_independent_review.py --root .
+INDEPENDENT REVIEW literal result: status=PASS; provider_network_credentials_used=false; external_actions_executed=false
+INDEPENDENT REVIEW exit status: 0
+
+ROLLBACK command: bash artifacts/opencoding-readme-completeness-20260902/ROLLBACK.sh .tmp/opencoding-readme-rollback-test-20260902
+ROLLBACK input: disposable copy containing modified README files
+ROLLBACK literal result: restored README.md and README_CN.md from baseline preimages; both SHA256 values matched baseline
+ROLLBACK exit status: 0
+
+Restored behavior/status: disposable copy restored to baseline; main workspace remains updated. GitHub push and Release creation were not performed. Historical receipts, snapshots, Ledger, scripts, tests, and unrelated files were preserved.

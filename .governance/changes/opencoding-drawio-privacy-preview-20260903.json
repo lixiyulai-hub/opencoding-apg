@@ -1,0 +1,32 @@
+{
+  "change_id": "opencoding-drawio-privacy-preview-20260903",
+  "problem": "Public draw.io source metadata exposes a private local project path.",
+  "outcome": "Replace local filesystem provenance in OpenCoding_INTRO.drawio with generic public provenance while preserving diagram structure; preview only.",
+  "metric": "Exact changed path is docs/diagrams/OpenCoding_INTRO.drawio; modified XML parses; private-reference scan is zero; source remains unchanged until apply.",
+  "rollout": "Create additive preview artifacts, validate XML and privacy scan, rehearse rollback on disposable copy; do not apply or push.",
+  "telemetry": [
+    "baseline and modified SHA256",
+    "private-reference count",
+    "XML parse result",
+    "rollback result"
+  ],
+  "changed_paths": [
+    "docs/diagrams/OpenCoding_INTRO.drawio"
+  ],
+  "acceptance": [
+    "No private project name or local path remains in modified drawio source.",
+    "Diagram IDs, labels, geometry, and edges remain unchanged.",
+    "Only one project source path is planned.",
+    "No GitHub push, Release, deployment, runtime, provider, host, or credential action."
+  ],
+  "non_goals": [
+    "Do not publish this preview.",
+    "Do not modify README, SVG, receipts history, Ledger, scripts, tests, skills, or downstream product.",
+    "Do not alter canonical drawio-skill or adaptive-project-governance identifiers."
+  ],
+  "risk": "routine",
+  "rollback": "Use artifacts/opencoding-drawio-privacy-preview-20260903/ROLLBACK.sh or copy PREIMAGE.drawio over target on disposable copy.",
+  "approval_refs": [
+    "USER-REQUEST-REMOVE-PRIVATE-PROJECT-20260902-001"
+  ]
+}

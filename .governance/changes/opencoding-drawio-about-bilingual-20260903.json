@@ -1,0 +1,15 @@
+{
+  "change_id": "opencoding-drawio-about-bilingual-20260903",
+  "problem": "The public introduction needs a clearer bilingual workflow graphic and a bilingual GitHub About description.",
+  "outcome": "Add a new editable draw.io OpenCoding beginner workflow graphic with SVG preview, reference it from public documentation, and set GitHub About to concise Chinese/English text.",
+  "metric": "README and GitHub About explain OpenCoding for beginners in Chinese first with an English counterpart and the diagram validates structurally.",
+  "rollout": "Generate the editable diagram with drawio-skill Diagram IR, validate and review it, update README references, set GitHub About, then verify remote metadata.",
+  "telemetry": ["diagram validation result", "diagram review result", "changed paths", "GitHub About before/after", "remote repository identity"],
+  "changed_paths": ["docs/diagrams/OpenCoding_INTRO.drawio", "docs/diagrams/OpenCoding_INTRO.svg", "README.md", "README_CN.md"],
+  "acceptance": ["Chinese introduction remains first.", "English version remains present.", "Editable draw.io and SVG preview exist.", "GitHub About contains Chinese and English descriptions.", "No Release or deployment is created."],
+  "non_goals": ["Do not rename the canonical drawio-skill or adaptive-project-governance invocation IDs.", "Do not modify historical evidence, scripts, tests, Ledger files, or downstream product code."],
+  "risk": "routine",
+  "rollback": "Restore the previous README files and remove the new diagram files in a disposable copy; restore the prior About description through a separate metadata edit.",
+  "surfaces": ["documentation", "diagram", "github-about"],
+  "approval_refs": ["USER-REQUEST-DRAWIO-BILINGUAL-ABOUT-20260903-001"]
+}

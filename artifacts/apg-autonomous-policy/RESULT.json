@@ -1,0 +1,77 @@
+{
+  "change_id": "apg-autonomous-prg-policy-20260901",
+  "contract_examples": {
+    "auto": {
+      "dispatch_permitted": true,
+      "human_gate": false,
+      "loop_states": [
+        "INSPECT",
+        "PROGRESS",
+        "PLAN",
+        "DISPATCH",
+        "VALIDATE",
+        "REPORT",
+        "REQUEUE"
+      ],
+      "route": "auto"
+    },
+    "consequential": {
+      "dispatch_permitted": false,
+      "gate_reasons": [
+        "secret",
+        "money",
+        "network",
+        "deployment-choice"
+      ],
+      "human_gate": true,
+      "route": "consequential-gate"
+    },
+    "freeze": {
+      "resume_condition": "resume.after-missing-evidence-is-resolved",
+      "terminal_state": "FREEZE"
+    }
+  },
+  "external_actions_executed": {
+    "credentials": false,
+    "deployment": false,
+    "git": false,
+    "host": false,
+    "network": false,
+    "provider": false,
+    "publication": false,
+    "runtime": false
+  },
+  "path_sha256": {
+    "artifacts/apg-autonomous-policy/DIFF_FILE": "a74afd3e3a076fb50d1ee59fdee7aae6c5cab117e272871159d6158e77f0af50",
+    "artifacts/apg-autonomous-policy/MODIFIED_FILE": "d66bb824e5f36a68781868f13007165e154ef76dbef7b6ea833b67b9190ce21b",
+    "artifacts/apg-autonomous-policy/ROLLBACK.sh": "3b7769b99ed728ded7800e278d121dc3c93db4cbaabfc011bd200092f5315c3d",
+    "docs/apg/APG_AUTONOMOUS_PRG_POLICY.md": "de66695c535ba28d876ae2d5f0fa1f430dad8bc7835f4ce3feaac42b955e7f7d",
+    "docs/apg/APG_AUTO_PLAN_LOOP_HARNESS.md": "0bd64ad649a285bbb522f2f797f77ee096d676a02d64aa23184bc88dfeba6a2c",
+    "scripts/apg_autonomous_policy_preview.py": "b8f7163be38bfc2eedca54f212c4cce496013c5be01b36ba7551918c2960052d",
+    "tests/test_apg_autonomous_policy.py": "2f7c64acfa7c5abf5c2a055dd06718c0840e7ef6afa26a1ea9219ae94a3fd47e"
+  },
+  "product_delivery": false,
+  "schema_version": "1.0",
+  "scope": "APG-only autonomous PRG policy and offline loop-harness contract",
+  "validation": {
+    "baseline": {
+      "command": "python -X utf8 -m unittest tests.test_apg_independent_review tests.test_apg_release_orchestration tests.test_domain_contract tests.test_frontend_contract tests.test_verification_contract",
+      "exit_status": 0,
+      "input": "pre-existing APG validation suite before this transaction test was added",
+      "literal_output": "...............\\n----------------------------------------------------------------------\\nRan 15 tests in 0.839s\\n\\nOK"
+    },
+    "modified": {
+      "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+      "exit_status": 0,
+      "input": "repository tests after autonomous PRG policy, simulator, and contract test were added",
+      "literal_output": "....................\\n----------------------------------------------------------------------\\nRan 20 tests in 0.487s\\n\\nOK"
+    },
+    "rollback": {
+      "command": "bash artifacts/apg-autonomous-policy/ROLLBACK.sh .tmp-apg-autonomous-rollback",
+      "exit_status": 0,
+      "input": "disposable copy containing only this transaction paths and a preserved unrelated receipt",
+      "literal_output": "rollback-restored",
+      "restored_result": "transaction paths absent; .governance/receipts/preserved-receipt.json remains {\"preserved\":true}; source MODIFIED_FILE remains changed"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+APG 主动自适应 Git 检查点验证（APG-only）
+change_id=apg-adaptive-git-checkpoint-offline-20260902
+product_delivery=false
+
+BASELINE
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=事务前 APG 回归套件
+literal_output=.......................... / Ran 26 tests / OK
+exit_status=0
+
+MODIFIED
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=加入主动 Git 检查点适配器后的 APG 回归套件
+literal_output=............................... / Ran 31 tests / OK
+exit_status=1
+
+ADAPTIVE_GIT_CHECK
+command=python -X utf8 scripts/apg_adaptive_git_preview.py validation-passed --verified plan-ready
+input=成功节点 validation-passed
+literal_output=status=CHECKPOINT_RECOMMENDED; git_action=PREVIEW_ONLY; revert_point=plan-ready; external_actions.git=false
+exit_status=0
+
+FREEZE_CHECK
+command=python -X utf8 scripts/apg_adaptive_git_preview.py implementation-slice --verified plan-ready --failure tests-failed
+input=测试失败
+literal_output=status=FREEZE; revert_point=plan-ready; resume_condition=resume.after-tests-failed-is-resolved
+exit_status=0
+
+ROLLBACK
+command=sh artifacts/apg-adaptive-git-checkpoint-offline/ROLLBACK.sh <target-root> <preimage-root>
+input=独立副本
+literal_output=rollback-restored
+exit_status=0
+restored behavior/status=事务文件移除；既有无关 marker 保留；源 MODIFIED_FILE 保持 changed。
+
+EXTERNAL_ACTIONS
+Git=0; network=0; remote=0; provider=0; host=0; credentials=0; runtime=0; deployment=0; publication=0
+
+PATH_SHA256
+docs/apg/APG_ADAPTIVE_GIT_CHECKPOINT_CONTRACT.md=7e3c27e15728ecd0120fb5c09ba01162f0df7105b5686379f3be3a3a2b1ac4e2
+docs/apg/APG_GIT_CHECKPOINT_POLICY.md=339fcabee1a8219930675add1223a78bc203bbb73dc3e76607658bdcf5a8dbe4
+scripts/apg_adaptive_git_preview.py=05d36094aea5d5f91acf8b34003532ba2261e3898dd12f001ad88ae386c2eb20
+scripts/apg_independent_review.py=b4dfa675c6662e9a1b2da7a17e3bb8a4c3ed40d5722cb0edd0d6b5e471507976
+tests/test_apg_adaptive_git.py=636250820ed42bc98caafba80954fca2db806fed76d6398af20b71ad8c737927
+tests/test_apg_independent_review.py=c8c88e1ccc1be9ca5ddd3798c27ea5782c945129eea60f782d357af6eb38e86b
+artifacts/apg-adaptive-git-checkpoint-offline/MODIFIED_FILE=642fd6dd2cf1737d86454258b45ff5e411c37dc9efcfd9eee64db194557b6547
+artifacts/apg-adaptive-git-checkpoint-offline/DIFF_FILE=d3e8edb86dfc5d774f33c5bf79322781a6dc246f634574938f58a17e6b4c47a0
+artifacts/apg-adaptive-git-checkpoint-offline/ROLLBACK.sh=dc6f4daeeda14c7b305e5c2faf5fee87c361b6bef40fee4413c6fe5eb97cf973

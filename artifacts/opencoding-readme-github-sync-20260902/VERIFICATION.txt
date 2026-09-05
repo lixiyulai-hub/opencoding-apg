@@ -1,0 +1,47 @@
+OpenCoding README GitHub synchronization verification
+Date: 2026-09-02
+
+Changed branch/field: lixiyulai-hub/opencoding-apg main; bilingual README content.
+Paths: README.md, README_CN.md; evidence directory: artifacts/opencoding-readme-github-sync-20260902/.
+
+BASELINE command: python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+BASELINE input: local project before GitHub synchronization
+BASELINE literal output: 42 tests passed (previous verified baseline)
+BASELINE exit status: 0
+BASELINE remote HEAD: f416a97ec5d3b032f0b0ca8ad6cc2c5100cab624
+BASELINE remote README SHA256: README.md=e2dea0b6d6d2b77c15772901e26b984eef18064204bd066b7dc50f3b902b65d2; README_CN.md=a4ba53414a556204b6e5eaf95a0845f3193fd26663f04384843afccf9f351b39
+
+MODIFIED command: git -C .tmp/opencoding-apg-remote push origin main
+MODIFIED input: commit 20ddfe3cc3130648c8771549708b73432e5b9202 containing exactly README.md and README_CN.md
+MODIFIED literal output: f416a97..20ddfe3 main -> main
+MODIFIED exit status: 0
+MODIFIED remote HEAD: 20ddfe3cc3130648c8771549708b73432e5b9202
+MODIFIED remote README SHA256: README.md=33d673b00fee4484ad84c6cb733f3fd4c8d5d8a88fe90e1317d9584fff0e2b8b; README_CN.md=5445bb47fe1561a2860a49ecb6d3d963d7f91d377ae01fa9cfae91ec1018ac8c
+
+TEST command: python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+TEST literal output: Ran 42 tests in 0.993s; OK
+TEST exit status: 0
+
+REVIEW command: python -X utf8 scripts/apg_independent_review.py --root .
+REVIEW literal result: status=PASS; provider_network_credentials_used=false; external_actions_executed=false
+REVIEW exit status: 0
+
+RELEASE command: gh release list -R lixiyulai-hub/opencoding-apg --limit 20
+RELEASE literal result: APG Validation 2026-08-30; Adaptive Project Governance 0.3.0; no new Release
+RELEASE exit status: 0
+
+ROLLBACK command: bash artifacts/opencoding-readme-github-sync-20260902/ROLLBACK.sh .tmp/opencoding-readme-github-rollback-test-20260902b 20ddfe3cc3130648c8771549708b73432e5b9202
+ROLLBACK input: disposable clone at pushed commit
+ROLLBACK literal result: disposable copy reverted commit; README.md and README_CN.md hashes matched pre-push baseline
+ROLLBACK exit status: 0
+
+Restored behavior/status: rollback copy restored to pre-push README state; GitHub main remains at 20ddfe3; no Release, deployment, runtime, or downstream product publication performed.
+
+PLAN RECEIPT: .governance/receipts/20260902T234821.408782Z-plan-change-opencoding-readme-github-sync-20260902-aef5e35f69fd.json
+PLAN receipt result: applied with user confirmation USER-CONFIRM-OPENCODING-README-GITHUB-SYNC-20260902-001; exit status 0
+
+FINAL DOCTOR command: python -X utf8 .tmp/opencoding-apg-remote/scripts/project_governance.py doctor . --json
+FINAL DOCTOR literal result: exit 0; receipts canonical=41; read_only_proof.passed=true; pre-existing codex:drifted adapter check remains
+FINAL AUDIT command: python -X utf8 .tmp/opencoding-apg-remote/scripts/project_governance.py audit . --json
+FINAL AUDIT literal result: classification=warn; audit.read-only=pass; read_only_proof.passed=true
+FINAL exit status: 0

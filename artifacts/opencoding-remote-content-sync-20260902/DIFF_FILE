@@ -1,0 +1,154 @@
+diff --git a/README.md b/README.md
+index 08fd302..b033801 100644
+--- a/README.md
++++ b/README.md
+@@ -1,19 +1,21 @@
+-﻿# Adaptive Project Governance (APG)
+-
+-Turn one idea into an automatically advancing, verifiable project plan.
+-
+-APG is a beginner-friendly, idea-to-result coordinator for AI coding. It clarifies natural-language requests, creates project Markdown knowledge packs, orchestrates tasks, and preserves evidence, Gates, and rollback.
+-
+-## Flow
+-
+-Idea -> Grill Me -> Markdown knowledge pack -> Task graph -> Offline adapter -> Validate / report
+-
+-![APG governance flow](docs/diagrams/APG_GITHUB_INTRO.svg)
+-
+-- Editable draw.io source: docs/diagrams/APG_GITHUB_INTRO.drawio
+-- Chinese overview: README_CN.md
+-- Validation summary: docs/validation/APG_PROJECT_VALIDATION_20260902.md
+-
+-The published files document APG governance and validation fixtures only. They do not claim publication of the downstream child product.
+-
++﻿# OpenCoding (APG)
++
++OpenCoding 是正式品牌；`adaptive-project-governance` 与 `APG` 保留为兼容技术标识。
++
++Turn one idea into an automatically advancing, verifiable project plan.
++
++OpenCoding is a beginner-friendly, idea-to-result coordinator for AI coding. It clarifies natural-language requests, creates project Markdown knowledge packs, orchestrates tasks, and preserves evidence, Gates, and rollback.
++
++## Flow
++
++Idea -> Grill Me -> Markdown knowledge pack -> Task graph -> Offline adapter -> Validate / report
++
++![APG governance flow](docs/diagrams/APG_GITHUB_INTRO.svg)
++
++- Editable draw.io source: docs/diagrams/APG_GITHUB_INTRO.drawio
++- Chinese overview: README_CN.md
++- Validation summary: docs/validation/APG_PROJECT_VALIDATION_20260902.md
++
++The published files document OpenCoding/APG governance and validation fixtures only. They do not claim publication of the downstream child product.
++
+ Grill Me attribution: https://github.com/mattpocock/skills
+diff --git a/README_CN.md b/README_CN.md
+index 4fa7e07..b8445e7 100644
+--- a/README_CN.md
++++ b/README_CN.md
+@@ -1,8 +1,10 @@
+-# APG：让小白轻松面对 AI Coding
++# OpenCoding（APG）：让小白轻松面对 AI Coding
++
++正式品牌：OpenCoding。`adaptive-project-governance` 与 `APG` 保留为兼容技术标识。
+ 
+ 把一句想法，变成一套能自动推进的项目计划。
+ 
+-APG 面向普通用户和 AI coding 初学者：用中文说出想做什么，Grill Me 会追问关键问题，APG 自动整理需求、任务、验证、证据和回滚。
++OpenCoding 面向普通用户和 AI coding 初学者：用中文说出想做什么，Grill Me 会追问关键问题，OpenCoding 自动整理需求、任务、验证、证据和回滚。
+ 
+ ## 核心体验
+ 
+@@ -22,4 +24,4 @@ APG 面向普通用户和 AI coding 初学者：用中文说出想做什么，Gr
+ 
+ ## 验证边界
+ 
+-本仓库内容用于验证 APG 的治理、Gate、证据、回滚和发布编排能力，不代表儿童知行星球下游产品已经实现、部署或上线。
++本仓库内容用于验证 OpenCoding/APG 的治理、Gate、证据、回滚和发布编排能力，不代表儿童知行星球下游产品已经实现、部署或上线。
+diff --git a/SKILL.md b/SKILL.md
+index b41ffe8..264efc3 100644
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -1,9 +1,11 @@
+ ---
+ name: adaptive-project-governance
+-description: Route software-project governance by project state and risk before repository writes or external actions. Use for governance diagnosis, adoption, specification planning, quality gates, global or host changes, target-project mutation, runtime, deployment, publication, pilot, or release work. Skip ordinary chat, translation, and unrelated informational requests.
++description: OpenCoding brand for the Route software-project governance by project state and risk before repository writes or external actions. Use for governance diagnosis, adoption, specification planning, quality gates, global or host changes, target-project mutation, runtime, deployment, publication, pilot, or release work. Skip ordinary chat, translation, and unrelated informational requests.
+ ---
+ 
+-# Adaptive Project Governance
++# OpenCoding / Adaptive Project Governance
++
++OpenCoding is the public brand. The skill invocation ID `$adaptive-project-governance` remains unchanged for compatibility.
+ 
+ Use this skill only for an explicitly authorized project. The global router decides
+ when to invoke it; project `AGENTS.md` files own project-specific commands and Gates.
+diff --git a/agents/openai.yaml b/agents/openai.yaml
+index 64a97e1..84eed87 100644
+--- a/agents/openai.yaml
++++ b/agents/openai.yaml
+@@ -1,6 +1,6 @@
+ interface:
+-  display_name: "Adaptive Project Governance"
++  display_name: "OpenCoding (APG)"
+   short_description: "Route project governance by state and risk"
+-  default_prompt: "Use $adaptive-project-governance to classify this project task and apply the smallest safe governance route."
++  default_prompt: "Use $adaptive-project-governance (OpenCoding/APG) to classify this project task and apply the smallest safe governance route."
+ policy:
+   allow_implicit_invocation: true
+diff --git a/docs/README.md b/docs/README.md
+index 3c7c0d5..993bf09 100644
+--- a/docs/README.md
++++ b/docs/README.md
+@@ -1,3 +1,7 @@
++# OpenCoding Documentation
++
++OpenCoding 是正式品牌；Adaptive Project Governance（APG）是兼容技术标识。
++
+ # APG 下一阶段正式目标：初心者交互体验与执行器连接
+ 
+ 当前正式目标不是直接“替用户盲目执行代码”，而是把 APG 的初心者体验做完整：
+diff --git a/docs/validation/APG_PROJECT_VALIDATION_20260902.md b/docs/validation/APG_PROJECT_VALIDATION_20260902.md
+index ba243c2..e3e7c28 100644
+--- a/docs/validation/APG_PROJECT_VALIDATION_20260902.md
++++ b/docs/validation/APG_PROJECT_VALIDATION_20260902.md
+@@ -1,17 +1,21 @@
+-﻿# APG Project Validation Summary (2026-09-02)
+-
+-This publication contains APG-only governance and validation evidence. It is not a release of the downstream child product.
+-
+-## Results
+-
+-- Unit tests: python -X utf8 -m unittest discover -s tests -p test_*.py -> 42 tests, OK.
+-- Independent review: status=PASS; no blockers; no external actions.
+-- Doctor: PASS; managed adapters current; receipts canonical.
+-- Git safety preview: PREVIEW_ONLY; source fixture has no project-local repository; read-only proof passed.
+-- Rollback exercises: PASS on disposable copies.
+-
+-## Validated capabilities
+-
+-- Governance initialization, plan-change routing, progress binding, and evidence retention.
+-- Offline PRG, Grill Me, beginner executor, adaptive Git checkpoint, Controller Bridge, checkpoint Ledger, local persistence, idempotent replay, and failure freeze.
+-- Publication boundaries remain explicit: no provider, network, credentials, runtime, deployment, release, or downstream product execution is implied.
++# OpenCoding / APG Project Validation Summary — 2026-09-02
++
++本报告使用 OpenCoding 作为正式品牌；APG 与 `adaptive-project-governance` 为兼容别名。
++
++# APG Project Validation Summary (2026-09-02)
++
++This publication contains APG-only governance and validation evidence. It is not a release of the downstream child product.
++
++## Results
++
++- Unit tests: python -X utf8 -m unittest discover -s tests -p test_*.py -> 42 tests, OK.
++- Independent review: status=PASS; no blockers; no external actions.
++- Doctor: PASS; managed adapters current; receipts canonical.
++- Git safety preview: PREVIEW_ONLY; source fixture has no project-local repository; read-only proof passed.
++- Rollback exercises: PASS on disposable copies.
++
++## Validated capabilities
++
++- Governance initialization, plan-change routing, progress binding, and evidence retention.
++- Offline PRG, Grill Me, beginner executor, adaptive Git checkpoint, Controller Bridge, checkpoint Ledger, local persistence, idempotent replay, and failure freeze.
++- Publication boundaries remain explicit: no provider, network, credentials, runtime, deployment, release, or downstream product execution is implied.
+

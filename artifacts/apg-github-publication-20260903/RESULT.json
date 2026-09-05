@@ -1,0 +1,56 @@
+{
+  "after_remote_head": "f232458d3f5e3f8f627cfaa7cc9adbcdd33350c1",
+  "before_remote_head": "6243ae942ca61facb17ce34f79e626aaa8cbdeb0",
+  "blob_shas": {
+    "README.md": "e825ae9cab61ef420631b5478c91f0c4dd29241f",
+    "README_CN.md": "9c070b2ec996c18a69168dfb62853fb664d1ce90",
+    "docs/attribution/GRILL_ME_UPSTREAM.md": "2c8927fdfbf6f9e1cf2f50af8515dd9b2d7f6894",
+    "docs/diagrams/APG_GITHUB_INTRO.drawio": "47a68b7d5d3b85ab74079827e27d6ae8a486fc60",
+    "docs/diagrams/APG_GITHUB_INTRO.svg": "7af3f288257cba28889479b9c85e515af4d70a17",
+    "docs/validation/APG_PROJECT_VALIDATION_20260902.md": "19b3f16a3700e22487d4705712c798652de96c8e"
+  },
+  "branch": "main",
+  "change_id": "apg-github-publication-20260903",
+  "external_actions": {
+    "clone": true,
+    "deployment": false,
+    "git_commit_local": true,
+    "git_push": false,
+    "github_api_commit": true,
+    "host": false,
+    "network": true,
+    "provider": true,
+    "release": false,
+    "runtime": false
+  },
+  "gate": "Gate-G1 confirmed",
+  "local_commit": "a9b95a9c3e80e9dec5993c977bc3d8808bb3b861",
+  "product_delivery": false,
+  "publication_method": "GitHub Git Data API single commit after push transport reset",
+  "published_paths": [
+    "README.md",
+    "README_CN.md",
+    "docs/validation/APG_PROJECT_VALIDATION_20260902.md",
+    "docs/attribution/GRILL_ME_UPSTREAM.md",
+    "docs/diagrams/APG_GITHUB_INTRO.drawio",
+    "docs/diagrams/APG_GITHUB_INTRO.svg"
+  ],
+  "push_attempt": {
+    "command": "git push -u origin main",
+    "exit_status": 128,
+    "literal_output": "Recv failure: Connection was reset"
+  },
+  "release_created": false,
+  "remote_commit": "f232458d3f5e3f8f627cfaa7cc9adbcdd33350c1",
+  "repository": "lixiyulai-hub/adaptive-project-governance",
+  "rollback_command": "sh artifacts/apg-github-publication-20260903/ROLLBACK.sh <disposable-clone> 6243ae942ca61facb17ce34f79e626aaa8cbdeb0",
+  "schema_version": "1.0",
+  "source_sha256": {
+    "README.md": "91c1a2ded75c0f1a6107ba55d739fb09f629106899887c1c2f0b5a5a216389d9",
+    "README_CN.md": "ac89516621556d1882ffbbfed6f4d6f31c21a43f16005b09618484a253ed1939",
+    "docs/attribution/GRILL_ME_UPSTREAM.md": "440cec141998b24d18ea52eb77e5c77a1db20257c955af03cbfdb12bd24ff72f",
+    "docs/diagrams/APG_GITHUB_INTRO.drawio": "9d1aab5e4c80bfe2a6e71a6b0c1faf597980be363017a9fccef86dae08ff0034",
+    "docs/diagrams/APG_GITHUB_INTRO.svg": "3165b582a1cd51c48237b8d4157a3d1100a6eb2de38d579e877a67935177fad8",
+    "docs/validation/APG_PROJECT_VALIDATION_20260902.md": "6754502657ec2a66438b13ee3422a90b78e5ffdf738087112102deece63d20f8"
+  }
+}

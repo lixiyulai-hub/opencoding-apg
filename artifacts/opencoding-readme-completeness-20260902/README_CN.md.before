@@ -1,0 +1,21 @@
+# OpenCoding（APG）中文介绍
+
+OpenCoding 帮助不会写代码、刚开始学习 AI coding 的人，把一个模糊想法变成清楚、可执行、可验证的项目计划。
+
+它可以帮助你：
+
+- 用 Grill Me 追问关键需求，减少遗漏；
+- 自动整理项目说明、知识包、任务清单和执行顺序；
+- 把大目标拆成容易理解的小步骤；
+- 为每一步准备检查、证据和回滚方案；
+- 在密钥、金钱、网络、部署或发布之前停下来确认。
+
+一句话：**让小白也能有条理地开始 AI coding 项目。**
+
+本仓库用于验证 OpenCoding/APG 的治理流程，不代表儿童知行星球下游产品已经实现或上线。
+
+## 流程图
+
+![OpenCoding 小白入门流程图](docs/diagrams/OpenCoding_INTRO.svg)
+
+可编辑源文件：`docs/diagrams/OpenCoding_INTRO.drawio`

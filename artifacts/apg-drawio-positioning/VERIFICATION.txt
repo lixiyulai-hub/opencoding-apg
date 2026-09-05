@@ -1,0 +1,48 @@
+APG Beginner Positioning Verification
+Transaction: zhi-xing-planet-apg-beginner-positioning-cn-20260830
+Scope: Chinese-first beginner-facing APG documentation; no product implementation or deployment.
+
+Baseline test command: python -X utf8 -m unittest discover -s tests -p test_*.py
+Input: C:\Users\Administrator\AppData\Local\Temp\apg-positioning-baseline-copy\tests
+Literal result: ...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.914s
+
+OK
+Exit status: 0
+
+Modified test command: python -X utf8 -m unittest discover -s tests -p test_*.py
+Input: E:\儿童知行星球\tests
+Literal result: ...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.521s
+
+OK
+Exit status: 0
+
+Drawio validation command: python C:\Users\Administrator\drawio-skill\skills\drawio-skill\scripts\validate.py docs\diagrams\APG_GOVERNANCE_RELEASE_FLOW.drawio --score
+Literal result: 0 error(s), 0 warning(s)
+score: 0 (0 through-vertex, 0 crossings, 0 overlaps)
+Exit status: 0
+
+Git diff check command: git diff --check
+Literal result: (no output)
+Exit status: 0
+
+Published commit command: git rev-parse HEAD
+Literal result: 597b6644d968257c2d82f903dafbbe86bb3bd265
+Exit status: 0
+
+About verification: {"description":"中文优先、面向小白的 APG AI Coding 项目协调器：用自然语言 Grill Me 问清需求，自动生成 PRG plan / memory / agents / design 等 Markdown 文档，拆分需求、编排执行、保留 Gate、证据与回滚。 Chinese-first, beginner-friendly idea-to-result governance."}
+Release verification: {"name":"APG Validation 2026-08-30","tagName":"apg-validation-20260830","targetCommitish":"main","url":"https://github.com/lixiyulai-hub/adaptive-project-governance/releases/tag/apg-validation-20260830"}
+
+Rollback command: bash E:\儿童知行星球\artifacts\apg-drawio-positioning/ROLLBACK.sh C:\Users\Administrator\AppData\Local\Temp\apg-positioning-rollback-test/modified C:\Users\Administrator\AppData\Local\Temp\apg-positioning-rollback-test/baseline
+Literal result: restored=C:\Users\Administrator\AppData\Local\Temp\apg-positioning-rollback-test\modified; restored_hash_match=True; modified_file_left_changed=True
+Exit status: 0
+
+Artifacts:
+- E:\儿童知行星球\artifacts\apg-drawio-positioning\MODIFIED_FILE
+- E:\儿童知行星球\artifacts\apg-drawio-positioning\DIFF_FILE
+- E:\儿童知行星球\artifacts\apg-drawio-positioning\VERIFICATION.txt
+- E:\儿童知行星球\artifacts\apg-drawio-positioning\ROLLBACK.sh
+- E:\儿童知行星球\artifacts\apg-drawio-positioning\RESULT.json

@@ -1,0 +1,98 @@
+{
+  "change_id": "apg-beginner-executor-offline-20260901",
+  "contract_examples": {
+    "auto": {
+      "human_gate": false,
+      "knowledge_pack_sha256": "c989074d317f5779d55332a2325d673eef13c6546d2531311d49a49d0a0173b1",
+      "route": "auto",
+      "task_lanes": [
+        "auto",
+        "recommend"
+      ]
+    },
+    "consequential": {
+      "dispatch_permitted": false,
+      "gate_reasons": [
+        "secret",
+        "network",
+        "deployment-choice",
+        "git-release"
+      ],
+      "human_gate": true,
+      "route": "consequential-gate"
+    },
+    "freeze": {
+      "resume_condition": "resume.after-missing-evidence-is-resolved",
+      "terminal_state": "FREEZE"
+    }
+  },
+  "external_actions_executed": {
+    "credentials": false,
+    "deployment": false,
+    "git": false,
+    "host": false,
+    "network": false,
+    "provider": false,
+    "publication": false,
+    "runtime": false
+  },
+  "path_sha256": {
+    "AGENTS.md": "4047a8dd91185e5496bb6acb088f156072074c97a96b11bb2fe66a93c20602f8",
+    "artifacts/apg-beginner-executor-offline/DIFF_FILE": "520d664f1ebaed3b7976dd5f6349cf97603df26a2fa39dd9ce02ab70ea2af448",
+    "artifacts/apg-beginner-executor-offline/MODIFIED_FILE": "909db854b330ebad52f2e9619c7970d0bf7a4bcf6cf35d18a5f6076f5caffa96",
+    "artifacts/apg-beginner-executor-offline/RESULT.json": "self-excluded",
+    "artifacts/apg-beginner-executor-offline/ROLLBACK.sh": "4e9875d4dd5e173fd5e43a1786ad63eee55aebd27893faf594a11dbb10bb00eb",
+    "docs/apg/APG_BEGINNER_EXECUTOR_OFFLINE_CONTRACT.md": "77432cb78b817dfd8fc6463599ea5d8a4b8a084a064116b249c719282c3ac839",
+    "docs/apg/APG_GRILL_ME_UPSTREAM_ATTRIBUTION.md": "61a067493015390137612b69785eb6494108ea5e2b0c668c224faf5447acee56",
+    "scripts/apg_beginner_executor_preview.py": "0dbe26c586ad71c5adcec47efbd46f912f95ea7cbf3c27bca257d29c4c2a8275",
+    "scripts/apg_independent_review.py": "4b43de7597aa790093c735d7c27b7329db7907dbe1af9139604c913e12098b79",
+    "tests/test_apg_beginner_executor.py": "84a7ac4e2242a515efff4b6a0039f86e426c3ca75e8ed068f42bcc6f83237064",
+    "tests/test_apg_independent_review.py": "edef0f8040e2f835e331cd39f16ef39bd2d94784e6f645d2720b69c236be1a4d"
+  },
+  "postimage_sha256": {
+    "AGENTS.md": "4047a8dd91185e5496bb6acb088f156072074c97a96b11bb2fe66a93c20602f8"
+  },
+  "preimage_sha256": {
+    "AGENTS.md": "7c16398b26b6056dce7a6d0ac727a4911a3cc4200b1ed65e349a8420bb551711"
+  },
+  "product_delivery": false,
+  "schema_version": "1.0",
+  "scope": "APG-only Chinese-first Grill Me, Markdown knowledge pack, task graph, and offline executor adapter contract",
+  "upstream_attribution": {
+    "grill_me_original_upstream": "https://github.com/mattpocock/skills",
+    "public_delivery_performed": false
+  },
+  "validation": {
+    "baseline": {
+      "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+      "exit_status": 0,
+      "input": "pre-transaction APG offline suite",
+      "literal_output": ".................... / Ran 20 tests / OK"
+    },
+    "doctor": {
+      "command": "python -X utf8 C:/Users/Administrator/.codex/skills/adaptive-project-governance/scripts/project_governance.py doctor E:/儿童知行星球 --json",
+      "exit_status": 0,
+      "input": "APG 项目根目录",
+      "literal_output": "classification=pass; adapter-drift=pass; receipts=24 canonical; baseline=pass"
+    },
+    "independent_review": {
+      "command": "python -X utf8 scripts/apg_independent_review.py --root .",
+      "exit_status": 0,
+      "input": "APG 部署预览、自动 PRG 与初心者离线 adapter 证据包",
+      "literal_output": "status=PASS; blocker_codes=[]; review_scope=offline-apg-deployment-preview-autonomous-prg-and-beginner-executor; external_actions_executed=false"
+    },
+    "modified": {
+      "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+      "exit_status": 0,
+      "input": "APG 初心者交互、知识包、任务图与离线 adapter 契约写入后的全量套件",
+      "literal_output": ".......................... / Ran 26 tests / OK"
+    },
+    "rollback": {
+      "command": "sh artifacts/apg-beginner-executor-offline/ROLLBACK.sh <target-root> <preimage-root>",
+      "exit_status": 0,
+      "input": "独立副本与独立 AGENTS.md preimage",
+      "literal_output": "rollback-restored",
+      "restored_result": "事务文件移除；AGENTS.md 恢复 preimage；源 MODIFIED_FILE 保持 changed"
+    }
+  }
+}

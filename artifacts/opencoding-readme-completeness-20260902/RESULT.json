@@ -1,0 +1,75 @@
+{
+  "status": "PASS",
+  "change_id": "opencoding-readme-completeness-20260902",
+  "repository": "lixiyulai-hub/opencoding-apg",
+  "branch": "main (local workspace; no Git repository mutation)",
+  "changed_paths": [
+    "README.md",
+    "README_CN.md"
+  ],
+  "scope": "Chinese-first comprehensive README and matching English coverage",
+  "topics": [
+    "capabilities",
+    "beginner audience",
+    "operating model",
+    "execution modes",
+    "human Gates",
+    "feedback",
+    "failure freeze",
+    "retry",
+    "Requeue",
+    "acceptance",
+    "verification",
+    "quick start",
+    "repository map",
+    "scope boundaries",
+    "README completeness comparison"
+  ],
+  "baseline": {
+    "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+    "input": "existing workspace before README write",
+    "literal_result": "Ran 42 tests in 0.939s; OK",
+    "exit_status": 0,
+    "sha256": {
+      "README.md": "e2dea0b6d6d2b77c15772901e26b984eef18064204bd066b7dc50f3b902b65d2",
+      "README_CN.md": "a4ba53414a556204b6e5eaf95a0845f3193fd26663f04384843afccf9f351b39"
+    }
+  },
+  "modified": {
+    "command": "python -X utf8 -m unittest discover -s tests -p 'test_*.py'",
+    "input": "updated README.md and README_CN.md",
+    "literal_result": "Ran 42 tests in 1.076s; OK",
+    "exit_status": 0,
+    "sha256": {
+      "README.md": "33d673b00fee4484ad84c6cb733f3fd4c8d5d8a88fe90e1317d9584fff0e2b8b",
+      "README_CN.md": "5445bb47fe1561a2860a49ecb6d3d963d7f91d377ae01fa9cfae91ec1018ac8c"
+    }
+  },
+  "rollback": {
+    "command": "bash artifacts/opencoding-readme-completeness-20260902/ROLLBACK.sh .tmp/opencoding-readme-rollback-test-20260902",
+    "input": "disposable copy containing modified README files",
+    "literal_result": "restored README.md and README_CN.md from baseline preimages; both SHA256 values matched baseline",
+    "exit_status": 0,
+    "restored_behavior": "PASS; main workspace remains modified"
+  },
+  "doctor": {
+    "command": "python -X utf8 .tmp/opencoding-apg-remote/scripts/project_governance.py doctor . --json",
+    "result": "PASS checks except pre-existing codex:drifted adapter warning/fail; read_only_proof.passed=true; receipts canonical=39",
+    "exit_status": 0
+  },
+  "audit": {
+    "command": "python -X utf8 .tmp/opencoding-apg-remote/scripts/project_governance.py audit . --json",
+    "result": "classification=warn; audit.read-only=pass; changed_paths=[]; read_only_proof.passed=true; evidence.data-risk warning is pre-existing profile uncertainty",
+    "exit_status": 0
+  },
+  "independent_review": {
+    "command": "python -X utf8 scripts/apg_independent_review.py --root .",
+    "literal_result": "status=PASS; provider_network_credentials_used=false; external_actions_executed=false",
+    "exit_status": 0
+  },
+  "github": {
+    "push": "not performed",
+    "release": "not created"
+  },
+  "receipt": ".governance/receipts/20260902T230208.888313Z-plan-change-opencoding-readme-completeness-20260902-f4e36edbba68.json"
+}

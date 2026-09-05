@@ -1,0 +1,1 @@
+# MVP Acceptance Plan\n\nPreview only: four-week closed pilot, thresholds, safety and deletion acceptance checks.\n

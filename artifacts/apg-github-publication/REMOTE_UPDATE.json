@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "repository": "lixiyulai-hub/adaptive-project-governance",
+  "branch": "main",
+  "base_commit": "320b79aff044a691f38d97421aa1fa9024237573",
+  "published_commit": "cb24225a799c359ddf1a3f947b9be1da3f847ec0",
+  "commit_message": "docs: publish APG project validation result",
+  "changed_paths": [
+    "docs/validation/APG_PROJECT_VALIDATION_20260831.md",
+    "docs/validation/APG_PROJECT_VALIDATION_20260831.json"
+  ],
+  "remote_file_shas": {
+    "docs/validation/APG_PROJECT_VALIDATION_20260831.md": "9321b37139751c9852d945d18f37010b8009bc0a",
+    "docs/validation/APG_PROJECT_VALIDATION_20260831.json": "336df513565f094ea272f1b00527e2c3d688c94d"
+  },
+  "remote_mutation": "PUBLISHED_APG_VALIDATION_EVIDENCE_ONLY",
+  "product_release": false,
+  "tag_created": false,
+  "github_release_created": false,
+  "deployment": false,
+  "pilot": false,
+  "provider": false,
+  "network": false,
+  "credentials": false,
+  "real_data": false,
+  "rollback": {
+    "status": "NOT_EXECUTED",
+    "target_parent_commit": "320b79aff044a691f38d97421aa1fa9024237573"
+  }
+}

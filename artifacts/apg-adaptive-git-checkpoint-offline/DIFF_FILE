@@ -1,0 +1,5 @@
+APG-only adaptive Git checkpoint advisor
++ success-node checkpoint suggestions
++ latest verified revert point selection
++ FREEZE on missing evidence/tests failure/scope drift
+Git actions executed: none.

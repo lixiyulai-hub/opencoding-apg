@@ -1,0 +1,53 @@
+{
+  "change_id": "apg-github-public-delivery-preview-20260902",
+  "drawio_workflow_reference": "https://github.com/Agents365-ai/drawio-skill",
+  "external_actions_executed": false,
+  "path_sha256": {
+    "artifacts/apg-github-public-delivery-preview/APG_GITHUB_INTRO.drawio": "9d1aab5e4c80bfe2a6e71a6b0c1faf597980be363017a9fccef86dae08ff0034",
+    "artifacts/apg-github-public-delivery-preview/APG_GITHUB_INTRO.svg": "3165b582a1cd51c48237b8d4157a3d1100a6eb2de38d579e877a67935177fad8",
+    "artifacts/apg-github-public-delivery-preview/APG_PUBLIC_HERO_PREVIEW.md": "2b59bd38c287b03c89e94ca4a4add30de157570fbfc5a1e7bfd6a1ef312cb25a",
+    "artifacts/apg-github-public-delivery-preview/DIFF_FILE": "cf0ff7435ec4e09e685c32a744f7124269266e6a1df1c9a977b6dbd376a8b3bf",
+    "artifacts/apg-github-public-delivery-preview/MODIFIED_FILE": "008050354564d370ce450f826ea991a12dafcca027bf3deb8bf6e9afad0fb69c",
+    "artifacts/apg-github-public-delivery-preview/RESULT.json": "self-excluded",
+    "artifacts/apg-github-public-delivery-preview/ROLLBACK.sh": "6c73a0146d92b529face0de3c74f05c1fb30fe82f56e3d3540e093572dfd2f03",
+    "artifacts/apg-github-public-delivery-preview/VERIFICATION.txt": "7b1d3fee1f12591570c7063375ad12c0b24deb4ab871c6647c69eda678836bdc",
+    "docs/apg/APG_DRAWIO_GITHUB_INTRO_PREVIEW.md": "297a56586abafe70d4a86d98f92ad3578ed0de590ca7a978f8335fa8231cb5d2",
+    "docs/apg/APG_GITHUB_PUBLIC_DELIVERY_PREVIEW_20260902.md": "c26ecfe6c046207241cf89511cab344a5672a19c27dbf2a188dc42c48b6fb738",
+    "docs/apg/APG_HOMEPAGE_HERO_PREVIEW_CN.md": "2b59bd38c287b03c89e94ca4a4add30de157570fbfc5a1e7bfd6a1ef312cb25a"
+  },
+  "planned_remote_paths": [
+    "README.md",
+    "README_CN.md",
+    "docs/validation/APG_PROJECT_VALIDATION_20260902.md",
+    "docs/attribution/GRILL_ME_UPSTREAM.md",
+    "docs/diagrams/APG_GITHUB_INTRO.drawio",
+    "docs/diagrams/APG_GITHUB_INTRO.svg"
+  ],
+  "preview_only": true,
+  "product_delivery": false,
+  "schema_version": "1.0",
+  "scope": "APG-only GitHub public-delivery preview with Chinese-first hero and drawio intro",
+  "upstream_attribution": "https://github.com/mattpocock/skills",
+  "validation": {
+    "drawio_structure": {
+      "exit_status": 0,
+      "gate_edges": 1,
+      "main_edges": 5,
+      "nodes": 7,
+      "xml_parse": true
+    },
+    "full_tests": {
+      "exit_status": 0,
+      "result": "OK",
+      "tests": "26"
+    },
+    "git_safety": "PREVIEW_ONLY",
+    "rollback": {
+      "exit_status": 0,
+      "result": "rollback-restored"
+    },
+    "svg_content": {
+      "exit_status": 0
+    }
+  }
+}

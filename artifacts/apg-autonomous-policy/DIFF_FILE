@@ -1,0 +1,7 @@
+--- /dev/null
++++ b/artifacts/apg-autonomous-policy/MODIFIED_FILE
+@@
++APG autonomous PRG fixture
++state=changed
++policy=auto-select-safe-defaults
++human_gate=consequential-only

@@ -1,0 +1,68 @@
+APG 初心者交互与离线 executor adapter 验证（APG-only）
+change_id=apg-beginner-executor-offline-20260901
+product_delivery=false
+
+SCOPE
+仅覆盖中文初心者入口、Grill Me 会话、项目 Markdown 知识包、需求/任务图、离线 adapter 模拟和治理适配器；不实现儿童知行星球，不连接 Host/Provider/网络/凭据/runtime/部署/Git/发布。
+
+UPSTREAM_ATTRIBUTION
+Grill Me 原始上游来源：https://github.com/mattpocock/skills
+本阶段只记录归属，不执行 GitHub 或网络动作。
+
+BASELINE
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=事务写入前既有 APG 离线套件
+literal_output=.................... / Ran 20 tests / OK
+exit_status=0
+
+MODIFIED
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=加入中文 Grill Me、知识包、任务图、离线 adapter 契约后的全量套件
+literal_output=.......................... / Ran 26 tests / OK
+exit_status=0
+
+AUTO_REPLAY
+command=python -X utf8 scripts/apg_beginner_executor_preview.py 我想做一个中文学习打卡工具
+input=中文初心者自然语言请求
+literal_output=route=auto; human_gate=false; knowledge_pack.format=markdown; grill_me.questions=3; adapter.mode=offline-simulation; execution_performed=false
+exit_status=0
+
+CONSEQUENTIAL_GATE_REPLAY
+command=python -X utf8 scripts/apg_beginner_executor_preview.py 请联网并使用密钥部署到 GitHub
+input=含网络、密钥、部署和 GitHub 公共交付意图
+literal_output=route=consequential-gate; human_gate=true; dispatch_permitted=false; external_actions.all=false
+exit_status=0
+
+FREEZE_REPLAY
+command=python -X utf8 scripts/apg_beginner_executor_preview.py 继续整理 --failure missing evidence
+input=缺失证据模拟
+literal_output=terminal_state=FREEZE; resume_condition=resume.after-missing-evidence-is-resolved; adapter.error_classification=missing-evidence
+exit_status=0
+
+DOCTOR
+command=python -X utf8 C:/Users/Administrator/.codex/skills/adaptive-project-governance/scripts/project_governance.py doctor E:/儿童知行星球 --json
+input=APG 项目根目录
+literal_output=classification=pass; adapter-drift=pass; receipts=24 canonical; baseline=pass
+exit_status=0
+
+AUDIT
+command=python -X utf8 C:/Users/Administrator/.codex/skills/adaptive-project-governance/scripts/project_governance.py audit E:/儿童知行星球 --json
+input=APG-only 根目录只读审计
+literal_output=classification=warn; read_only_proof.passed=true; no scope change
+exit_status=0
+
+INDEPENDENT_REVIEW
+command=python -X utf8 scripts/apg_independent_review.py --root .
+input=部署预览、自动 PRG 与初心者离线 adapter 证据包
+literal_output=status=PASS; blocker_codes=[]; review_scope=offline-apg-deployment-preview-autonomous-prg-and-beginner-executor; external_actions_executed=false
+exit_status=0
+
+ROLLBACK
+command=sh artifacts/apg-beginner-executor-offline/ROLLBACK.sh <disposable-root> <preimage-root>
+input=独立副本；保留一份 AGENTS.md preimage 作为恢复来源
+literal_output=rollback-restored
+exit_status=0
+restored behavior/status=独立副本事务文件移除，AGENTS.md 恢复到 preimage；源 MODIFIED_FILE 保持 state=changed。
+
+GATES
+常规 APG-only 离线工作自动推进，不要求重复人工批准。唯一 consequential Gate 规则保持不变，仅当密钥、金钱、网络、部署目标、真实数据、Git/公开发布或不可逆外部动作出现时暂停一次。

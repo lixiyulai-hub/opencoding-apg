@@ -1,0 +1,52 @@
+APG 自动漂移修复验证（APG-only）
+change_id=apg-autonomous-drift-remediation-loop-authorized-20260901
+product_delivery=false
+
+BASELINE
+command=python -X utf8 -m unittest tests.test_apg_independent_review tests.test_apg_release_orchestration tests.test_domain_contract tests.test_frontend_contract tests.test_verification_contract
+input=修复前既有 APG 验收套件
+literal_output=............... / Ran 15 tests in 0.839s / OK
+exit_status=0
+
+MODIFIED
+command=python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+input=APG 自动 PRG 策略、漂移修复与独立复核覆盖已写入后的全量离线套件
+literal_output=.................... / Ran 20 tests in 0.927s / OK
+exit_status=0
+
+DOCTOR
+command=python -X utf8 -m project_governance doctor E:\儿童知行星球 --json
+input=当前 APG 根目录
+literal_output=classification=pass; adapter-drift=pass; progress-definition=pass; source_status=not-computable; receipts=22 canonical
+exit_status=0
+
+INDEPENDENT_REVIEW
+command=python -X utf8 scripts/apg_independent_review.py --root .
+input=部署预览与自动 PRG 证据包
+literal_output=status=PASS; blocker_codes=[]; review_scope=offline-apg-deployment-preview-and-autonomous-prg; external_actions_executed=false
+exit_status=0
+
+ROLLBACK
+command=bash artifacts/apg-autonomous-drift-repair/ROLLBACK.sh <preimage-dir> <disposable-root>
+input=独立副本；包含事务文件与 .governance/receipts/preserved-receipt.json
+literal_output=rollback-restored
+exit_status=0
+restored behavior/status=事务文件在独立副本移除，preserved-receipt.json 保留；源 MODIFIED_FILE 继续保持 state=changed。
+
+EVIDENCE_HASH_POLICY
+RESULT.json hashes all external evidence paths; VERIFICATION.txt is intentionally excluded because it records the hash policy and would otherwise self-mutate.
+
+GATES
+routine APG-only 本地修复已执行。没有 Host、Provider、网络、凭据、Runtime、部署、Git、发布或真实数据动作。
+唯一 consequential Gate 规则保持不变，仅在外部影响事务出现时触发一次。
+
+POSTIMAGE HASHES
+AGENTS.md.sha256=2ff0708a2d9fbfef106abeefa54fd89650cfb4344db818630beb6a7235149b35
+.governance/progress/active.json.sha256=2e1e6566b997df5111e3ef0b17fbd8cf6a1cd5b6a5fde250cdf9eef3e88eca8f
+docs/apg/APG_AUTONOMOUS_DRIFT_REPAIR.md.sha256=f740336cfcfc48c9b9e69db51c68660c375d614994a439c90d36e07425c97166
+scripts/apg_independent_review.py.sha256=a94bdefeb77838f02a669ce128d5c993a2cddee1e66f22a77d8ab8aa01aa8ba1
+tests/test_apg_independent_review.py.sha256=7cd6f4aade7eab4447f889b7133d0ebf35f4e917f49de45839d00a7a9ce04a28
+artifacts/apg-autonomous-drift-repair/MODIFIED_FILE.sha256=818a5385aeeb1ea1da145f949fc0670705c6bb80851a17d9704dbf2a8c599e0a
+artifacts/apg-autonomous-drift-repair/DIFF_FILE.sha256=c4de4d0ef6ffdee75ac5e10112f61d98849ad77bd19939cc61143b7889d8d91e
+artifacts/apg-autonomous-drift-repair/VERIFICATION.txt.sha256=77f061c6857c051da2c0c6fa48925f8fa82c945ac1b9858d2aa6070be1b48f27
+artifacts/apg-autonomous-drift-repair/ROLLBACK.sh.sha256=c2bf178b51fd16773e80e5b197d6e8aea600898eb9e7133bb1f3c1c62356ad8a

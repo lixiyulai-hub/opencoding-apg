@@ -1,0 +1,9 @@
+--- PROJECT_BRIEF.md
++++ artifacts/apg-adaptive-git-ledger-replay/MODIFIED_FILE
+@@ -10,4 +10,6 @@
+ 
+ ## Evidence tasks
+ - Confirm users, ownership, lifecycle, and release model.
+-- Replace unknown data and exposure classifications with evidence.+- Replace unknown data and exposure classifications with evidence.
++APG checkpoint ledger replay fixture marker
++changed_field=checkpoint_ledger.snapshot_digest
