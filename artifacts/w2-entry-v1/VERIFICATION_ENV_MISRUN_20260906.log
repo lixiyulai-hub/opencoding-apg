@@ -1,0 +1,5 @@
+Command: final compile/diff/hash/doctor compound command
+Working directory: C:\Users\Administrator\.codex\skills\adaptive-project-governance
+Exit code: 1
+Cause: source-relative paths were evaluated from the governance skill directory; compile could not find opencoding/__init__.py and the target doctor invocation was not the intended target.
+Effect: no W2 source write; no evidence overwrite; command was rerun from wt-entry and the target doctor then exited 0.

@@ -1,0 +1,10 @@
+[build-system]
+requires = []
+build-backend = "setuptools.build_meta:__legacy__"
+
+[project]
+name = "opencoding-local-entry"
+version = "0.1.0"
+description = "Offline Chinese-first OpenCoding product entry"
+requires-python = ">=3.11"
+dependencies = []

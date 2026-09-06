@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import stat
+from contextlib import contextmanager
 from typing import Any
 import uuid
 
@@ -336,4 +337,37 @@ def load_session(root: Path, session_id: str) -> dict[str, Any]:
         _release_lock(lock, handle, lock_payload)
 
 
-__all__ = ["SessionConflictError", "SessionLockError", "load_session", "save_session"]
+def read_session_snapshot(root: Path, session_id: str) -> dict[str, Any]:
+    """Read one atomically saved session without creating metadata or touching the guard."""
+
+    root = _root(root)
+    destination = _path(root, session_id)
+    if not destination.exists():
+        raise FileNotFoundError(f"session not found: {session_id}")
+    _check_existing_chain(destination, root=root)
+    session = _read_existing(destination)
+    if session is None or session["id"] != session_id:
+        raise ValueError("session id does not match path")
+    return session
+
+
+@contextmanager
+def session_write_lock(root: Path):
+    """Hold the existing OS-backed session lock across a compound service operation."""
+
+    root = _root(root)
+    lock, handle, lock_payload = _acquire_lock(root)
+    try:
+        yield
+    finally:
+        _release_lock(lock, handle, lock_payload)
+
+
+__all__ = [
+    "SessionConflictError",
+    "SessionLockError",
+    "load_session",
+    "read_session_snapshot",
+    "save_session",
+    "session_write_lock",
+]

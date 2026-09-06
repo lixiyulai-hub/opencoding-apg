@@ -10,11 +10,33 @@ from opencoding.intake import answer_question, new_session
 from opencoding.sessions import SessionConflictError, SessionLockError, load_session, save_session
 
 
-def _save_from_process(root_text, session, queue):
+def _save_from_process(root_text, session, queue, label, ready=None, start=None):
+    if ready is not None:
+        ready.set()
+    if start is not None and not start.wait(10):
+        raise RuntimeError("writer start barrier timed out")
     try:
-        queue.put(("saved", save_session(Path(root_text), session)["status"]))
-    except Exception as exc:  # pragma: no cover - exercised in the child process
-        queue.put(("error", type(exc).__name__))
+        queue.put((label, "saved", save_session(Path(root_text), session)["status"]))
+    except (SessionConflictError, SessionLockError) as exc:  # pragma: no cover - child process
+        queue.put((label, "rejected", type(exc).__name__))
+    except BaseException as exc:  # pragma: no cover - unexpected child failure
+        queue.put((label, "unexpected_error", type(exc).__name__, str(exc)))
+        raise
+
+
+def _save_with_lock_checkpoint(root_text, session, queue, label, lock_held, continue_event):
+    import opencoding.sessions as session_module
+
+    original_read = session_module._read_existing
+
+    def read_after_checkpoint(destination):
+        lock_held.set()
+        if not continue_event.wait(10):
+            raise RuntimeError("lock-held checkpoint timed out")
+        return original_read(destination)
+
+    session_module._read_existing = read_after_checkpoint
+    _save_from_process(root_text, session, queue, label)
 
 
 def _crash_during_load(root_text, session_id):
@@ -54,13 +76,18 @@ def _crash_before_replace(root_text, session_id):
     session_module.save_session(Path(root_text), answer_question(base, "platform", "网页"))
 
 
-def _hold_lock(root_text, ready, release):
+def _hold_lock(root_text, ready, release, released=None):
     import opencoding.sessions as session_module
 
     lock, handle, payload = session_module._acquire_lock(Path(root_text))
     ready.set()
-    release.wait(10)
-    session_module._release_lock(lock, handle, payload)
+    try:
+        if not release.wait(10):
+            raise RuntimeError("lock release barrier timed out")
+    finally:
+        session_module._release_lock(lock, handle, payload)
+        if released is not None:
+            released.set()
 
 
 def _crash_after_replace(root_text, session_id):
@@ -328,16 +355,97 @@ class SessionPersistenceTests(unittest.TestCase):
             right = answer_question(base, "platform", "命令行")
             context = multiprocessing.get_context("spawn")
             queue = context.Queue()
-            processes = [context.Process(target=_save_from_process, args=(str(root), candidate, queue)) for candidate in (left, right)]
-            for process in processes:
-                process.start()
-            for process in processes:
-                process.join(10)
-                self.assertEqual(process.exitcode, 0)
-            results = [queue.get(timeout=2) for _ in processes]
+            left_lock_held = context.Event()
+            left_continue = context.Event()
+            right_ready = context.Event()
+            right_start = context.Event()
+            left_process = context.Process(
+                target=_save_with_lock_checkpoint,
+                args=(str(root), left, queue, "left", left_lock_held, left_continue),
+            )
+            right_process = context.Process(
+                target=_save_from_process,
+                args=(str(root), right, queue, "right", right_ready, right_start),
+            )
+            processes = [left_process, right_process]
+            try:
+                left_process.start()
+                self.assertTrue(left_lock_held.wait(10))
+                right_process.start()
+                self.assertTrue(right_ready.wait(10))
 
-            self.assertEqual([item[0] for item in results].count("saved"), 1)
-            self.assertEqual([item[1] for item in results].count("SessionConflictError"), 1)
+                right_start.set()
+                right_result = queue.get(timeout=10)
+                left_continue.set()
+                left_result = queue.get(timeout=10)
+
+                for process in processes:
+                    process.join(10)
+                    self.assertEqual(process.exitcode, 0)
+            finally:
+                left_continue.set()
+                right_start.set()
+                for process in processes:
+                    if process.pid is not None:
+                        if process.is_alive():
+                            process.terminate()
+                        process.join(10)
+
+            results = [left_result, right_result]
+            self.assertEqual({item[0] for item in results}, {"left", "right"})
+            self.assertEqual(left_result, ("left", "saved", "saved"))
+            self.assertEqual(right_result, ("right", "rejected", "SessionLockError"))
+            saved = [item for item in results if item[1:] == ("saved", "saved")]
+            rejected = [item for item in results if item[1] == "rejected"]
+            self.assertEqual(len(saved), 1)
+            self.assertEqual(len(rejected), 1)
+            self.assertIn(rejected[0][2], {"SessionLockError", "SessionConflictError"})
+
+            winner = {"left": left, "right": right}[saved[0][0]]
+            self.assertEqual(load_session(root, base["id"]), winner)
+
+    def test_released_lock_rejects_stale_process_candidate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = new_session("做一个工具")
+            save_session(root, base)
+            winner = answer_question(base, "platform", "网页")
+            stale = answer_question(base, "platform", "命令行")
+            context = multiprocessing.get_context("spawn")
+            queue = context.Queue()
+            stale_ready = context.Event()
+            stale_start = context.Event()
+            stale_process = context.Process(
+                target=_save_from_process,
+                args=(str(root), stale, queue, "stale", stale_ready, stale_start),
+            )
+            winner_process = context.Process(
+                target=_save_from_process,
+                args=(str(root), winner, queue, "winner"),
+            )
+            try:
+                stale_process.start()
+                self.assertTrue(stale_ready.wait(10))
+                winner_process.start()
+                winner_result = queue.get(timeout=10)
+                winner_process.join(10)
+                self.assertEqual(winner_process.exitcode, 0)
+
+                stale_start.set()
+                stale_result = queue.get(timeout=10)
+                stale_process.join(10)
+                self.assertEqual(stale_process.exitcode, 0)
+            finally:
+                stale_start.set()
+                for process in (winner_process, stale_process):
+                    if process.pid is not None:
+                        if process.is_alive():
+                            process.terminate()
+                        process.join(10)
+
+            self.assertEqual(winner_result, ("winner", "saved", "saved"))
+            self.assertEqual(stale_result, ("stale", "rejected", "SessionConflictError"))
+            self.assertEqual(load_session(root, base["id"]), winner)
 
     def test_read_missing_session_does_not_create_store(self):
         with tempfile.TemporaryDirectory() as directory:
