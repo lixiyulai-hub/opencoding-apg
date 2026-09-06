@@ -73,7 +73,7 @@ def _root_path(root: str | Path) -> Path:
     if not path.is_absolute():
         raise ServiceError("invalid_root", "项目根目录必须是绝对路径")
     try:
-        return _root(path)
+        return _root(path).resolve(strict=True)
     except (TypeError, ValueError) as exc:
         raise ServiceError("invalid_root", sanitize_text(str(exc))) from exc
 

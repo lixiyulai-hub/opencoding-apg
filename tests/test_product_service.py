@@ -85,6 +85,15 @@ class ProductServiceTests(unittest.TestCase):
             self.assertTrue(preview["file_plan"]["entries"])
             self.assertIsInstance(service_module.as_json(preview), str)
 
+    def test_preview_and_approval_use_one_canonical_root_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            view = _complete(root)
+            preview = preview_session(root, view["session"]["id"])
+            self.assertEqual(preview["root"], preview["file_plan"]["root"])
+            self.assertEqual(preview["root"], str(root.resolve(strict=True)))
+            self.assertTrue(approve_preview(preview)["approved"])
+
     def test_frontier_follows_dependencies_and_changed_answer_is_visible(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
