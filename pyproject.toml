@@ -1,6 +1,6 @@
 [build-system]
-requires = []
-build-backend = "setuptools.build_meta:__legacy__"
+requires = ["setuptools>=83"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "opencoding-local-entry"
@@ -8,3 +8,12 @@ version = "0.1.0"
 description = "Offline Chinese-first OpenCoding product entry"
 requires-python = ">=3.11"
 dependencies = []
+readme = {file = "docs/product/OFFLINE_INSTALLATION.md", content-type = "text/markdown"}
+license-files = []
+
+[project.scripts]
+opencoding = "opencoding.cli:main"
+
+[tool.setuptools]
+packages = ["opencoding"]
+include-package-data = false

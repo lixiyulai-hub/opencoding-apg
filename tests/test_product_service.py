@@ -9,14 +9,17 @@ import multiprocessing
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 from opencoding.intake import QUESTION_DEFINITIONS
+from opencoding.scheduler import SchedulerSnapshotError
 import opencoding.service as service_module
 from opencoding.service import (
     ServiceError,
     apply_approved,
     approve_preview,
     create_session,
+    execution_status,
     preview_session,
     rollback,
     session_view,
@@ -73,6 +76,36 @@ def _save_child(root_text: str, session_id: str, revision: int, queue) -> None:
 
 
 class ProductServiceTests(unittest.TestCase):
+    def test_execution_status_is_json_safe_zero_write_and_maps_snapshot_errors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            before = _inventory(root)
+            status = execution_status(root)
+            self.assertEqual(status, {
+                "schema_version": "1.0",
+                "root": str(root),
+                "status": "not_initialized",
+                "tasks": [],
+                "runs": [],
+            })
+            self.assertEqual(_inventory(root), before)
+            with self.assertRaises(ServiceError) as invalid:
+                execution_status(root, "bad task id")
+            self.assertEqual(invalid.exception.code, "execution_status_invalid_task_id")
+            with mock.patch.object(service_module, "read_snapshot", side_effect=SchedulerSnapshotError("database_busy", "token=sk-test-1234567890")):
+                with self.assertRaises(ServiceError) as busy:
+                    execution_status(root)
+            self.assertEqual(busy.exception.code, "execution_status_database_busy")
+            self.assertNotIn("sk-test-1234567890", str(busy.exception))
+            with mock.patch.object(service_module, "read_snapshot", side_effect=SchedulerSnapshotError("unsupported_schema", "schema broken")):
+                with self.assertRaises(ServiceError) as schema:
+                    execution_status(root, "absent")
+            self.assertEqual(schema.exception.code, "execution_status_unsupported_schema")
+            with mock.patch.object(service_module, "read_snapshot", side_effect=SchedulerSnapshotError("unsupported_platform", "platform unsupported")):
+                with self.assertRaises(ServiceError) as platform:
+                    execution_status(root)
+            self.assertEqual(platform.exception.code, "execution_status_unsupported_platform")
+
     def test_preview_is_zero_write_and_service_state_is_json_safe(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

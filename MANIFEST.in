@@ -1,0 +1,29 @@
+include pyproject.toml
+include MANIFEST.in
+include docs/product/OFFLINE_INSTALLATION.md
+include opencoding/*.py
+
+prune apps
+prune artifacts
+prune docs
+prune scripts
+prune services
+prune tests
+prune .governance
+
+exclude AGENTS.md
+exclude ARCHITECTURE.md
+exclude PROJECT_BRIEF.md
+exclude QUALITY_GATES.md
+exclude README.md
+exclude README_CN.md
+exclude AUTHORS
+exclude AUTHORS.*
+exclude COPYING
+exclude COPYING.*
+exclude LICENSE
+exclude LICENSE.*
+exclude NOTICE
+exclude NOTICE.*
+global-exclude __pycache__
+global-exclude *.py[cod]

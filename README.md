@@ -64,6 +64,12 @@ OpenCoding 是一个面向不会写代码、刚开始使用 AI coding 的人的 
 - receipt、snapshot、ledger（如适用）可重放、幂等且未覆盖历史记录；
 - 失败时能冻结、回滚或 Requeue，成功时能说明结果、状态和下一步。
 
+### 供 Codex 与其他 agent 使用
+
+OpenCoding 不要求嵌入浏览器工作台、Codex App、MCP 或插件才能被 agent 使用。已有的本地 CLI 和 Python API 是当前受控入口；它们只处理显式本地 root，不会接通 Host、Provider、网络、凭据或外部服务。
+
+从源码仓库使用时，请先阅读 [`docs/product/AGENT_NATIVE_USE.md`](docs/product/AGENT_NATIVE_USE.md)。该指南区分零写入查看、会话写入、经人工确认的本地文档 apply，以及会初始化或恢复本地调度状态的 scheduler 调用；它不把 TaskPlan 当成已执行任务，也不承诺任何特定 agent Host 已兼容。
+
 ### 快速开始
 
 ```powershell
@@ -153,6 +159,12 @@ Inspect the transaction receipt, `VERIFICATION.txt`, and test output first. Corr
 ### Verification and acceptance
 
 A change is accepted when its paths match the plan, preview and apply remain separate, preimages and rollback evidence are retained, the offline unittest command passes, doctor/audit/independent-review evidence is traceable, receipts and ledgers remain replayable and idempotent, and success or failure states clearly identify the result and next step.
+
+### For Codex and other agents
+
+OpenCoding does not require a browser workbench, Codex App embedding, MCP, or a plugin before an agent can use its existing local CLI and Python APIs. Those entry points operate only on an explicit local root and do not connect to a Host, provider, network, credentials, or external services.
+
+When working from the source repository, read [`docs/product/AGENT_NATIVE_USE.md`](docs/product/AGENT_NATIVE_USE.md) first. It distinguishes zero-write views, session writes, user-authorized local document apply, and scheduler calls that may initialize or recover local state. It also does not treat a TaskPlan as an executed task or claim compatibility with every agent Host.
 
 ### Quick start
 

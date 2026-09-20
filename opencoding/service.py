@@ -13,6 +13,7 @@ from .decisions import build_recommendation
 from .documents import render_documents, validate_recommendation
 from .intake import QUESTION_DEFINITIONS, answer_question, new_session
 from .planning import build_task_plan, validate_task_plan
+from .scheduler import SchedulerSnapshotError, read_snapshot
 from .safety import action_digest, canonical_json, evaluate_action, sanitize_text, sha256_bytes
 from .sessions import (
     SessionConflictError,
@@ -223,6 +224,18 @@ def list_sessions(root: str | Path) -> list[dict[str, Any]]:
             raise ServiceError("session_read_failed", sanitize_text(str(exc))) from exc
         result.append({"id": session["id"], "revision": session["revision"], "goal": session["goal"], "state": session["state"]})
     return result
+
+
+def execution_status(root: str | Path, task_id: str | None = None) -> dict[str, Any]:
+    """Return the scheduler's zero-write task/run status for one local root."""
+
+    project_root = _root_path(root)
+    try:
+        return _json_value(read_snapshot(project_root, task_id))
+    except SchedulerSnapshotError as exc:
+        raise ServiceError("execution_status_" + exc.code, sanitize_text(str(exc))) from exc
+    except (TypeError, ValueError) as exc:
+        raise ServiceError("execution_status_rejected", sanitize_text(str(exc))) from exc
 
 
 def submit_answer(root: str | Path, session_id: str, expected_revision: int, question_id: str, answer: str) -> dict[str, Any]:
@@ -467,6 +480,7 @@ __all__ = [
     "approve_preview",
     "create_session",
     "derive_frontier",
+    "execution_status",
     "list_sessions",
     "preview_session",
     "rollback",

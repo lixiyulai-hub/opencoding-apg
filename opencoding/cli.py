@@ -7,17 +7,37 @@ from pathlib import Path
 import sys
 from typing import Any, Callable
 
+from .safety import sanitize_text
 from .service import (
     ServiceError,
     apply_approved,
     approve_preview,
     as_json,
     create_session,
+    execution_status,
     preview_session,
     rollback,
     session_view,
     submit_answer,
 )
+
+
+_TASK_STATE_LABELS = {
+    "queued": "排队中",
+    "running": "运行中",
+    "succeeded": "已成功",
+    "failed": "失败",
+    "frozen": "已冻结",
+    "cancelled": "已取消",
+    "timed_out": "已超时",
+}
+_RUN_STATE_LABELS = {
+    "running": "运行中",
+    "succeeded": "已成功",
+    "failed": "失败",
+    "cancelled": "已取消",
+    "timed_out": "已超时",
+}
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -26,11 +46,14 @@ def _parser() -> argparse.ArgumentParser:
         description="OpenCoding 中文入口：离线问答、方案预览、精确本地文档确认与回滚。",
     )
     parser.add_argument("--root", required=True, help="已有本地项目根目录（绝对路径）")
-    parser.add_argument("--resume", metavar="SESSION_ID", help="恢复指定会话")
-    parser.add_argument("--list", action="store_true", help="列出本地会话")
-    parser.add_argument("--preview", metavar="SESSION_ID", help="只读显示指定会话的方案、文件范围和差异")
-    parser.add_argument("--change", nargs=3, metavar=("SESSION_ID", "QUESTION_ID", "ANSWER"), help="修改已有会话答案并显示新方案差异")
-    parser.add_argument("--rollback", metavar="TRANSACTION_ID", help="回滚指定的本地文档事务")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--resume", metavar="SESSION_ID", help="恢复指定会话")
+    mode.add_argument("--list", action="store_true", help="列出本地会话")
+    mode.add_argument("--preview", metavar="SESSION_ID", help="只读显示指定会话的方案、文件范围和差异")
+    mode.add_argument("--change", nargs=3, metavar=("SESSION_ID", "QUESTION_ID", "ANSWER"), help="修改已有会话答案并显示新方案差异")
+    mode.add_argument("--rollback", metavar="TRANSACTION_ID", help="回滚指定的本地文档事务")
+    mode.add_argument("--status", action="store_true", help="只读显示本地任务与运行状态")
+    parser.add_argument("--task-id", help="仅在 --status 时查看指定任务")
     parser.add_argument("--json", action="store_true", help="以 JSON 输出服务状态")
     return parser
 
@@ -55,6 +78,105 @@ def _show_plan(view: dict[str, Any]) -> None:
     if "diff" in view:
         print("本地文件差异：")
         print(view["diff"] or "（无差异）")
+
+
+def _status_text(value: Any, *, limit: int = 96) -> str:
+    """Keep human status output single-line and deliberately bounded."""
+
+    if value is None:
+        return "无"
+    text = "".join(character for character in str(value) if not (ord(character) < 32 or 127 <= ord(character) <= 159))
+    text = sanitize_text(text).strip()
+    if not text:
+        return "（已省略）"
+    return text if len(text) <= limit else text[:limit] + "..."
+
+
+def _state_label(value: Any, labels: dict[str, str]) -> str:
+    return labels.get(value, "未知状态")
+
+
+def _show_execution_status(snapshot: dict[str, Any]) -> None:
+    status = snapshot.get("status")
+    if status == "not_initialized":
+        print("执行状态：尚未初始化；未创建任务状态。")
+        return
+    if status == "not_found":
+        print("执行状态：未找到指定任务。")
+        return
+    if status != "ready":
+        print("执行状态：状态信息不可识别。")
+        return
+
+    tasks = snapshot.get("tasks")
+    runs = snapshot.get("runs")
+    tasks = tasks if isinstance(tasks, list) else []
+    runs = runs if isinstance(runs, list) else []
+    print(f"执行状态：就绪。任务：{len(tasks)}；运行：{len(runs)}。")
+    _show_status_tasks(tasks)
+    _show_status_runs(runs)
+
+
+def _show_status_tasks(tasks: list[Any]) -> None:
+    if not tasks:
+        return
+    print("任务摘要：")
+    for item in tasks[:20]:
+        task = item if isinstance(item, dict) else {}
+        print(
+            "- "
+            + "；".join(
+                (
+                    "任务=" + _status_text(task.get("task_id")),
+                    "状态=" + _state_label(task.get("state"), _TASK_STATE_LABELS),
+                    "尝试=" + _status_text(task.get("attempt")) + "/" + _status_text(task.get("max_attempts")),
+                    "最近运行=" + _status_text(task.get("last_run_id")),
+                )
+            )
+        )
+    if len(tasks) > 20:
+        print(f"其余 {len(tasks) - 20} 条任务未展开。")
+
+
+def _show_status_runs(runs: list[Any]) -> None:
+    if not runs:
+        return
+    print("运行摘要：")
+    for item in runs[:20]:
+        run = item if isinstance(item, dict) else {}
+        print(
+            "- "
+            + "；".join(
+                (
+                    "运行=" + _status_text(run.get("run_id")),
+                    "任务=" + _status_text(run.get("task_id")),
+                    "状态=" + _state_label(run.get("status"), _RUN_STATE_LABELS),
+                    "尝试=" + _status_text(run.get("attempt")),
+                    "开始=" + _status_text(run.get("started_at")),
+                    "结束=" + _status_text(run.get("finished_at")),
+                    "退出码=" + _status_text(run.get("exit_code")),
+                )
+            )
+        )
+    if len(runs) > 20:
+        print(f"其余 {len(runs) - 20} 条运行未展开。")
+
+
+def _print_status_error(code: str) -> None:
+    print(as_json({"error": {"code": code}}), file=sys.stderr)
+
+
+def _show_status_error(code: str) -> None:
+    messages = {
+        "invalid_root": "无法读取执行状态：项目根目录无效。",
+        "execution_status_invalid_task_id": "无法读取执行状态：任务编号无效。",
+        "execution_status_database_busy": "读取执行状态失败：本地状态正在被占用，请稍后重试。",
+        "execution_status_unsafe_journal_state": "无法安全读取执行状态：本地状态正在更新。",
+        "execution_status_unsupported_platform": "当前平台不支持只读执行状态查询。",
+        "execution_status_unsupported_schema": "无法读取执行状态：本地状态版本不受支持。",
+        "execution_status_database_unavailable": "无法读取执行状态：本地状态不可用。",
+    }
+    print(messages.get(code, "读取执行状态失败，请检查本地状态后重试。"), file=sys.stderr)
 
 
 def _prompt(input_fn: Callable[[str], str], message: str) -> str:
@@ -122,8 +244,31 @@ def _wizard(root: str, resume: str | None, input_fn: Callable[[str], str]) -> in
 
 
 def main(argv: list[str] | None = None, *, input_fn: Callable[[str], str] = input) -> int:
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if args.task_id is not None and not args.status:
+        parser.error("--task-id 只能与 --status 一起使用")
     try:
+        if args.status:
+            try:
+                result = execution_status(args.root, args.task_id)
+            except ServiceError as exc:
+                if args.json:
+                    _print_status_error(exc.code)
+                else:
+                    _show_status_error(exc.code)
+                return 2
+            except (OSError, ValueError, TypeError):
+                if args.json:
+                    _print_status_error("status_read_failed")
+                else:
+                    _show_status_error("status_read_failed")
+                return 2
+            if args.json:
+                print(as_json(result))
+            else:
+                _show_execution_status(result)
+            return 0
         if args.rollback:
             result = rollback(args.root, args.rollback)
             if args.json:
