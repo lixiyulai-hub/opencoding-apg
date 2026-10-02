@@ -14,8 +14,12 @@ publication preview 将平台兼容性、真实用户验收、许可证/贡献�
 
 preview 的状态固定为 `blocked_human_gate`，`gate.recorded=false`，并明确 `publish_executed=false`、`release_executed=false`、`deployment_executed=false`。摘要只包含 revision、计数、事实状态、回滚范围和 digest，不包含 Prompt、Cookie、Token、API Key、用户内容或原始文件内容。回滚计划只能是人工可审阅的非自动范围，例如 `git-revert-w5-boundary`。
 
-测试证据：全量 `python -X utf8 -m unittest discover -s tests -p 'test*.py' -v` 为 `Ran 693 tests in 162.144s`、`OK (skipped=9)`，即 total=693、passed=684、skipped=9、failures=0、errors=0、returncode=0；扩展定向回归为 49/49。原始日志分别位于 `/workspace/stage28-validation-20261002/w5-publication-full/` 和 `/workspace/stage28-validation-20261002/w5-publication-focused/`。
+测试证据：全量 `python -X utf8 -m unittest discover -s tests -p 'test*.py' -v` 为 `Ran 694 tests in 162.315s`、`OK (skipped=9)`，即 total=694、passed=685、skipped=9、failures=0、errors=0、returncode=0；扩展定向回归为 50/50。原始日志分别位于 `/workspace/stage28-validation-20261002/w5-publication-review-full/` 和 `/workspace/stage28-validation-20261002/w5-publication-review-focused/`。
 
-独立 detached worktree 从提交 `929ffde` 完成复核：49/49 定向测试、离线 Cargo 4/4，skill verifier 为 `format_valid_project_discovered_host_unverified`，`project_loader_exercised=true`、`host_loaded=null`。独立原始日志位于 `/workspace/stage28-validation-20261002/w5-publication-independent/`。
+独立 detached worktree 将从本次一致性修复提交完成复核，并补入最终账本。
 
 当前唯一人工 Gate 是公开发布前确认 exact revision、公开文件范围、事实/未验证声明、隐私审计、许可证/贡献入口、回滚方案和发布目标。没有该 Gate，preview 只能作为只读审计记录。
+
+## 一致性复核
+
+Audit Snapshot 现在带有自身 `snapshot_digest`，publication preview 会在最小证据校验前验证该摘要；publication preview 也提供 `verify_publication_preview`，篡改事实、Gate 或 action 标记会 fail closed。平台事实不能超过 Audit Snapshot，真实用户事实不能从 synthetic/unverified 审计升级。

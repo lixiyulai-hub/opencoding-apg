@@ -69,7 +69,7 @@ class AgentNativeDocsContractTests(unittest.TestCase):
 
     def test_w5_publication_boundary_report_keeps_gate_and_minimum_evidence(self):
         report = (ROOT / "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W5_PUBLICATION_BOUNDARY_CN.md").read_text(encoding="utf-8")
-        for marker in ("source_revision", "test_baseline", "independent_review", "privacy_audit", "rollback_plan", "blocked_human_gate", "publish_executed=false"):
+        for marker in ("source_revision", "test_baseline", "independent_review", "privacy_audit", "rollback_plan", "blocked_human_gate", "publish_executed=false", "snapshot_digest", "verify_publication_preview"):
             self.assertIn(marker, report)
         plan = json.loads((ROOT / "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json").read_text(encoding="utf-8"))
         transaction = plan["current_w5_publication_boundary_transaction"]
@@ -103,8 +103,8 @@ class AgentNativeDocsContractTests(unittest.TestCase):
         self.assertEqual(plan["current_transaction"]["id"], "agent-native-package-r3")
         self.assertIn("opencoding/resources/skill/SKILL.md", plan["current_transaction"]["paths"])
         self.assertEqual(plan["package_resource_boundary"]["partial_resource"], "fail_closed")
-        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["total"], 693)
-        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["passed"], 684)
+        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["total"], 694)
+        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["passed"], 685)
         boundary = plan["retained_evidence_boundary"]
         self.assertFalse(boundary["checkout_contains"])
         self.assertFalse(boundary["source_bound"])

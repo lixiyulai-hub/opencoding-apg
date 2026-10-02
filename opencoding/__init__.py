@@ -37,6 +37,7 @@ from .evidence_boundary import (
     build_read_only_audit_snapshot,
     classify_evidence,
     platform_compatibility_declaration,
+    verify_read_only_audit_snapshot,
 )
 from .publication_boundary import (
     PublicationBoundaryError,
@@ -83,6 +84,7 @@ __all__ = [
     "build_read_only_audit_snapshot",
     "classify_evidence",
     "platform_compatibility_declaration",
+    "verify_read_only_audit_snapshot",
     "PublicationBoundaryError",
     "build_publication_preview",
     "LocalAgentTaskExecutor",

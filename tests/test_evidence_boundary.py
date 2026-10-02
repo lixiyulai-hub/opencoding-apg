@@ -8,6 +8,7 @@ from opencoding.evidence_boundary import (
     build_read_only_audit_snapshot,
     classify_evidence,
     platform_compatibility_declaration,
+    verify_read_only_audit_snapshot,
 )
 from opencoding.safety import inspect_sensitive, sanitize_text
 from opencoding.w5_acceptance import build_synthetic_acceptance_matrix
@@ -75,6 +76,13 @@ class EvidenceBoundaryTests(unittest.TestCase):
         self.assertTrue(all(item["evidence_class"] == "unverified" for item in audit["platform_compatibility"]))
         self.assertTrue(all(item["evidence_class"] == "synthetic" for item in preview["matrix"]["scenarios"]))
         self.assertFalse(audit["privacy"]["raw_values_included"])
+
+    def test_audit_snapshot_digest_detects_field_drift(self):
+        audit = build_synthetic_acceptance_matrix()["external_audit"]
+        self.assertTrue(verify_read_only_audit_snapshot(audit))
+        tampered = {**audit, "status": "published"}
+        with self.assertRaisesRegex(EvidenceBoundaryError, "digest"):
+            verify_read_only_audit_snapshot(tampered)
 
     def test_safety_marks_cookie_and_prompt_before_any_audit_projection(self):
         text = "Cookie: sid=secret-cookie; Prompt: private instructions"

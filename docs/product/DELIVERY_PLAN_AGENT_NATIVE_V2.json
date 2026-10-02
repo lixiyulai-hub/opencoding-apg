@@ -52,13 +52,13 @@
     "status": "passed",
     "commit": "8a79ffc",
     "full_unittest": {
-      "total": 693,
-      "passed": 684,
+      "total": 694,
+      "passed": 685,
       "skipped": 9,
       "failures": 0,
       "errors": 0,
       "returncode": 0,
-      "raw": "Ran 693 tests in 162.144s; OK (skipped=9)"
+      "raw": "Ran 694 tests in 162.315s; OK (skipped=9)"
     },
     "offline_cargo": {
       "tests_passed": 4,
@@ -200,13 +200,32 @@
     },
     "w5_publication_boundary_skill": "format_valid_project_discovered_host_unverified",
     "w5_publication_boundary_independent_root": "/workspace/stage28-validation-20261002/w5-publication-independent",
-    "w5_publication_boundary_code_commit": "929ffde"
+    "w5_publication_boundary_code_commit": "929ffde",
+    "w5_publication_review_full_unittest": {
+      "total": 694,
+      "passed": 685,
+      "skipped": 9,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "raw": "Ran 694 tests in 162.315s; OK (skipped=9)",
+      "evidence_root": "/workspace/stage28-validation-20261002/w5-publication-review-full"
+    },
+    "w5_publication_review_focused": {
+      "total": 50,
+      "passed": 50,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "Publication preview/Audit Snapshot consistency, W5 evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
+    }
   },
-  "following_stage": "W5 evidence-based publication boundaries, separately scoped and accepted.",
+  "following_stage": "Independent detached W5 publication review verification.",
   "ordered_successors": [
-    "W5 evidence-based publication boundaries, separately scoped and accepted.",
-    "Real public publication only after the explicit human Gate.",
-    "Retain the preview and rollback evidence for later review."
+    "Independent detached W5 publication review verification and checkpoint push.",
+    "Stop at the explicit publication human Gate; no external action.",
+    "Retain preview, digest and rollback evidence for later review."
   ],
   "retained_delivery_evidence": [
     {
@@ -569,5 +588,34 @@
     "independent_host_loaded": null,
     "independent_project_loader_exercised": true,
     "independent_boundary": "No public publication, release, deployment, provider, connector, credential, merge or real-user acceptance."
+  },
+  "current_w5_publication_review_transaction": {
+    "id": "agent-native-w5-publication-review",
+    "status": "implemented_pending_detached_verification",
+    "paths": [
+      "opencoding/evidence_boundary.py",
+      "opencoding/publication_boundary.py",
+      "tests/test_evidence_boundary.py",
+      "tests/test_publication_boundary.py",
+      "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W5_PUBLICATION_BOUNDARY_CN.md"
+    ],
+    "scope": "Offline consistency review of Audit Snapshot and publication preview digests, minimum evidence, fact drift and privacy flags.",
+    "checks": [
+      "snapshot_digest",
+      "preview_digest",
+      "minimum_evidence",
+      "platform_fact_drift",
+      "real_user_fact_drift",
+      "privacy_flags",
+      "blocked_actions"
+    ],
+    "read_only": true,
+    "publish_executed": false,
+    "release_executed": false,
+    "deployment_executed": false,
+    "provider_used": false,
+    "credentials_read": false,
+    "human_gate": "Stop at the existing publication Gate; no external action is started by this review.",
+    "rollback": "git revert this review transaction; no external or persistent publication state is changed."
   }
 }

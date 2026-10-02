@@ -187,7 +187,7 @@ def build_read_only_audit_snapshot(
         safe_status = "unreported"
     else:
         safe_status = sanitize_text(raw_status)[:80]
-    return {
+    snapshot = {
         "schema": EVIDENCE_BOUNDARY_SCHEMA,
         "mode": "external_audit_read_only",
         "read_only": True,
@@ -207,6 +207,24 @@ def build_read_only_audit_snapshot(
             "policy": "metadata-only; raw prompts, credentials and user content are omitted",
         },
     }
+    snapshot["snapshot_digest"] = sha256_bytes(canonical_json(snapshot))
+    return snapshot
+
+
+def verify_read_only_audit_snapshot(snapshot: Mapping[str, Any]) -> bool:
+    """Verify the projection digest without reading or writing any source data."""
+
+    if not isinstance(snapshot, Mapping) or not isinstance(snapshot.get("snapshot_digest"), str):
+        raise EvidenceBoundaryError("snapshot_digest_missing", "audit snapshot digest is missing")
+    supplied = snapshot["snapshot_digest"]
+    if not re.fullmatch(r"[0-9a-f]{64}", supplied):
+        raise EvidenceBoundaryError("snapshot_digest_invalid", "audit snapshot digest is invalid")
+    unsigned = dict(snapshot)
+    unsigned.pop("snapshot_digest", None)
+    expected = sha256_bytes(canonical_json(unsigned))
+    if supplied != expected:
+        raise EvidenceBoundaryError("snapshot_drifted", "audit snapshot digest does not match its fields")
+    return True
 
 
 __all__ = [
@@ -217,4 +235,5 @@ __all__ = [
     "build_read_only_audit_snapshot",
     "classify_evidence",
     "platform_compatibility_declaration",
+    "verify_read_only_audit_snapshot",
 ]

@@ -10,6 +10,7 @@ from opencoding.publication_boundary import (
     MINIMUM_EVIDENCE_IDS,
     PublicationBoundaryError,
     build_publication_preview,
+    verify_publication_preview,
 )
 from opencoding.w5_acceptance import build_synthetic_acceptance_matrix
 
@@ -49,12 +50,16 @@ class PublicationBoundaryTests(unittest.TestCase):
         facts = {item["id"]: item for item in preview["facts"]}
         self.assertEqual(facts["platform_compatibility"]["status"], "unverified")
         self.assertEqual(facts["real_user_acceptance"]["status"], "unverified")
-        self.assertEqual(preview["privacy"], {"raw_values_included": False, "user_content_included": False})
+        self.assertEqual(preview["privacy"], {
+            "raw_values_included": False, "prompt_included": False, "cookie_included": False,
+            "token_included": False, "api_key_included": False, "user_content_included": False,
+        })
         self.assertTrue(preview["preview_digest"])
+        self.assertTrue(verify_publication_preview(preview))
         serialized = json.dumps(preview, ensure_ascii=False)
         self.assertIn("11a1e55", serialized)  # revision is a public metadata fact
         self.assertNotIn("Prompt", serialized)
-        self.assertNotIn("api_key", serialized)
+        self.assertNotIn("sk-", serialized)
 
     def test_failed_or_inconsistent_minimum_evidence_fails_closed(self):
         candidate = _candidate()
@@ -69,6 +74,11 @@ class PublicationBoundaryTests(unittest.TestCase):
         candidate["audit_snapshot"] = {**candidate["audit_snapshot"], "privacy": {"raw_values_included": True}}
         with self.assertRaisesRegex(PublicationBoundaryError, "privacy audit"):
             build_publication_preview(candidate)
+
+        preview = build_publication_preview(_candidate())
+        tampered = {**preview, "facts": []}
+        with self.assertRaisesRegex(PublicationBoundaryError, "preview digest"):
+            verify_publication_preview(tampered)
 
     def test_raw_secret_like_candidate_fields_are_not_accepted_as_ids(self):
         candidate = _candidate()

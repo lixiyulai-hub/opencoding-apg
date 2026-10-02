@@ -10,7 +10,12 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping
 
-from .evidence_boundary import EVIDENCE_BOUNDARY_SCHEMA, EVIDENCE_CLASSES, PLATFORM_COMPATIBILITY_STATUSES
+from .evidence_boundary import (
+    EVIDENCE_BOUNDARY_SCHEMA,
+    EVIDENCE_CLASSES,
+    PLATFORM_COMPATIBILITY_STATUSES,
+    verify_read_only_audit_snapshot,
+)
 from .safety import canonical_json, inspect_sensitive, sha256_bytes
 
 
@@ -88,6 +93,10 @@ def _privacy_audit(value: Any) -> dict[str, Any]:
     if not isinstance(value, Mapping) or value.get("schema") != EVIDENCE_BOUNDARY_SCHEMA:
         raise PublicationBoundaryError("privacy_audit_invalid", "privacy audit schema is missing")
     _safe_id(value.get("source"), field="privacy_audit_source")
+    try:
+        verify_read_only_audit_snapshot(value)
+    except (TypeError, ValueError, KeyError) as error:
+        raise PublicationBoundaryError("privacy_audit_drifted", "privacy audit snapshot digest does not match") from error
     digest = value.get("payload_sha256")
     if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
         raise PublicationBoundaryError("privacy_audit_digest_invalid", "privacy audit digest is invalid")
@@ -198,10 +207,40 @@ def build_publication_preview(candidate: Mapping[str, Any]) -> dict[str, Any]:
             "reason_code": "publication_requires_explicit_human_gate",
         },
         "actions": {"publish_executed": False, "release_executed": False, "deployment_executed": False},
-        "privacy": {"raw_values_included": False, "user_content_included": False},
+        "privacy": {
+            "raw_values_included": False,
+            "prompt_included": False,
+            "cookie_included": False,
+            "token_included": False,
+            "api_key_included": False,
+            "user_content_included": False,
+        },
     }
     public_projection["preview_digest"] = sha256_bytes(canonical_json(public_projection))
     return public_projection
+
+
+def verify_publication_preview(preview: Mapping[str, Any]) -> bool:
+    """Verify a preview's digest and permanent blocked-action boundary."""
+
+    if not isinstance(preview, Mapping) or not isinstance(preview.get("preview_digest"), str):
+        raise PublicationBoundaryError("preview_digest_missing", "publication preview digest is missing")
+    supplied = preview["preview_digest"]
+    if not re.fullmatch(r"[0-9a-f]{64}", supplied):
+        raise PublicationBoundaryError("preview_digest_invalid", "publication preview digest is invalid")
+    unsigned = dict(preview)
+    unsigned.pop("preview_digest", None)
+    if supplied != sha256_bytes(canonical_json(unsigned)):
+        raise PublicationBoundaryError("preview_drifted", "publication preview digest does not match its fields")
+    if preview.get("status") not in {"blocked_human_gate", "blocked_incomplete_evidence"}:
+        raise PublicationBoundaryError("preview_status_invalid", "publication preview must remain blocked")
+    gate = preview.get("gate")
+    actions = preview.get("actions")
+    if not isinstance(gate, Mapping) or gate.get("recorded") is not False or gate.get("external_action_allowed") is not False:
+        raise PublicationBoundaryError("publication_gate_invalid", "publication gate is not closed")
+    if actions != {"publish_executed": False, "release_executed": False, "deployment_executed": False}:
+        raise PublicationBoundaryError("publication_actions_invalid", "publication actions are not all false")
+    return True
 
 
 __all__ = [
@@ -211,4 +250,5 @@ __all__ = [
     "PUBLICATION_FACT_IDS",
     "PublicationBoundaryError",
     "build_publication_preview",
+    "verify_publication_preview",
 ]
