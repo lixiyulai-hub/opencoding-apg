@@ -30,9 +30,17 @@
     "program_stage": "not-computable",
     "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the agent-native delivery plan."
   },
+  "retained_evidence_boundary": {
+    "checkout_contains": false,
+    "source_bound": false,
+    "availability": "absent-from-checkout-and-fetched-history",
+    "candidate_archive": "OpenCoding-Stage28-Recovery-20261001.zip",
+    "archive_membership_verified": false,
+    "interpretation": "Historical acceptance labels and the separate W2-C1/W2-C2 references are preserved below. Their files are absent here. The recovery archive may be consulted later; no claim is made that it contains these specific files. Fresh tests do not establish historical acceptance."
+  },
   "immediate_transaction": {
     "id": "agent-native-docs-r2",
-    "purpose": "Correct the documented conflict branch, make installed-package API guidance self-contained, and retain the complete accepted W2-C evidence split.",
+    "purpose": "Verify published session/document examples against installed bytes, distinguish source-only project execution, and preserve W2-C history with explicit evidence availability.",
     "status": "in_progress_pending_independent_verification",
     "paths": [
       "docs/product/OFFLINE_INSTALLATION.md",
@@ -49,28 +57,38 @@
   "retained_delivery_evidence": [
     {
       "wave": "W2-B",
-      "status": "accepted_integrated",
-      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/integration-r4-resume/acceptance.json"
+      "status": "historical_claim_unverified_in_checkout",
+      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/integration-r4-resume/acceptance.json",
+      "historical_status": "accepted_integrated",
+      "evidence_availability": "absent-from-checkout"
     },
     {
       "wave": "W2-C1 read-only status",
-      "status": "accepted_integrated",
-      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/w2c-readviews/integrated-acceptance.json"
+      "status": "historical_claim_unverified_in_checkout",
+      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/w2c-readviews/integrated-acceptance.json",
+      "historical_status": "accepted_integrated",
+      "evidence_availability": "absent-from-checkout"
     },
     {
       "wave": "W2-C2 CLI control normalization",
-      "status": "accepted_integrated",
-      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/w2c-cli/integrated-acceptance.json"
+      "status": "historical_claim_unverified_in_checkout",
+      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/w2c-cli/integrated-acceptance.json",
+      "historical_status": "accepted_integrated",
+      "evidence_availability": "absent-from-checkout"
     },
     {
       "wave": "W3-A offline packaging",
-      "status": "accepted_integrated",
-      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/w3a-packaging/integrated-acceptance.json"
+      "status": "historical_claim_unverified_in_checkout",
+      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/w3a-packaging/integrated-acceptance.json",
+      "historical_status": "accepted_integrated",
+      "evidence_availability": "absent-from-checkout"
     },
     {
       "wave": "W3 browser workbench",
       "status": "cancelled_not_completed",
-      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/dispatch-registry.json#/w3b_workbench"
+      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/dispatch-registry.json#/w3b_workbench",
+      "historical_status": "cancelled_not_completed",
+      "evidence_availability": "absent-from-checkout"
     }
   ],
   "later_waves": [
