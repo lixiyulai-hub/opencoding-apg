@@ -42,6 +42,18 @@ class AgentNativeDocsContractTests(unittest.TestCase):
         self.assertIn("A stale or busy result is a stop-and-reconcile condition", document)
         self.assertIn("installed wheel and sdist include the validated package skill resource", document)
 
+    def test_w5_matrix_report_and_plan_keep_synthetic_boundaries_explicit(self):
+        report = (ROOT / "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W5_MATRIX_CN.md").read_text(encoding="utf-8")
+        self.assertIn("clarify → plan → preview → execute → verify → rollback → review", report)
+        self.assertIn("real_user=false", report)
+        self.assertIn("receipt_covered_files_only", report)
+        plan = json.loads((ROOT / "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json").read_text(encoding="utf-8"))
+        transaction = plan["current_w5_transaction"]
+        self.assertEqual(transaction["id"], "agent-native-w5-synthetic-matrix")
+        self.assertTrue(transaction["synthetic_only"])
+        self.assertFalse(transaction["provider_used"])
+        self.assertIn("opencoding/w5_acceptance.py", transaction["paths"])
+
     def test_w4_report_and_plan_keep_external_gate_explicit(self):
         report = (ROOT / "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W4_CONTRACT_CN.md").read_text(encoding="utf-8")
         self.assertIn("blocked_human_gate", report)

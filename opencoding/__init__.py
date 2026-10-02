@@ -26,6 +26,12 @@ from .host_connector import (
     OfflineConnectorRegistry,
     OfflineHostContract,
 )
+from .w5_acceptance import (
+    SyntheticAcceptanceMatrix,
+    SyntheticBeginnerScenario,
+    W5AcceptanceError,
+    build_synthetic_acceptance_matrix,
+)
 from .agent_tasks import LocalAgentTaskExecutor, preview_agent_tasks
 from .target_adapters import (
     MacOSTargetAdapter,
@@ -59,6 +65,10 @@ __all__ = [
     "HostConnectorError",
     "OfflineConnectorRegistry",
     "OfflineHostContract",
+    "SyntheticAcceptanceMatrix",
+    "SyntheticBeginnerScenario",
+    "W5AcceptanceError",
+    "build_synthetic_acceptance_matrix",
     "LocalAgentTaskExecutor",
     "preview_agent_tasks",
     "TargetAdapterError",
