@@ -16,7 +16,7 @@ preview 的状态固定为 `blocked_human_gate`，`gate.recorded=false`，并明
 
 测试证据：全量 `python -X utf8 -m unittest discover -s tests -p 'test*.py' -v` 为 `Ran 694 tests in 162.315s`、`OK (skipped=9)`，即 total=694、passed=685、skipped=9、failures=0、errors=0、returncode=0；扩展定向回归为 50/50。原始日志分别位于 `/workspace/stage28-validation-20261002/w5-publication-review-full/` 和 `/workspace/stage28-validation-20261002/w5-publication-review-focused/`。
 
-独立 detached worktree 将从本次一致性修复提交完成复核，并补入最终账本。
+独立 detached worktree 从提交 `0ec7639` 完成复核：50/50 定向测试、离线 Cargo 4/4，skill verifier 为 `format_valid_project_discovered_host_unverified`，`project_loader_exercised=true`、`host_loaded=null`。独立原始日志位于 `/workspace/stage28-validation-20261002/w5-publication-review-independent/`。
 
 当前唯一人工 Gate 是公开发布前确认 exact revision、公开文件范围、事实/未验证声明、隐私审计、许可证/贡献入口、回滚方案和发布目标。没有该 Gate，preview 只能作为只读审计记录。
 

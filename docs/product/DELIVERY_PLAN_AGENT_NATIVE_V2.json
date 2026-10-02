@@ -219,11 +219,27 @@
       "errors": 0,
       "returncode": 0,
       "coverage": "Publication preview/Audit Snapshot consistency, W5 evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
-    }
+    },
+    "w5_publication_review_independent": {
+      "total": 50,
+      "passed": 50,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "Publication preview/Audit Snapshot consistency, W5 evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
+    },
+    "w5_publication_review_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
+    "w5_publication_review_skill": "format_valid_project_discovered_host_unverified",
+    "w5_publication_review_independent_root": "/workspace/stage28-validation-20261002/w5-publication-review-independent"
   },
-  "following_stage": "Independent detached W5 publication review verification.",
+  "following_stage": "Stop at the explicit publication human Gate; retain the offline preview for review.",
   "ordered_successors": [
-    "Independent detached W5 publication review verification and checkpoint push.",
     "Stop at the explicit publication human Gate; no external action.",
     "Retain preview, digest and rollback evidence for later review."
   ],
@@ -591,7 +607,7 @@
   },
   "current_w5_publication_review_transaction": {
     "id": "agent-native-w5-publication-review",
-    "status": "implemented_pending_detached_verification",
+    "status": "completed_with_independent_verification",
     "paths": [
       "opencoding/evidence_boundary.py",
       "opencoding/publication_boundary.py",
@@ -616,6 +632,27 @@
     "provider_used": false,
     "credentials_read": false,
     "human_gate": "Stop at the existing publication Gate; no external action is started by this review.",
-    "rollback": "git revert this review transaction; no external or persistent publication state is changed."
+    "rollback": "git revert this review transaction; no external or persistent publication state is changed.",
+    "independent_verified_commit": "0ec7639",
+    "independent_evidence_root": "/workspace/stage28-validation-20261002/w5-publication-review-independent",
+    "independent_focused": {
+      "total": 50,
+      "passed": 50,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "Publication preview/Audit Snapshot consistency, W5 evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
+    },
+    "independent_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
+    "independent_skill": "format_valid_project_discovered_host_unverified",
+    "independent_host_loaded": null,
+    "independent_project_loader_exercised": true,
+    "independent_boundary": "No public publication, release, deployment, provider, connector, credential, merge or real-user acceptance."
   }
 }
