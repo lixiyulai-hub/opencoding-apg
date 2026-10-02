@@ -1,6 +1,6 @@
 # Stage28 有限修复与离线复核报告
 
-更新日期：2026-10-02。报告对应独立分支 `checkpoint/stage28-20261002`，最新提交为 `5ce3651840d757f0fa3c0ffcd64be516f4a65e6e`，已推送到 GitHub。没有合并、部署或 Release。
+更新日期：2026-10-02。报告对应独立分支 `checkpoint/stage28-20261002`，最新提交为 `ac637b6866aee97a536e326356b94f5c0cd62f71`，已推送到 GitHub。没有合并、部署或 Release。
 
 ## 变更
 
