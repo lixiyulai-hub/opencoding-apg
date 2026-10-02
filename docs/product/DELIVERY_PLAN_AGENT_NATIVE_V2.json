@@ -50,7 +50,7 @@
   },
   "current_checkout_verification": {
     "status": "passed",
-    "commit": "f873803",
+    "commit": "0a49622",
     "full_unittest": {
       "total": 663,
       "passed": 654,
@@ -134,7 +134,8 @@
       "returncode": 0
     },
     "w5_independent_skill": "format_valid_project_discovered_host_unverified",
-    "w5_independent_evidence_root": "/workspace/stage28-validation-20261002/w5-independent"
+    "w5_independent_evidence_root": "/workspace/stage28-validation-20261002/w5-independent",
+    "w5_code_commit": "4979dc1"
   },
   "following_stage": "Real user/platform/provider acceptance only after the explicit human Gate; otherwise W5 evidence-based publication boundaries.",
   "ordered_successors": [
