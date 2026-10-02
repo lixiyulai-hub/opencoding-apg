@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "opencoding-local-entry"
-version = "0.1.0"
-description = "Offline Chinese-first OpenCoding product entry"
+version = "0.2.7"
+description = "OpenCoding 本地工作台:小白友好的自适应项目规划与执行助手(本地可视化入口+真实AI评估+受控执行)"
 requires-python = ">=3.11"
 dependencies = []
 readme = {file = "docs/product/OFFLINE_INSTALLATION.md", content-type = "text/markdown"}
@@ -13,6 +13,7 @@ license-files = []
 
 [project.scripts]
 opencoding = "opencoding.cli:main"
+opencoding-project = "opencoding.project_entry:main"
 
 [tool.setuptools]
 packages = ["opencoding"]

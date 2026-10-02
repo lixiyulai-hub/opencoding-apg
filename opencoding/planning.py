@@ -361,8 +361,9 @@ def build_task_plan(recommendation: dict) -> dict:
                 break
             scenario_id = scenario["id"]
             source_suffix, test_suffix = artifact_kind
-            source_path = f"src/features/{scenario_id}{source_suffix}"
-            test_path = f"tests/features/test_{scenario_id}{test_suffix}"
+            artifact_id = scenario_id.replace("-", "_") if source_suffix == ".py" else scenario_id
+            source_path = f"src/features/{artifact_id}{source_suffix}"
+            test_path = f"tests/features/test_{artifact_id}{test_suffix}"
             implement_id = f"implement-{scenario_id}"
             verify_id = f"verify-{scenario_id}"
             tasks.append(_task(implement_id, f"实现业务场景：{scenario['title']}", f"待执行：在 {scenario_platform} 上实现“{scenario['action']}”，使结果达到“{scenario['result']}”。", design_dependencies, ["product.md", "architecture.md"], [source_path], {"type": "implement_feature", "scenario_id": scenario_id, "platform": scenario_platform}, [f"待执行实现应支持业务结果：{scenario['result']}。", "本任务只是计划，不代表源码已经存在。"]))

@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sqlite3
+import sys
 import threading
 import time
 import uuid
@@ -68,11 +69,52 @@ def _validate_snapshot_task_id(task_id: str | None) -> None:
 
 
 def _snapshot_platform_supported() -> bool:
-    return os.name == "nt"
+    """Whether the platform can hold SQLite's shared-lock byte without writes.
+
+    Windows uses ``LockFileEx`` below; POSIX SQLite uses the same byte-range
+    locking protocol through ``fcntl``.  Both paths lock the PENDING/SHARED
+    range before checking journal state, so a concurrent writer cannot switch
+    to WAL while the read-only transaction is being opened.
+    """
+    if os.name == "nt":
+        return True
+    if os.name == "posix":
+        try:
+            import fcntl  # noqa: F401
+        except ImportError:
+            return False
+        return True
+    return False
 
 
 def _snapshot_sidecars(database: Path) -> list[Path]:
     return [database.with_name(database.name + suffix) for suffix in ("-journal", "-wal", "-shm") if database.with_name(database.name + suffix).exists()]
+
+
+def _linux_posix_writer_lock_present(database: Path) -> bool:
+    """Detect a traditional SQLite POSIX writer lock held by another process.
+
+    Linux keeps classic ``fcntl`` locks in ``/proc/locks``.  SQLite's lock is
+    process-associated, so an OFD probe in a child process can otherwise miss
+    a lock held by the parent test/application process.  Reading this kernel
+    view is side-effect free and only used as a conservative busy check.
+    """
+    if not sys.platform.startswith("linux"):
+        return False
+    try:
+        stat = database.stat()
+        device = f"{os.major(stat.st_dev):02x}:{os.minor(stat.st_dev):02x}"
+        inode = str(stat.st_ino)
+        for line in Path("/proc/locks").read_text(encoding="ascii", errors="ignore").splitlines():
+            fields = line.split()
+            if len(fields) < 8 or fields[1] != "POSIX" or fields[3] != "WRITE":
+                continue
+            lock_file = fields[5]
+            if lock_file == f"{device}:{inode}":
+                return True
+    except (OSError, ValueError):
+        return False
+    return False
 
 
 def _snapshot_sqlite_error(error: sqlite3.Error) -> SchedulerSnapshotError:
@@ -93,6 +135,35 @@ def _snapshot_lock(database: Path):
     except OSError as exc:
         raise SchedulerSnapshotError("database_unavailable", sanitize_text(str(exc))) from exc
     try:
+        if os.name == "posix":
+            import errno
+            import fcntl
+            import struct
+            import sys
+            ofd_setlk = getattr(fcntl, "F_OFD_SETLK", 37 if sys.platform.startswith("linux") else None)
+            if ofd_setlk is None:
+                raise SchedulerSnapshotError("unsupported_platform", "POSIX OFD locking is unavailable")
+            if _linux_posix_writer_lock_present(database):
+                raise SchedulerSnapshotError("database_busy", "scheduler database is locked")
+            lock_format = "hhqqi"
+            request = struct.pack(lock_format, fcntl.F_RDLCK, os.SEEK_SET, _SQLITE_SHARED_LOCK, 1, 0)
+            try:
+                fcntl.fcntl(handle.fileno(), ofd_setlk, request)
+            except (BlockingIOError, OSError) as exc:
+                if getattr(exc, "errno", None) in {errno.EACCES, errno.EAGAIN} or isinstance(exc, BlockingIOError):
+                    raise SchedulerSnapshotError("database_busy", "scheduler database is locked") from exc
+                raise SchedulerSnapshotError("database_unavailable", sanitize_text(str(exc))) from exc
+            try:
+                yield
+            finally:
+                try:
+                    unlock = struct.pack(lock_format, fcntl.F_UNLCK, os.SEEK_SET, _SQLITE_SHARED_LOCK, 1, 0)
+                    fcntl.fcntl(handle.fileno(), ofd_setlk, unlock)
+                except OSError:
+                    pass
+            return
+
+
         import ctypes
         import msvcrt
         from ctypes import wintypes
@@ -120,7 +191,6 @@ def _snapshot_lock(database: Path):
             kernel32.UnlockFileEx(msvcrt.get_osfhandle(handle.fileno()), 0, 1, 0, ctypes.byref(overlap))
     finally:
         handle.close()
-
 
 def _database_uses_wal(database: Path) -> bool:
     """Inspect the SQLite header before opening it, because RO WAL opens can create SHM."""

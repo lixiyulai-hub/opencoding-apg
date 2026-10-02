@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 from itertools import combinations
 import json
+import multiprocessing
 import os
 from pathlib import Path
 import re
@@ -16,6 +17,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
+from typing import Any
 from unittest import mock
 
 import opencoding.cli as cli_module
@@ -84,6 +86,24 @@ def scheduler_task(task_id: str) -> dict[str, object]:
         "timeout_seconds": 2,
         "idempotency_key": task_id + "-key",
     }
+
+
+def _exclusive_lock_worker(database_text: str, ready: Any, release: Any) -> None:
+    """Hold SQLite's writer lock in a separate process for the CLI probe.
+
+    Reading the database with ``Path.read_bytes`` in the parent can release
+    process-associated POSIX locks, so a same-process fixture is not a valid
+    cross-process busy check.  A separate process keeps the lock owner and
+    the CLI reader independent on Linux and Windows.
+    """
+    connection = sqlite3.connect(database_text, timeout=0.0, isolation_level=None)
+    try:
+        connection.execute("BEGIN EXCLUSIVE")
+        ready.set()
+        release.wait(10)
+        connection.execute("ROLLBACK")
+    finally:
+        connection.close()
 
 
 class ProductCliSubprocessTests(unittest.TestCase):
@@ -246,18 +266,30 @@ class ProductCliSubprocessTests(unittest.TestCase):
             root = Path(directory).resolve()
             Scheduler(root)
             database = database_path(root)
-            lock = sqlite3.connect(database, timeout=0.0, isolation_level=None)
+            before = inventory(root)
+            context = multiprocessing.get_context("spawn")
+            ready = context.Event()
+            release = context.Event()
+            locker = context.Process(
+                target=_exclusive_lock_worker,
+                args=(str(database), ready, release),
+                daemon=True,
+            )
+            locker.start()
             try:
-                lock.execute("BEGIN EXCLUSIVE")
-                before = inventory(root)
+                self.assertTrue(ready.wait(10), "separate lock process did not acquire SQLite writer lock")
                 busy = run_cli(root, "", "--status", "--json")
                 self.assertEqual(busy.returncode, 2)
                 self.assertEqual(busy.stdout, "")
                 self.assertEqual(json.loads(busy.stderr), {"error": {"code": "execution_status_database_busy"}})
-                self.assertEqual(inventory(root), before)
             finally:
-                lock.execute("ROLLBACK")
-                lock.close()
+                release.set()
+                locker.join(10)
+                if locker.is_alive():
+                    locker.terminate()
+                    locker.join(2)
+            self.assertEqual(locker.exitcode, 0)
+            self.assertEqual(inventory(root), before)
 
             journal = database.with_name(database.name + "-journal")
             journal.write_bytes(b"unsafe journal")

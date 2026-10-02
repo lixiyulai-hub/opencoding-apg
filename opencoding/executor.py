@@ -6,6 +6,7 @@ import os
 import re
 import select
 import signal
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -89,6 +90,21 @@ def _validate_action(action: Mapping[str, Any]) -> dict[str, Any]:
             raise ValueError("python_module args are too large")
         if inspect_sensitive(" ".join(args))["sensitive"]:
             raise ValueError("python_module args contain sensitive material")
+    elif kind == "node_script":
+        if set(action) != {"type", "path", "args"}:
+            raise ValueError("node_script has unknown or missing fields")
+        path = action["path"]
+        args = action["args"]
+        if not isinstance(path, str) or not path or not path.endswith((".js", ".mjs", ".cjs", ".ts")):
+            raise ValueError("node_script path must be a JavaScript or TypeScript file")
+        if not isinstance(args, list) or len(args) > 32 or any(not isinstance(arg, str) for arg in args):
+            raise ValueError("node_script args must be a short string list")
+        if any(len(arg) > 4096 or "\x00" in arg for arg in args):
+            raise ValueError("node_script args are invalid")
+        if sum(len(arg.encode("utf-8")) for arg in args) > MAX_ARGUMENT_BYTES:
+            raise ValueError("node_script args are too large")
+        if inspect_sensitive(" ".join(args))["sensitive"]:
+            raise ValueError("node_script args contain sensitive material")
     else:
         raise ValueError("unknown action type")
     return action
@@ -120,7 +136,7 @@ def _validate_context(context: Mapping[str, Any], root: Path, action: Mapping[st
         raise ValueError("action context data_scope is not allowed")
     for target in targets:
         safe_target(root, target)
-    expected = [action["path"]] if action["type"] == "write_text" else []
+    expected = [action["path"]] if action["type"] in {"write_text", "node_script"} else []
     if targets != expected:
         raise ValueError("action context targets do not precisely match action")
 
@@ -347,8 +363,16 @@ class Executor:
             artifact = {"path": action["path"].replace("\\", "/"), "sha256": artifact_hash, "sha256_kind": "file_bytes"}
             return self._result(run_id, "succeeded", 0, False, False, started, "", "", [artifact], None, action, input_payload)
 
+        if action["type"] == "python_module":
+            command = [sys.executable, "-m", action["module"], *action["args"]]
+        else:
+            node = shutil.which("node")
+            if not node:
+                return self._result(run_id, "failed", None, False, False, started, "", "node runtime unavailable", [], "node_unavailable", action, input_payload)
+            script = safe_target(self.root, action["path"], allow_missing=False)
+            command = [node, *action["args"], str(script)]
         process = subprocess.Popen(
-            [sys.executable, "-m", action["module"], *action["args"]],
+            command,
             cwd=str(self.root),
             shell=False,
             stdout=subprocess.PIPE,

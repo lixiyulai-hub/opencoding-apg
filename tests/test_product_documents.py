@@ -5,13 +5,13 @@ from opencoding.documents import render_documents, validate_recommendation
 from opencoding.planning import build_task_plan
 
 
-def recommendation(*, revision=1, status="ready", payment="not_needed", notifications="not_needed", draft=False, platform="web", client_technology="TypeScript"):
+def recommendation(*, revision=1, status="ready", payment="not_needed", notifications="not_needed", draft=False, platform="web", client_technology="TypeScript", server="not_needed", database="required", api="required", auth="required"):
     capabilities = []
     needs = {
-        "server": "not_needed",
-        "database": "required",
-        "api": "required",
-        "auth": "required",
+        "server": server,
+        "database": database,
+        "api": api,
+        "auth": auth,
         "payment": payment,
         "notifications": notifications,
         "admin": "optional",

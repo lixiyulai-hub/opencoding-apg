@@ -2,13 +2,13 @@
 
 ## 中文介绍
 
-OpenCoding 是一个面向不会写代码、刚开始使用 AI coding 的人的 **项目治理与执行准备助手**。你只要用大白话说清楚想做什么、给谁用，它就会先把需求问清楚，再直接给出适合的项目方案。
+OpenCoding 是一个可通过 skill 接入不同 Agent 的跨平台 Agent AI coding 规划与受控执行核心。它不要求运行在 Windows，也不把宿主系统当成生成项目的平台。你只要用大白话说清楚想做什么、给谁用，它就会先把需求问清楚，再给出适合目标平台的项目方案，并在有合法工具能力时执行可验证的本地步骤。
 
 ### 它能帮你做什么？
 
 - 用自然语言描述想法，不必先会写专业需求文档；
 - 通过 **Grill Me** 用大白话追问目标、用户、边界、验收条件和风险；
-- 主动判断项目适合 Windows、Mac、iPhone、安卓、网页等哪些平台；
+- 主动判断项目适合 Windows、Mac、iPhone、安卓、网页、命令行等哪些目标平台；
 - 不要求小白选择前端技术，系统直接给出客户端、后端和整体技术方案；
 - 主动判断是否需要服务器、数据库、登录、API、支付、消息通知、后台管理和文件存储；
 - 按项目需要生成 `AGENTS.md`、`memory.md`、`PRG.md`、`plan.md` 及其他 Markdown 文档；
@@ -17,6 +17,7 @@ OpenCoding 是一个面向不会写代码、刚开始使用 AI coding 的人的 
 - 先做离线 preview，再决定是否 apply；
 - 对失败任务进行记录、重试和 **Requeue**，避免“失败后没人知道下一步”；
 - 对密钥、金钱、网络、部署、远程 GitHub 发布等外部影响保留人工 Gate。
+- 通过 `skills/opencoding/SKILL.md` 和 `LocalAgentAdapter` 接入 Agent 工具能力，明确区分宿主系统、目标平台和实际可用动作。
 
 ### 适合谁？
 
@@ -43,7 +44,7 @@ OpenCoding 是一个面向不会写代码、刚开始使用 AI coding 的人的 
 | **Bounded apply** | 只在授权路径内写入本地文件，并保留 preimage | 否 |
 | **Human Gate** | 由人确认密钥、金钱、网络、部署、远程 Git、发布或不可逆动作 | 可能 |
 
-普通 APG 流程不反复要求人工批准；只有外部影响才需要 Gate。本仓库当前保持 **APG-only、离线、无真实 Git 写入**。
+普通 APG 流程不反复要求人工批准；只有外部影响才需要 Gate。APG 提供治理与证据层。本仓库保持离线、无真实 Git 写入；本地结构化适配器可以写文件和运行受控 Python 模块，但不冒称提供模型或完成任意下游项目。
 
 ### 反馈、失败与 Requeue
 
@@ -110,13 +111,14 @@ python -X utf8 -m unittest discover -s tests -p 'test_*.py'
 
 ## English
 
-OpenCoding is a **beginner-oriented AI coding governance and execution-preparation framework**. It does not pretend to build a product from an unclear idea; it turns that idea into work that is understandable, executable, verifiable, and reversible.
+OpenCoding is a **cross-platform Agent AI coding planning and controlled-execution core** that can be connected through a skill. It is beginner-oriented, does not require Windows as its host, and keeps the host OS, generated project's target platform, and the Agent's actual tool capabilities separate. It turns an unclear idea into work that is understandable, executable when a legal adapter exists, verifiable, and reversible.
 
 ### What can it do?
 
 - accept a rough idea in natural language;
 - use **Grill Me** to clarify goals, users, boundaries, acceptance criteria, and risks;
 - recommend target platforms and a front-end/back-end approach without asking beginners to choose frameworks;
+- expose a repository `skills/opencoding/SKILL.md` entry and a structured local adapter for Agent callers;
 - identify likely needs for servers, databases, APIs, login, payments, notifications, admin tools, and file storage;
 - generate project-specific Markdown such as `AGENTS.md`, `memory.md`, `PRG.md`, and `plan.md` when needed;
 - produce project notes, knowledge packs, task lists, dependencies, and execution context;
@@ -150,7 +152,7 @@ OpenCoding is a **beginner-oriented AI coding governance and execution-preparati
 | **Bounded apply** | Write only inside authorized local paths and retain preimages | No |
 | **Human Gate** | Confirm secrets, money, network, deployment, remote Git, release, or irreversible work | Maybe |
 
-Routine APG work proceeds without repeated manual approval. This repository currently remains **APG-only, offline, and free of real Git writes**.
+Routine APG work proceeds without repeated manual approval. APG supplies the governance and evidence layer. This repository remains offline and free of real Git writes; the local structured adapter can write files and run a bounded Python module, but it does not pretend to provide a model or complete an arbitrary downstream project.
 
 ### Feedback, failure, and Requeue
 
@@ -188,7 +190,7 @@ python -X utf8 -m unittest discover -s tests -p 'test_*.py'
 
 ### Scope and boundaries
 
-OpenCoding is for requirement clarification, AI-coding task decomposition, offline execution preparation, evidence, rollback, and human-Gate orchestration. This repository does not implement the downstream child product and does not connect to providers, hosts, credentials, networks, or deployment environments.
+OpenCoding is for requirement clarification, AI-coding task decomposition, skill-based Agent integration, bounded local execution, evidence, rollback, and human-Gate orchestration. This repository does not implement a particular downstream child product and does not connect to providers, hosts, credentials, networks, or deployment environments.
 
 ### README completeness note
 
@@ -207,3 +209,21 @@ Large, popular GitHub projects commonly include positioning, features, quick sta
 本项目的 **Grill Me** 追问式需求澄清能力，参考并致谢 [mattpocock/skills](https://github.com/mattpocock/skills) 中的 `/grill-me` 入口；需要结合项目文档时，可参考其 `/grill-with-docs` 入口。
 
 OpenCoding 在 APG 中提供的是中文优先、离线的契约与流程模拟：不会自动连接或安装上游项目，也不表示得到上游作者背书。上游项目的许可证、使用方式和最新内容请以其仓库为准。
+## Project skill entry
+
+OpenCoding can be attached as a project-level Agent skill. The standard entry is
+`.agents/skills/opencoding/`, with a source copy at `skills/opencoding/`. Check
+format, project discovery, and entrypoint loading with
+`python scripts/verify_codex_skill.py --root /absolute/project --exercise`.
+The verifier does not claim that a managed Codex host loaded the skill when no
+host observation is available.
+
+`LocalAgentAdapter` runs `python_module` as the same OS user in a bounded
+subprocess; it is not a security sandbox. Authorization binds the canonical
+root, action digest, targets, short expiry, and confirmation id.
+
+For a Codex-compatible local host, install the resource into an explicit
+`$CODEX_HOME/skills/opencoding` with
+`python scripts/install_codex_skill.py --project-root /absolute/project --codex-home /absolute/private-codex-home --load`.
+This proves resource discovery and adapter import while keeping managed Codex
+load observation separate.

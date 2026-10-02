@@ -16,7 +16,7 @@ def _context(root, action):
         "schema_version": "1.0",
         "root": str(root.resolve()),
         "action_digest": action_digest(action),
-        "targets": [action["path"]] if action["type"] == "write_text" else [],
+        "targets": [action["path"]] if action["type"] in {"write_text", "node_script"} else [],
         "external": False,
         "cost_limit": 0,
         "data_scope": "synthetic",
@@ -46,6 +46,15 @@ class ExecutorTests(unittest.TestCase):
         self.assertEqual(result["artifacts"][0]["sha256_kind"], "file_bytes")
         self.assertEqual(len(result["input_sha256"]), 64)
         self.assertFalse(result["live_verified"])
+
+    def test_node_script_runs_existing_node_without_shell(self):
+        script = {"type": "write_text", "path": "checks/test.mjs", "content": "console.log('OPENCODING_TESTS_RUN=1')\n"}
+        self.executor.execute(script, _context(self.root, script), run_id="run-node-write")
+        action = {"type": "node_script", "path": "checks/test.mjs", "args": []}
+        result = self.executor.execute(action, _context(self.root, action), run_id="run-node-script")
+        self.assertEqual(result["status"], "succeeded")
+        self.assertEqual(result["exit_code"], 0)
+        self.assertIn("OPENCODING_TESTS_RUN=1", result["stdout_summary"])
 
     def test_unknown_shell_and_context_mismatch_are_rejected(self):
         for action in (

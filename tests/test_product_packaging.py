@@ -23,7 +23,7 @@ from opencoding.safety import safe_target
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_FILES = tuple(sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / "opencoding").glob("*.py")))
-FIXTURE_FILES = ("pyproject.toml", "MANIFEST.in", "docs/product/OFFLINE_INSTALLATION.md", *PACKAGE_FILES)
+FIXTURE_FILES = ("pyproject.toml", "MANIFEST.in", "docs/product/OFFLINE_INSTALLATION.md", "docs/product/QUICKSTART_CN.md", *PACKAGE_FILES)
 DIST_INFO_FILES = {"METADATA", "RECORD", "WHEEL", "entry_points.txt", "top_level.txt"}
 SDIST_EGG_INFO_FILES = {"PKG-INFO", "SOURCES.txt", "dependency_links.txt", "entry_points.txt", "top_level.txt"}
 PRIVATE_FILENAMES = ("AUTHORS_PRIVATE.txt", "AUTHORS", "COPYING", "LICENSE", "LICENSE.txt", "NOTICE", "NOTICE.txt")
@@ -271,7 +271,7 @@ class ProductPackagingTests(unittest.TestCase):
     def test_build_contract_and_archives_have_exact_allowlists(self):
         configuration = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         self.assertEqual(configuration["build-system"], {"requires": ["setuptools>=83"], "build-backend": "setuptools.build_meta"})
-        self.assertEqual(configuration["project"]["scripts"], {"opencoding": "opencoding.cli:main"})
+        self.assertEqual(configuration["project"]["scripts"], {"opencoding": "opencoding.cli:main", "opencoding-project": "opencoding.project_entry:main"})
         self.assertEqual(
             configuration["project"]["readme"],
             {"file": "docs/product/OFFLINE_INSTALLATION.md", "content-type": "text/markdown"},
@@ -286,7 +286,7 @@ class ProductPackagingTests(unittest.TestCase):
             self.assertEqual(members, expected)
             self.assertEqual(
                 archive.read(f"{dist_info}/entry_points.txt").decode("utf-8"),
-                "[console_scripts]\nopencoding = opencoding.cli:main\n",
+                "[console_scripts]\nopencoding = opencoding.cli:main\nopencoding-project = opencoding.project_entry:main\n",
             )
 
         with tarfile.open(self.sdist, "r:gz") as archive:
@@ -298,6 +298,7 @@ class ProductPackagingTests(unittest.TestCase):
             f"{prefix}/pyproject.toml",
             f"{prefix}/setup.cfg",
             f"{prefix}/docs/product/OFFLINE_INSTALLATION.md",
+            f"{prefix}/docs/product/QUICKSTART_CN.md",
         }
         expected.update(f"{prefix}/{name}" for name in PACKAGE_FILES)
         expected.update(f"{prefix}/opencoding_local_entry.egg-info/{name}" for name in SDIST_EGG_INFO_FILES)

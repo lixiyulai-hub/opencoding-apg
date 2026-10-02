@@ -1,0 +1,1 @@
+"""Installable OpenCoding skill resources."""

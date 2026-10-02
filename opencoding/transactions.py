@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import stat
 import tempfile
 import uuid
 from contextlib import contextmanager
@@ -120,11 +121,34 @@ def _plan_digest(plan_core: Mapping[str, Any]) -> str:
 
 
 def _identity(path: Path) -> list[int] | None:
+    """普通**文件**的身份:拒绝符号链接/重解析点/硬链接(nlink>1)。"""
     try:
         info = os.stat(path, follow_symlinks=False)
     except (FileNotFoundError, OSError):
         return None
     if path.is_symlink() or _is_reparse(path) or getattr(info, "st_nlink", 1) > 1:
+        return None
+    return [int(getattr(info, "st_dev", 0)), int(getattr(info, "st_ino", 0))]
+
+
+def _dir_identity(path: Path) -> list[int] | None:
+    """**目录**的身份:拒绝符号链接/重解析点/非目录,链接计数不作为判据。
+
+    W2(2026-09-30):目录的 ``st_nlink`` 语义与普通文件不同——POSIX 上一个
+    空目录的 ``st_nlink`` 就是 2(自身 + 父目录里的条目),子目录再各加 1;
+    硬链接规则只对普通文件有意义。此前把两者混用,导致 Linux 上"新建的父
+    目录"一律被判为身份不可得,从缺父目录开始的新手流程被整体挡住。
+
+    这里**不**删除任何链接/重解析/前像防护:目录链接仍然被拒,身份仍然绑定
+    (dev, ino),事务回滚仍只移除"本事务创建且身份未变的空目录"。
+    """
+    try:
+        info = os.stat(path, follow_symlinks=False)
+    except (FileNotFoundError, OSError):
+        return None
+    if path.is_symlink() or _is_reparse(path):
+        return None
+    if not stat.S_ISDIR(int(getattr(info, "st_mode", 0))):
         return None
     return [int(getattr(info, "st_dev", 0)), int(getattr(info, "st_ino", 0))]
 
@@ -165,7 +189,7 @@ def _prepare_parents(root: Path, target: Path) -> list[tuple[str, list[int]]]:
         if current.is_symlink() or _is_reparse(current) or not current.is_dir():
             raise ValueError("target parent is an unsafe link or non-directory")
         if made:
-            identity = _identity(current)
+            identity = _dir_identity(current)
             if identity is None:
                 raise ValueError("created parent identity is unavailable")
             created.append((current.relative_to(root).as_posix(), identity))
@@ -203,7 +227,7 @@ def _remove_owned_empty_parents(
             parent.is_symlink()
             or _is_reparse(parent)
             or not parent.is_dir()
-            or _identity(parent) != parent_identities[relative]
+            or _dir_identity(parent) != parent_identities[relative]
         ):
             continue
         try:
@@ -242,7 +266,7 @@ def _cleanup_parent_paths(
         if parent is None:
             continue
         expected = parent_identities.get(relative)
-        if expected is None or _identity(parent) != expected:
+        if expected is None or _dir_identity(parent) != expected:
             residual.append(relative)
             continue
         try:
@@ -302,8 +326,11 @@ def _valid_hash(value: Any, *, allow_none: bool = False) -> bool:
 def _validate_plan(root: Path, plan: Mapping[str, Any]) -> tuple[dict[str, Any], list[tuple[dict[str, Any], Path]]]:
     if not isinstance(plan, Mapping) or plan.get("schema_version") != SCHEMA_VERSION:
         raise ValueError("unsupported or missing plan schema")
-    if set(plan) - {"schema_version", "root", "entries", "plan_digest", "status"}:
+    if set(plan) - {"schema_version", "root", "entries", "plan_digest", "status", "commit_guard"}:
         raise ValueError("plan contains unknown fields")
+    guard = plan.get("commit_guard")
+    if guard is not None and not callable(guard):
+        raise ValueError("plan commit guard is not callable")
     if plan.get("status") not in {None, "preview"}:
         raise ValueError("plan is not an immutable preview")
     if plan.get("root") != str(root):
@@ -635,8 +662,15 @@ def _load_receipt_manifest(root: Path, transaction_id: str) -> tuple[Path, dict[
     manifest_bytes = manifest_path.read_bytes()
     if sha256_bytes(manifest_bytes.rstrip(b"\n")) != receipt["manifest_sha256"]:
         raise ValueError("manifest digest mismatch")
-    if set(manifest_doc) != {"schema_version", "transaction_id", "plan_digest", "entries"}:
+    legacy_manifest_fields = {"schema_version", "transaction_id", "plan_digest", "entries"}
+    if set(manifest_doc) not in (legacy_manifest_fields, legacy_manifest_fields | {"root"}):
         raise ValueError("manifest fields are incompatible")
+    # New receipts retain the canonical root from the reviewed plan. A moved
+    # tree can retain every inode, so file identities alone cannot bind a
+    # rollback to its original project path. Legacy manifests remain readable
+    # but their missing root binding is explicitly reported to callers.
+    if "root" in manifest_doc and manifest_doc["root"] != str(root):
+        raise ValueError("transaction root mismatch")
     if manifest_doc["schema_version"] != SCHEMA_VERSION or manifest_doc["transaction_id"] != transaction_id or manifest_doc["plan_digest"] != receipt["plan_digest"]:
         raise ValueError("manifest identity is invalid")
     entries = manifest_doc["entries"]
@@ -971,7 +1005,7 @@ def apply_changes(root: Path, plan: dict[str, Any], *, approved_digest: str) -> 
                         "before_identity": identity_before,
                     }
                 )
-            manifest = {"schema_version": SCHEMA_VERSION, "transaction_id": transaction_id, "plan_digest": plan["plan_digest"], "entries": manifest_entries}
+            manifest = {"schema_version": SCHEMA_VERSION, "transaction_id": transaction_id, "plan_digest": plan["plan_digest"], "root": str(project_root), "entries": manifest_entries}
             manifest_bytes = canonical_json(manifest) + b"\n"
             _write_bytes(evidence / "manifest.json", manifest_bytes)
             receipt = {
@@ -994,7 +1028,14 @@ def apply_changes(root: Path, plan: dict[str, Any], *, approved_digest: str) -> 
             candidates: set[str] = set()
             after_identities: dict[str, list[int]] = {}
             try:
+                # S02：受控提交点。取消/撤销/预算核对由调用方以 commit_guard 注入，
+                # 在真正落盘前与每次写入前各核对一次，消除“检查完—开始应用”的无协调窗口。
+                guard = plan.get("commit_guard")
+                if callable(guard):
+                    guard()
                 for entry, _original_target in entries:
+                    if callable(guard):
+                        guard()
                     target = safe_target(project_root, entry["path"], allow_missing=True)
                     current_identity = _identity(target)
                     current_hash = _read_hash(target)
@@ -1209,4 +1250,54 @@ def rollback_changes(root: Path, transaction_id: str) -> dict[str, Any]:
         return {"schema_version": SCHEMA_VERSION, "status": "blocked", "reason_codes": [sanitize_text(str(error))], "changed_paths": []}
 
 
-__all__ = ["apply_changes", "preview_changes", "rollback_changes"]
+_RECEIPT_MAX_BYTES = 4 * 1024 * 1024
+
+
+def read_receipt_state(root: str | os.PathLike[str] | Path, transaction_id: str) -> dict[str, Any]:
+    """F10：只读读取某次事务的权威回执与清单，供状态核验使用。
+
+    只解析受控证据目录内的 receipt/manifest，先检查文件身份与大小，再校验
+    摘要与路径一致性；不读取无关数据，不修改任何证据。
+    """
+
+    project_root = _root(root)
+    if not isinstance(transaction_id, str) or not _TRANSACTION_ID.fullmatch(transaction_id):
+        raise ValueError("invalid transaction id")
+    evidence = _secure_dir(project_root, (".opencoding", "transactions", transaction_id), create=False)
+    receipt_path = evidence / "receipt.json"
+    manifest_path = evidence / "manifest.json"
+    _safe_evidence_file(receipt_path, evidence)
+    _safe_evidence_file(manifest_path, evidence)
+    receipt_size = os.path.getsize(receipt_path)
+    manifest_size = os.path.getsize(manifest_path)
+    if receipt_size > _RECEIPT_MAX_BYTES or manifest_size > _RECEIPT_MAX_BYTES:
+        raise ValueError("transaction receipt is oversized")
+    _evidence, receipt, manifest_doc, entries = _load_receipt_manifest(project_root, transaction_id)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "transaction_id": transaction_id,
+        "root_binding": "verified" if "root" in manifest_doc else "legacy_unbound",
+        "recorded_root": manifest_doc.get("root"),
+        "status": str(receipt["status"]),
+        "rollback_status": receipt.get("rollback_status"),
+        "planned_paths": list(receipt["planned_paths"]),
+        "changed_paths": list(receipt["changed_paths"]),
+        "uncertain_paths": list(receipt.get("uncertain_paths", [])),
+        "rollback_changed_paths": list(receipt.get("rollback_changed_paths", [])),
+        "residual_paths": list(receipt.get("rollback_residual_paths", [])),
+        "entries": [
+            {
+                "path": str(item["path"]),
+                "before_exists": bool(item["before_exists"]),
+                "before_sha256": item["before_sha256"],
+                "after_sha256": item["after_sha256"],
+            }
+            for item in entries
+        ],
+        "receipt_bytes": receipt_size,
+        "manifest_bytes": manifest_size,
+        "plan_digest": str(receipt["plan_digest"]),
+    }
+
+
+__all__ = ["apply_changes", "preview_changes", "read_receipt_state", "rollback_changes"]

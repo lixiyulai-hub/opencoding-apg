@@ -102,6 +102,7 @@ class SchedulerTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 Scheduler(root)
             self.assertFalse((outside / "scheduler" / "state.sqlite3").exists())
+            (root / ".opencoding").unlink()
 
         with tempfile.TemporaryDirectory() as directory:
             fixture = Path(directory).resolve()
@@ -381,6 +382,7 @@ class SchedulerTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 read_snapshot(root)
             self.assertEqual(_inventory(root), before)
+            (root / ".opencoding").unlink()
 
         with tempfile.TemporaryDirectory() as directory:
             fixture = Path(directory).resolve()

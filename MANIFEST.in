@@ -1,8 +1,3 @@
-include pyproject.toml
-include MANIFEST.in
-include docs/product/OFFLINE_INSTALLATION.md
-include opencoding/*.py
-
 prune apps
 prune artifacts
 prune docs
@@ -10,6 +5,12 @@ prune scripts
 prune services
 prune tests
 prune .governance
+
+include pyproject.toml
+include MANIFEST.in
+include docs/product/OFFLINE_INSTALLATION.md
+include docs/product/QUICKSTART_CN.md
+include opencoding/*.py
 
 exclude AGENTS.md
 exclude ARCHITECTURE.md

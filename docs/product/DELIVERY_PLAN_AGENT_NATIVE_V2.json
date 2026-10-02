@@ -1,0 +1,93 @@
+{
+  "schema_version": "2.0",
+  "program_id": "opencoding-agent-native-delivery-v2-20260909",
+  "status": "scope_corrected",
+  "supersedes": {
+    "path": "docs/product/DELIVERY_PLAN_V1.json",
+    "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
+  },
+  "scope": {
+    "current_product_direction": "Agent-native local use through existing CLI and Python APIs.",
+    "not_required": [
+      "browser workbench",
+      "HTTP service",
+      "embedded Codex App",
+      "MCP server",
+      "plugin architecture"
+    ],
+    "not_accepted": [
+      "universal agent Host compatibility",
+      "real Host activation",
+      "controlled connector implementation",
+      "platform or beginner acceptance",
+      "publication"
+    ]
+  },
+  "progress": {
+    "task_total": "not-computable",
+    "task_stage": "not-computable",
+    "program_total": "not-computable",
+    "program_stage": "not-computable",
+    "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the agent-native delivery plan."
+  },
+  "immediate_transaction": {
+    "id": "agent-native-docs-r2",
+    "purpose": "Correct the documented conflict branch, make installed-package API guidance self-contained, and retain the complete accepted W2-C evidence split.",
+    "status": "in_progress_pending_independent_verification",
+    "paths": [
+      "docs/product/OFFLINE_INSTALLATION.md",
+      "docs/product/AGENT_NATIVE_USE.md",
+      "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json"
+    ]
+  },
+  "following_stage": "Independent bounded agent-native workflow verification and documentation integration.",
+  "ordered_successors": [
+    "Independent agent-native workflow verification and evidence-led documentation integration",
+    "W4 controlled Host and connector work, separately scoped and accepted",
+    "W5 independent beginner/platform acceptance and publication boundaries, separately scoped and accepted"
+  ],
+  "retained_delivery_evidence": [
+    {
+      "wave": "W2-B",
+      "status": "accepted_integrated",
+      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/integration-r4-resume/acceptance.json"
+    },
+    {
+      "wave": "W2-C1 read-only status",
+      "status": "accepted_integrated",
+      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/w2c-readviews/integrated-acceptance.json"
+    },
+    {
+      "wave": "W2-C2 CLI control normalization",
+      "status": "accepted_integrated",
+      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/w2c-cli/integrated-acceptance.json"
+    },
+    {
+      "wave": "W3-A offline packaging",
+      "status": "accepted_integrated",
+      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/w3a-packaging/integrated-acceptance.json"
+    },
+    {
+      "wave": "W3 browser workbench",
+      "status": "cancelled_not_completed",
+      "evidence": "artifacts/w2-executor-v1/native-resume-20260908/dispatch-registry.json#/w3b_workbench"
+    }
+  ],
+  "later_waves": [
+    {
+      "wave": "W4",
+      "status": "pending_unverified",
+      "scope": "Controlled AI coding Host and the original connector roadmap. Recommendation flags and plans are not real connector implementations."
+    },
+    {
+      "wave": "W5",
+      "status": "pending_unverified",
+      "scope": "Independent beginner and platform acceptance plus evidence-based public delivery."
+    }
+  ],
+  "gates": {
+    "immediate_human_gate": null,
+    "automatic_gate_coverage": "inconclusive",
+    "later": "Real Host or connector activation, credentials, cost-bearing work, real data, deployment, and publication require separate authorization with exact target and scope."
+  }
+}
