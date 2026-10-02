@@ -49,8 +49,8 @@
     ]
   },
   "current_checkout_verification": {
-    "status": "passed_local_pending_detached",
-    "commit": "a642e533e21139ca177c89be43e70f2b9cc351cd",
+    "status": "passed",
+    "commit": "0cd3183d7a91b7c6c5e18a1c197cc190bd5f1e6f",
     "full_unittest": {
       "total": 663,
       "passed": 654,
@@ -66,15 +66,23 @@
       "doc_tests": 0,
       "returncode": 0
     },
-    "independent_detached_focused": "67 tests passed",
+    "independent_detached_focused": "7 tests passed; 0 failures/errors",
     "independent_skill": "format_valid_project_discovered_host_unverified",
     "managed_loader": "unverified_host_api_has_no_project_skill_loader",
     "real_user_acceptance": "not-run",
     "evidence_root": "/workspace/stage28-validation-20261002/package-r3-final",
     "packaged_loop": "wheel and sdist-rebuilt wheel passed outside-repository clean venv synthetic flow",
-    "skill_verifier": "format_valid_project_discovered_host_unverified"
+    "skill_verifier": "format_valid_project_discovered_host_unverified",
+    "independent_detached_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
+    "independent_detached_skill": "format_valid_project_discovered_host_unverified",
+    "independent_evidence_root": "/workspace/stage28-validation-20261002/package-r3-independent"
   },
-  "following_stage": "Independent detached verification of package-r3 checkpoint and evidence-led push.",
+  "following_stage": "W4 controlled Host and connector work, separately scoped and accepted.",
   "ordered_successors": [
     "Independent agent-native workflow verification and evidence-led documentation integration",
     "W4 controlled Host and connector work, separately scoped and accepted",
@@ -137,7 +145,7 @@
   "current_transaction": {
     "id": "agent-native-package-r3",
     "purpose": "Close the packaging omission so clean wheel/sdist installs discover the bounded skill resource and can run preview/run offline.",
-    "status": "completed_local_verification_pending_detached",
+    "status": "completed_with_independent_verification",
     "paths": [
       "MANIFEST.in",
       "pyproject.toml",
