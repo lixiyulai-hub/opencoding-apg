@@ -13,6 +13,14 @@ from opencoding.source_identity import source_fingerprint
 
 
 class SkillRuntimeContractTests(unittest.TestCase):
+    _RUNTIME_SOURCE_PATHS = (
+        "opencoding",
+        "skills/opencoding",
+        ".agents/skills/opencoding",
+        "scripts/run_skill_contract.py",
+        "scripts/recover_skill_transaction.py",
+    )
+
     @property
     def source_root(self) -> Path:
         return Path(__file__).resolve().parents[1]
@@ -28,6 +36,25 @@ class SkillRuntimeContractTests(unittest.TestCase):
     @property
     def recovery_runner(self) -> Path:
         return self.source_root / "scripts" / "recover_skill_transaction.py"
+
+    def _copy_runtime_source(self, destination: Path) -> None:
+        """Copy only the reviewed runtime inputs used by the skill runner.
+
+        The repository also carries historical integration evidence, including
+        links from an old Windows checkout.  Those files are outside the
+        runtime source fingerprint and must not make a source-drift fixture
+        fail while it is being prepared.
+        """
+        import shutil
+
+        for relative in self._RUNTIME_SOURCE_PATHS:
+            source = self.source_root / relative
+            target = destination / relative
+            if source.is_dir():
+                shutil.copytree(source, target, symlinks=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target, follow_symlinks=False)
 
     def test_install_discover_load_changes_home_but_runs_no_project_actions(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -107,8 +134,8 @@ class SkillRuntimeContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             copied = root / "source-copy"
-            import shutil
-            shutil.copytree(self.source_root, copied)
+            self._copy_runtime_source(copied)
+            self.assertEqual(source_fingerprint(copied), self.source_sha)
             with (copied / "skills" / "opencoding" / "SKILL.md").open("a", encoding="utf-8") as changed_skill:
                 changed_skill.write("\nchanged in test\n")
             action_file = root / "actions.json"
