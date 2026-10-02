@@ -50,7 +50,7 @@
   },
   "current_checkout_verification": {
     "status": "passed",
-    "commit": "8a79ffc",
+    "commit": "f5123ca",
     "full_unittest": {
       "total": 694,
       "passed": 685,
@@ -236,7 +236,8 @@
       "returncode": 0
     },
     "w5_publication_review_skill": "format_valid_project_discovered_host_unverified",
-    "w5_publication_review_independent_root": "/workspace/stage28-validation-20261002/w5-publication-review-independent"
+    "w5_publication_review_independent_root": "/workspace/stage28-validation-20261002/w5-publication-review-independent",
+    "w5_publication_review_code_commit": "0ec7639"
   },
   "following_stage": "Stop at the explicit publication human Gate; retain the offline preview for review.",
   "ordered_successors": [
