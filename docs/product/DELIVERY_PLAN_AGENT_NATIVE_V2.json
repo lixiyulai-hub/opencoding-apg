@@ -82,9 +82,34 @@
     "independent_detached_skill": "format_valid_project_discovered_host_unverified",
     "independent_evidence_root": "/workspace/stage28-validation-20261002/package-r3-independent",
     "independent_verified_commit": "0cd3183",
-    "note": "Focused independent evidence was collected from 0cd3183 before this documentation-only checkpoint update."
+    "note": "Focused independent evidence was collected from 0cd3183 before this documentation-only checkpoint update.",
+    "w4_full_unittest": {
+      "total": 675,
+      "passed": 666,
+      "skipped": 9,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "raw": "Ran 675 tests in 160.575s; OK (skipped=9)"
+    },
+    "w4_independent_focused": {
+      "total": 24,
+      "passed": 24,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "W4 contracts, docs, host adapter, skill contract, wheel/sdist clean install"
+    },
+    "w4_independent_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
+    "w4_independent_skill": "format_valid_project_discovered_host_unverified"
   },
-  "following_stage": "Independent detached W4 contract verification and checkpoint push.",
+  "following_stage": "Real Host/connector activation only after explicit human Gate; otherwise W5 independent beginner/platform acceptance.",
   "ordered_successors": [
     "Full W4 contract regression: raw total/pass/skip/failure/error counts and offline evidence.",
     "Independent detached W4 contract verification and checkpoint push.",
@@ -198,7 +223,7 @@
   },
   "current_w4_transaction": {
     "id": "agent-native-w4-offline-contract",
-    "status": "full_local_verification_pending_detached",
+    "status": "completed_with_independent_verification",
     "paths": [
       "opencoding/host_connector.py",
       "opencoding/__init__.py",
@@ -221,6 +246,23 @@
       "errors": 0,
       "returncode": 0,
       "raw": "Ran 675 tests in 160.575s; OK (skipped=9)"
-    }
+    },
+    "independent_evidence_root": "/workspace/stage28-validation-20261002/w4-independent",
+    "independent_focused": {
+      "total": 24,
+      "passed": 24,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "W4 contracts, docs, host adapter, skill contract, wheel/sdist clean install"
+    },
+    "independent_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
+    "independent_skill": "format_valid_project_discovered_host_unverified"
   }
 }
