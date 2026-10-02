@@ -15,6 +15,7 @@
 - 技能 verifier：`format_valid_project_discovered_host_unverified`；项目发现、入口导入和能力读取通过，managed loader 仍为 `unverified`。
 - 独立 detached worktree（推送后的 `5ce3651`）：focused 子集 103/103、Cargo 4/4 通过。
 - 现有 Stage19 本地闭环以 fixture 运行：初始测试失败被记录，修复后测试通过，事务回滚 `rolled_back` 且残留为空。该输入明确为 `synthetic`，不计作真实用户验收。
+- 另以仓库推荐的 CLI 路由做了一次完整离线演练：`project init → plan → apply-docs → preview → run → status → rollback`，10/10 计划任务完成、1 个 Python 测试通过，两个新建源码文件均由 `project rollback` 移除。答案来源明确为 `agent-assumptions`，因此仍不计作真实用户验收。
 
 原始终端日志保存在仓库外 `/workspace/stage28-validation-20261002/logs/`，避免把运行缓存和环境路径提交进仓库。
 
