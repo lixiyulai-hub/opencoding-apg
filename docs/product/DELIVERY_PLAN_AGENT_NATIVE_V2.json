@@ -50,7 +50,7 @@
   },
   "current_checkout_verification": {
     "status": "passed",
-    "commit": "0cd3183d7a91b7c6c5e18a1c197cc190bd5f1e6f",
+    "commit": "f873803",
     "full_unittest": {
       "total": 663,
       "passed": 654,
@@ -80,7 +80,9 @@
       "returncode": 0
     },
     "independent_detached_skill": "format_valid_project_discovered_host_unverified",
-    "independent_evidence_root": "/workspace/stage28-validation-20261002/package-r3-independent"
+    "independent_evidence_root": "/workspace/stage28-validation-20261002/package-r3-independent",
+    "independent_verified_commit": "0cd3183",
+    "note": "Focused independent evidence was collected from 0cd3183 before this documentation-only checkpoint update."
   },
   "following_stage": "W4 controlled Host and connector work, separately scoped and accepted.",
   "ordered_successors": [
