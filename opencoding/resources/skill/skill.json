@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "name": "opencoding",
+  "entrypoint": "opencoding.agent_adapter:LocalAgentAdapter",
+  "planning": "opencoding.service",
+  "actions": [
+    "write_text",
+    "python_module",
+    "node_script"
+  ],
+  "host_independent": true,
+  "model_available": false,
+  "external_actions": false,
+  "requires_user_authorization_for_local_write": true,
+  "sandbox": false,
+  "authorization_binding": [
+    "root",
+    "action_digest",
+    "targets",
+    "expires_at",
+    "confirmation_id"
+  ],
+  "capability_matrix": "opencoding.host_capabilities:build_capability_matrix",
+  "adapter_check": "scripts/check_agent_adapter.py",
+  "execution_observation": "LocalAgentAdapter.execute:capability_observation",
+  "non_template_validation": "scripts/run_stage19_non_template.py",
+  "toolchain_probe": "opencoding.toolchain_probe:probe_target_toolchain",
+  "multi_project_validation": "scripts/run_stage20_multi_project.py",
+  "capability_contract": "opencoding.capability_contract:build_capability_contract",
+  "stage21_project_matrix": "scripts/run_stage21_project_matrix.py",
+  "acceptance_report": "opencoding.acceptance_report:build_acceptance_report",
+  "acceptance_cli": "scripts/report_acceptance.py",
+  "acceptance_state": "opencoding.acceptance_state:resume_acceptance_state",
+  "stage23_state_recovery": "scripts/run_stage23_state_recovery.py",
+  "host_root_contract": "$CODEX_HOME/skills/<name>/SKILL.md",
+  "product_loop_bridge": "opencoding.agent_tasks:LocalAgentTaskExecutor",
+  "product_loop_preview": "opencoding.agent_tasks:preview_agent_tasks",
+  "target_adapters": "opencoding.target_adapters:get_target_adapter",
+  "target_status_report": "opencoding.target_adapters:target_adapter_status"
+}

@@ -40,6 +40,7 @@ class AgentNativeDocsContractTests(unittest.TestCase):
         self.assertIn("A `busy` or `stale` answer result has no session payload", document)
         self.assertIn("Only `read_snapshot` is a zero-write scheduler view", document)
         self.assertIn("A stale or busy result is a stop-and-reconcile condition", document)
+        self.assertIn("installed wheel and sdist include the validated package skill resource", document)
 
     def test_delivery_plan_marks_retained_evidence_as_archive_only(self):
         plan = json.loads((ROOT / "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json").read_text(encoding="utf-8"))
@@ -51,6 +52,11 @@ class AgentNativeDocsContractTests(unittest.TestCase):
                 "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json",
             ],
         )
+        self.assertEqual(plan["current_transaction"]["id"], "agent-native-package-r3")
+        self.assertIn("opencoding/resources/skill/SKILL.md", plan["current_transaction"]["paths"])
+        self.assertEqual(plan["package_resource_boundary"]["partial_resource"], "fail_closed")
+        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["total"], 663)
+        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["passed"], 654)
         boundary = plan["retained_evidence_boundary"]
         self.assertFalse(boundary["checkout_contains"])
         self.assertFalse(boundary["source_bound"])

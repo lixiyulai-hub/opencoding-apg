@@ -49,17 +49,32 @@
     ]
   },
   "current_checkout_verification": {
-    "status": "passed",
-    "commit": "d50c6c6cef5852d430900b01eef93da7f8b71f7e",
-    "full_unittest": "659 tests; 0 failures; 0 errors; 9 skipped",
-    "offline_cargo": "4 tests passed; 0 failed; doc-tests 0",
+    "status": "passed_local_pending_detached",
+    "commit": "a642e533e21139ca177c89be43e70f2b9cc351cd",
+    "full_unittest": {
+      "total": 663,
+      "passed": 654,
+      "skipped": 9,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "raw": "Ran 663 tests in 155.578s; OK (skipped=9)"
+    },
+    "offline_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
     "independent_detached_focused": "67 tests passed",
     "independent_skill": "format_valid_project_discovered_host_unverified",
     "managed_loader": "unverified_host_api_has_no_project_skill_loader",
     "real_user_acceptance": "not-run",
-    "evidence_root": "/workspace/stage28-validation-20261002/docs-r2-final/logs"
+    "evidence_root": "/workspace/stage28-validation-20261002/package-r3-final",
+    "packaged_loop": "wheel and sdist-rebuilt wheel passed outside-repository clean venv synthetic flow",
+    "skill_verifier": "format_valid_project_discovered_host_unverified"
   },
-  "following_stage": "Independent bounded agent-native workflow verification and documentation integration.",
+  "following_stage": "Independent detached verification of package-r3 checkpoint and evidence-led push.",
   "ordered_successors": [
     "Independent agent-native workflow verification and evidence-led documentation integration",
     "W4 controlled Host and connector work, separately scoped and accepted",
@@ -118,5 +133,56 @@
     "immediate_human_gate": null,
     "automatic_gate_coverage": "inconclusive",
     "later": "Real Host or connector activation, credentials, cost-bearing work, real data, deployment, and publication require separate authorization with exact target and scope."
+  },
+  "current_transaction": {
+    "id": "agent-native-package-r3",
+    "purpose": "Close the packaging omission so clean wheel/sdist installs discover the bounded skill resource and can run preview/run offline.",
+    "status": "completed_local_verification_pending_detached",
+    "paths": [
+      "MANIFEST.in",
+      "pyproject.toml",
+      "opencoding/agent_tasks.py",
+      "opencoding/codex_host.py",
+      "opencoding/skill_resources.py",
+      "opencoding/resources/skill/SKILL.md",
+      "opencoding/resources/skill/skill.json",
+      "docs/product/OFFLINE_INSTALLATION.md",
+      "docs/product/AGENT_NATIVE_USE.md",
+      "docs/product/DELIVERY_REPORT_AGENT_NATIVE_PACKAGE_R3_CN.md",
+      "tests/test_agent_native_docs_contract.py",
+      "tests/test_product_packaging.py",
+      "tests/test_skill_resource_packaging.py"
+    ],
+    "rollback": "Revert this transaction commit; no user project migration is required. Product-loop rollback only removes receipt-covered synthetic files."
+  },
+  "package_resource_boundary": {
+    "canonical_checkout": ".agents/skills/opencoding",
+    "packaged": "opencoding/resources/skill",
+    "source_precedence": [
+      ".agents/skills/opencoding",
+      "skills/opencoding",
+      "opencoding/resources/skill"
+    ],
+    "partial_resource": "fail_closed",
+    "provider_used": false,
+    "managed_loader": "unverified_host_api_has_no_project_skill_loader"
+  },
+  "synthetic_acceptance": {
+    "status": "synthetic_only",
+    "goal": "离线中文命令行借还登记工具，记录物品与借用人并查看状态",
+    "flow": [
+      "questions",
+      "plan",
+      "documents",
+      "action_preview",
+      "authorization_rejection",
+      "synthetic_execution",
+      "unittest_review",
+      "status",
+      "rollback"
+    ],
+    "real_provider": false,
+    "real_user": false,
+    "evidence_root": "/workspace/stage28-validation-20261002/package-r3-final"
   }
 }

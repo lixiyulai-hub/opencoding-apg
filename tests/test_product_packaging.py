@@ -23,7 +23,8 @@ from opencoding.safety import safe_target
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_FILES = tuple(sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / "opencoding").glob("*.py")))
-FIXTURE_FILES = ("pyproject.toml", "MANIFEST.in", "docs/product/OFFLINE_INSTALLATION.md", "docs/product/QUICKSTART_CN.md", *PACKAGE_FILES)
+PACKAGE_DATA_FILES = tuple(sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / "opencoding" / "resources" / "skill").glob("*")))
+FIXTURE_FILES = ("pyproject.toml", "MANIFEST.in", "docs/product/OFFLINE_INSTALLATION.md", "docs/product/QUICKSTART_CN.md", *PACKAGE_FILES, *PACKAGE_DATA_FILES)
 DIST_INFO_FILES = {"METADATA", "RECORD", "WHEEL", "entry_points.txt", "top_level.txt"}
 SDIST_EGG_INFO_FILES = {"PKG-INFO", "SOURCES.txt", "dependency_links.txt", "entry_points.txt", "top_level.txt"}
 PRIVATE_FILENAMES = ("AUTHORS_PRIVATE.txt", "AUTHORS", "COPYING", "LICENSE", "LICENSE.txt", "NOTICE", "NOTICE.txt")
@@ -65,6 +66,7 @@ def _run(
     workspace: Path,
     label: str,
     text: str | None = None,
+    expected_returncode: int = 0,
 ) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
         command,
@@ -81,7 +83,8 @@ def _run(
     log.with_suffix(".command.json").write_text(json.dumps(command, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
     log.with_suffix(".stdout.log").write_text(result.stdout, encoding="utf-8")
     log.with_suffix(".stderr.log").write_text(result.stderr, encoding="utf-8")
-    if result.returncode:
+    log.with_suffix(".returncode").write_text(str(result.returncode) + "\n", encoding="utf-8")
+    if result.returncode != expected_returncode:
         raise AssertionError(
             "command failed:\n"
             + " ".join(command)
@@ -89,6 +92,7 @@ def _run(
             + result.stdout
             + "\nstderr:\n"
             + result.stderr
+            + f"\nexpected return code: {expected_returncode}, actual: {result.returncode}"
         )
     return result
 
@@ -277,12 +281,12 @@ class ProductPackagingTests(unittest.TestCase):
             {"file": "docs/product/OFFLINE_INSTALLATION.md", "content-type": "text/markdown"},
         )
         self.assertEqual(configuration["project"]["license-files"], [])
-        self.assertEqual(configuration["tool"]["setuptools"], {"packages": ["opencoding"], "include-package-data": False})
+        self.assertEqual(configuration["tool"]["setuptools"], {"packages": ["opencoding"], "include-package-data": False, "package-data": {"opencoding": ["resources/skill/*"]}})
 
         with zipfile.ZipFile(self.wheel) as archive:
             members = set(archive.namelist())
             dist_info = next(member.rsplit("/", 1)[0] for member in members if member.endswith(".dist-info/METADATA"))
-            expected = set(PACKAGE_FILES) | {f"{dist_info}/{name}" for name in DIST_INFO_FILES}
+            expected = set(PACKAGE_FILES) | set(PACKAGE_DATA_FILES) | {f"{dist_info}/{name}" for name in DIST_INFO_FILES}
             self.assertEqual(members, expected)
             self.assertEqual(
                 archive.read(f"{dist_info}/entry_points.txt").decode("utf-8"),
@@ -301,6 +305,7 @@ class ProductPackagingTests(unittest.TestCase):
             f"{prefix}/docs/product/QUICKSTART_CN.md",
         }
         expected.update(f"{prefix}/{name}" for name in PACKAGE_FILES)
+        expected.update(f"{prefix}/{name}" for name in PACKAGE_DATA_FILES)
         expected.update(f"{prefix}/opencoding_local_entry.egg-info/{name}" for name in SDIST_EGG_INFO_FILES)
         self.assertEqual(files, expected)
         prohibited = (*PRIVATE_FILENAMES, "private-sentinel", "tests/", "apps/", "artifacts/", "scripts/", "services/", ".governance/", "README")
@@ -401,6 +406,135 @@ class ProductPackagingTests(unittest.TestCase):
         extracted = _extract_sdist(archive, destination)
         self.assertEqual((extracted / "\u00e9/one.txt").read_bytes(), b"canonical")
         self.assertEqual({path.name for path in extracted.iterdir()}, {"\u00e9"})
+
+    def _run_clean_product_loop(self, artifact: Path, label: str) -> None:
+        venv = self.workspace / (label + "-venv")
+        outside = self.workspace / (label + "-outside")
+        project = self.workspace / (label + "-project")
+        outside.mkdir()
+        project.mkdir()
+        _run(
+            [sys.executable, "-I", "-B", "-X", "utf8", "-m", "venv", str(venv)],
+            cwd=outside, workspace=self.workspace, label=label + "-create-venv",
+        )
+        python = venv / "Scripts" / "python.exe"
+        console = venv / "Scripts" / "opencoding-project.exe"
+        if not python.exists():
+            python = venv / "bin" / "python"
+            console = venv / "bin" / "opencoding-project"
+        _run(
+            [str(python), "-I", "-B", "-X", "utf8", "-m", "pip", "install", "--no-index", "--no-deps", "--no-cache-dir", "--no-compile", str(artifact)],
+            cwd=outside, workspace=self.workspace, label=label + "-install",
+        )
+        probe = ("from opencoding.agent_tasks import skill_identity; "
+                 "from opencoding.codex_host import CodexSkillHost; "
+                 "import pathlib; i=skill_identity(); "
+                 "assert i['resource'] == 'opencoding/resources/skill'; "
+                 "h=CodexSkillHost(pathlib.Path.cwd()); r=h.discover(); "
+                 "assert r.source == 'installed_package'; "
+                 "print(i['resource'], r.source)")
+        identity = _run(
+            [str(python), "-I", "-B", "-X", "utf8", "-c", probe],
+            cwd=outside, workspace=self.workspace, label=label + "-resource-discovery",
+        )
+        self.assertIn("opencoding/resources/skill installed_package", identity.stdout)
+        init = _run(
+            [str(console), "init", "--root", str(project), "--idea", "我想要一个离线中文命令行借还登记工具，记录物品与借用人并查看状态。"],
+            cwd=outside, workspace=self.workspace, label=label + "-init",
+        )
+        self.assertEqual(json.loads(init.stdout)["status"], "needs_answers")
+        answers = {item["id"]: "否" for item in QUESTION_DEFINITIONS}
+        answers.update({
+            "audience": "我自己", "outcome": "记录借出和归还并查看当前状态",
+            "platform": "命令行", "data_persistence": "是",
+        })
+        answers_file = self.workspace / (label + "-answers.json")
+        answers_file.write_text(json.dumps(answers, ensure_ascii=False), encoding="utf-8")
+        planned = _run(
+            [str(console), "plan", "--root", str(project), "--answers", str(answers_file), "--answers-origin", "fixture"],
+            cwd=outside, workspace=self.workspace, label=label + "-plan",
+        )
+        planned_json = json.loads(planned.stdout)
+        self.assertEqual(planned_json["status"], "documents_preview")
+        applied = _run(
+            [str(console), "apply-docs", "--root", str(project), "--expected-digest", planned_json["expected_digest"], "--authorized-local", "--authorization-id", label + "-docs", "--synthetic"],
+            cwd=outside, workspace=self.workspace, label=label + "-apply-docs",
+        )
+        self.assertEqual(json.loads(applied.stdout)["status"], "applied")
+        plan_tasks = planned_json["evaluation"]["task_plan"]["tasks"]
+        implementation = next(item for item in plan_tasks if item["action"]["type"] == "implement_feature")
+        verification = next(item for item in plan_tasks if item["action"]["type"] == "verify_feature")
+        source_path = implementation["outputs"][0]
+        test_path = verification["outputs"][0]
+        source_module = source_path.removesuffix(".py").replace("/", ".")
+        source_content = "def status():\n    return '借还登记可用'\n"
+        test_content = ("import importlib\nimport unittest\n\n"
+                        f"product = importlib.import_module({source_module!r})\n\n"
+                        "class SyntheticBeginnerProductTest(unittest.TestCase):\n"
+                        "    def test_status_records_local_need(self):\n"
+                        "        self.assertEqual(product.status(), '借还登记可用')\n")
+        actions_file = self.workspace / (label + "-actions.json")
+        actions = {
+            implementation["id"]: [{"type": "write_text", "path": source_path, "content": source_content}],
+            verification["id"]: [
+                {"type": "write_text", "path": test_path, "content": test_content},
+                {"type": "python_module", "module": "unittest", "args": ["discover", "-s", str(Path(test_path).parent), "-p", Path(test_path).name, "-v"]},
+            ],
+        }
+        actions_file.write_text(json.dumps(actions, ensure_ascii=False), encoding="utf-8")
+        preview = _run(
+            [str(console), "preview", "--root", str(project), "--actions", str(actions_file)],
+            cwd=outside, workspace=self.workspace, label=label + "-preview",
+        )
+        preview_json = json.loads(preview.stdout)
+        self.assertEqual(preview_json["status"], "actions_preview")
+        self.assertEqual(preview_json["preview"]["skill"]["resource"], "opencoding/resources/skill")
+        rejected = _run(
+            [str(console), "run", "--root", str(project), "--actions", str(actions_file), "--expected-digest", preview_json["expected_digest"]],
+            cwd=outside, workspace=self.workspace, label=label + "-run-without-auth", expected_returncode=2,
+        )
+        self.assertIn('authorization', rejected.stderr)
+        run = _run(
+            [str(console), "run", "--root", str(project), "--actions", str(actions_file), "--expected-digest", preview_json["expected_digest"], "--authorized-local", "--authorization-id", label + "-run", "--synthetic"],
+            cwd=outside, workspace=self.workspace, label=label + "-run",
+        )
+        run_json = json.loads(run.stdout)
+        self.assertEqual(run_json["status"], "succeeded")
+        self.assertTrue(all(item["status"] == "succeeded" for item in run_json["tasks"]))
+        self.assertTrue(run_json["evidence"]["tests"])
+        run_record = json.loads((project / ".opencoding" / "product_runs" / (run_json["run_id"] + ".json")).read_text(encoding="utf-8"))
+        self.assertTrue(any(event.get("synthetic_confirmation") for event in run_record.get("action_events", [])))
+        status = _run(
+            [str(console), "status", "--root", str(project)],
+            cwd=outside, workspace=self.workspace, label=label + "-status",
+        )
+        self.assertEqual(json.loads(status.stdout)["run"]["status"], "succeeded")
+        rolled_back = _run(
+            [str(console), "rollback", "--root", str(project), "--reason", "synthetic QA rollback", "--authorized-local", "--authorization-id", label + "-rollback", "--synthetic"],
+            cwd=outside, workspace=self.workspace, label=label + "-rollback",
+        )
+        rollback_json = json.loads(rolled_back.stdout)
+        self.assertEqual(rollback_json["status"], "files_rolled_back")
+        self.assertFalse((project / source_path).exists())
+        self.assertFalse((project / test_path).exists())
+        self.assertTrue((project / "AGENTS.md").exists())
+
+    def test_clean_wheel_and_sdist_rebuild_run_synthetic_product_loop(self):
+        self._run_clean_product_loop(self.wheel, "clean-wheel")
+        rebuild_root = self.workspace / "product-loop-sdist-rebuild"
+        rebuild_root.mkdir()
+        extracted = _extract_sdist(self.sdist, rebuild_root)
+        rebuilt_dist = self.workspace / "product-loop-rebuilt-dist"
+        rebuilt_dist.mkdir()
+        rebuild = (
+            "import pathlib,sys,setuptools.build_meta as backend;"
+            "wheel_out=str(pathlib.Path(sys.argv[1]).resolve());"
+            "print(backend.build_wheel(wheel_out))"
+        )
+        _run([sys.executable, "-I", "-B", "-X", "utf8", "-c", rebuild, str(rebuilt_dist)],
+             cwd=extracted, workspace=self.workspace, label="product-loop-sdist-rebuild")
+        rebuilt_wheel = next(rebuilt_dist.glob("*.whl"))
+        self._run_clean_product_loop(rebuilt_wheel, "clean-sdist-rebuilt-wheel")
 
     def test_sdist_rebuild_and_clean_install_use_installed_entrypoints(self):
         rebuild_root = self.workspace / "sdist-rebuild"

@@ -38,7 +38,7 @@ python -m opencoding --root C:\path\to\authorized-project --status --json
 
 已安装包也导出 `opencoding.scheduler.read_snapshot(root, task_id=None)`、`recover(root)` 和 `requeue(root, task_id, idempotency_key)`。只有 `read_snapshot` 以及 CLI 的 `--status` 是零写入状态查看；它们不会初始化、迁移或恢复 scheduler。`recover` 和 `requeue` 都会构造 `Scheduler`，而构造 scheduler 会初始化/迁移本地状态并执行恢复；它们是需要授权本地范围的写入操作。`get_task` 与 `list_runs` 也构造 scheduler，因此不能仅因最后查询而标记为零写入。`requeue` 需要匹配 idempotency key，可能因状态或 attempt 限制被拒绝；`recover` 仅恢复遗留运行记录，二者都不会单独执行任务，也不会把 TaskPlan 变成真实执行。
 
-应先检查每次返回的 `status`，并把 `ServiceError.code`、`ValueError` 或 `SchedulerSnapshotError` 作为调用方处理的本地失败，而不是解析人类可读错误文本。不要把 `--status --json` 的稳定状态错误格式扩展为交互式向导或所有 CLI 模式的统一 JSON 协议。源码仓库中的更完整说明位于 `docs/product/AGENT_NATIVE_USE.md`，但该源文件不包含在当前 wheel；本节已列出安装后所需的调用顺序和限制。
+应先检查每次返回的 `status`，并把 `ServiceError.code`、`ValueError` 或 `SchedulerSnapshotError` 作为调用方处理的本地失败，而不是解析人类可读错误文本。不要把 `--status --json` 的稳定状态错误格式扩展为交互式向导或所有 CLI 模式的统一 JSON 协议。源码仓库中的更完整说明位于 `docs/product/AGENT_NATIVE_USE.md`，该源文件仍不包含在当前 wheel；本节已列出安装后所需的调用顺序和限制。
 
 ## 安装产物与源码入口的边界
 
@@ -46,8 +46,8 @@ python -m opencoding --root C:\path\to\authorized-project --status --json
 | --- | --- |
 | `python -m opencoding --help` / `opencoding --help` | 列出原有会话、状态、计划和自主模式；本文只验收本地会话/文档 API。 |
 | `python -m opencoding project --help` / `opencoding-project --help` | 可查看 Stage28 子命令；`init/plan/apply-docs/status` 可运行。`project status` 读取项目入口状态，与旧 `--status` 的 scheduler/autorun 快照是不同协议。 |
-| `project preview/run`、`preview_agent_tasks`、`LocalAgentTaskExecutor` | 需要随源码 checkout 提供的 `.agents/skills/opencoding`。当前 wheel/sdist 没有这份资源，安装包不能据此声称完成结构化任务闭环。需要该路径时，从完整 checkout 使用 `python -m opencoding project ...`。 |
-| 文档与 skill 安装脚本 | 本说明嵌入 wheel 的包元数据；`QUICKSTART_CN.md` 只在 sdist 中。`AGENT_NATIVE_USE.md`、`scripts/`、两份 skill 资源不在 wheel/sdist 中。 |
+| `project preview/run`、`preview_agent_tasks`、`LocalAgentTaskExecutor` | wheel/sdist 随包带有受合约测试约束的 `opencoding/resources/skill`，干净安装可发现并运行离线结构化任务；源码 checkout 仍优先使用 `.agents/skills/opencoding`，两处资源内容必须一致。 |
+| 文档与 skill 安装脚本 | 本说明嵌入 wheel 的包元数据；`QUICKSTART_CN.md` 只在 sdist 中。`AGENT_NATIVE_USE.md`、`scripts/` 不在 wheel/sdist 中；Codex 专用安装脚本仍需完整 checkout。 |
 
 `python -m opencoding.project_entry --help` 没有模块级 main 调用，可能只退出 0，不能作为入口有效的证据。使用上表 CLI 路由。`project` 错误 JSON 和退出码也不等同于旧 `--status --json` 的约定；所有路径都必须检查结构化状态，不能仅凭退出码 0 声称任务成功。
 

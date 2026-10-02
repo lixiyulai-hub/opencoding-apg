@@ -18,7 +18,7 @@ python -m opencoding --root C:\path\to\authorized-project --help
 
 The legacy document/status modes covered here are the interactive session flow, `--resume SESSION_ID`, `--list`, `--preview SESSION_ID`, `--change SESSION_ID QUESTION_ID ANSWER`, `--rollback TRANSACTION_ID`, and `--status [--task-id TASK_ID] [--json]`. It has no `--create`, `--apply`, `--run-next`, `--recover`, or `--requeue` aliases.
 
-Additional plan/autorun modes are listed by `--help`. The Stage28 route is `python -m opencoding project --help` (or installed `opencoding-project --help`). `python -m opencoding.project_entry --help` is not a working module CLI. The installed wheel includes the entrypoints but omits the skill resources required by `project preview/run`; use a complete source checkout for that execution path. See [installation boundaries](OFFLINE_INSTALLATION.md#安装产物与源码入口的边界).
+Additional plan/autorun modes are listed by `--help`. The Stage28 route is `python -m opencoding project --help` (or installed `opencoding-project --help`). `python -m opencoding.project_entry --help` is not a working module CLI. The installed wheel and sdist include the validated package skill resource used by `project preview/run`; a source checkout still takes precedence when present. See [installation boundaries](OFFLINE_INSTALLATION.md#安装产物与源码入口的边界).
 
 The Python entry points are `opencoding.service` for the document/session loop and `opencoding.scheduler` for explicit local scheduler tasks. They are ordinary in-process APIs, not a wire protocol. Use return values and exception types, not human-readable CLI text, for control flow.
 

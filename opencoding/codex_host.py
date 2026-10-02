@@ -106,6 +106,9 @@ def _resource_candidates(project_root: Path, codex_home: Path | None, extra_root
         root = Path(root)
         candidates.append((root / "opencoding", "extra_root"))
         candidates.append((root, "extra_root_direct"))
+    # A wheel/sdist has no project checkout, so expose its explicit package
+    # resource after all caller-provided project and host locations.
+    candidates.append((Path(__file__).resolve().parent / "resources" / "skill", "installed_package"))
     return candidates
 
 

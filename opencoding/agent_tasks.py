@@ -18,6 +18,7 @@ from .executor import action_digest
 from .safety import canonical_json, safe_target, _root_path, sha256_bytes
 from .service import adoption_input_status, evaluate_session
 from .source_identity import source_fingerprint
+from .skill_resources import SkillResourceError, locate_skill_resource
 
 SOURCE_ROOT = Path(__file__).resolve().parent.parent
 SKILL_PATH = '.agents/skills/opencoding/SKILL.md'
@@ -33,12 +34,20 @@ def _file_hash(root: Path, name: str) -> str | None:
 
 
 def skill_identity() -> dict[str, str]:
-    resource = SOURCE_ROOT / SKILL_PATH
-    manifest = json.loads((resource.parent / 'skill.json').read_text(encoding='utf-8'))
+    try:
+        location = locate_skill_resource(SOURCE_ROOT)
+    except SkillResourceError as error:
+        raise AgentAdapterError('skill_missing', str(error)) from error
+    resource = location.directory / 'SKILL.md'
+    manifest_path = location.directory / 'skill.json'
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError) as error:
+        raise AgentAdapterError('skill_invalid', 'skill.json 无法读取或不是有效 JSON') from error
     if not resource.read_text(encoding='utf-8').startswith('---\nname: opencoding\n') or manifest.get('entrypoint') != 'opencoding.agent_adapter:LocalAgentAdapter':
         raise AgentAdapterError('skill_invalid', '项目 skill 入口无效')
-    return {'resource': SKILL_PATH, 'sha256': sha256_bytes(resource.read_bytes()),
-            'manifest_sha256': sha256_bytes((resource.parent / 'skill.json').read_bytes()),
+    return {'resource': location.identifier, 'sha256': sha256_bytes(resource.read_bytes()),
+            'manifest_sha256': sha256_bytes(manifest_path.read_bytes()),
             'source_sha256': source_fingerprint(SOURCE_ROOT), 'entrypoint': manifest['entrypoint']}
 
 
