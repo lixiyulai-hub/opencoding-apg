@@ -12,6 +12,7 @@ from copy import deepcopy
 from typing import Any, Mapping
 
 from .decisions import build_recommendation
+from .evidence_boundary import build_read_only_audit_snapshot, platform_compatibility_declaration
 from .host_capabilities import build_capability_matrix, normalize_target_platform
 from .intake import QUESTION_DEFINITIONS, answer_question, new_session
 from .safety import canonical_json, inspect_sensitive, sha256_bytes
@@ -90,21 +91,45 @@ DEFAULT_SCENARIOS = (
 def _platform_status(label: str) -> dict[str, Any]:
     normalized = normalize_target_platform(label)
     if not normalized["recognized"]:
+        declaration = platform_compatibility_declaration(
+            normalized["requested"], reason="目标平台标签未识别，不能静默选择平台"
+        )
         return {"target": normalized, "adapter": None, "status": "unverified",
                 "execution": {"status": "unverified", "observed": False, "attempted": False,
-                               "reason": "目标平台标签未识别，不能静默选择平台"}, "contract_only": True}
+                               "reason": "目标平台标签未识别，不能静默选择平台"}, "contract_only": True,
+                "evidence_class": "unverified", "compatibility": declaration}
     if normalized["normalized"] in {"windows", "macos", "web"}:
         try:
-            return target_adapter_status(normalized["normalized"], host_family="linux")
+            report = target_adapter_status(normalized["normalized"], host_family="linux")
+            report["evidence_class"] = "unverified"
+            report["compatibility"] = platform_compatibility_declaration(
+                normalized["normalized"], status=report["status"],
+                execution_observed=report["execution"]["observed"],
+                toolchain_status=report.get("toolchain", {}).get("status", "unverified"),
+                host_family=report.get("host", {}).get("family"),
+                reason=report["execution"].get("reason", ""),
+            )
+            return report
         except TargetAdapterError as error:
             return {"target": normalized, "adapter": None, "status": "blocked",
                     "execution": {"status": "blocked", "observed": False, "attempted": False,
-                                   "reason": str(error)}, "contract_only": True}
+                                   "reason": str(error)}, "contract_only": True,
+                    "evidence_class": "unverified",
+                    "compatibility": platform_compatibility_declaration(
+                        normalized["normalized"], status="blocked", reason=str(error)
+                    )}
     matrix = build_capability_matrix(target_platform=normalized["normalized"])
-    return {"target": normalized, "adapter": None, "status": "unverified",
+    report = {"target": normalized, "adapter": None, "status": "unverified",
             "execution": {"status": "unverified", "observed": False, "attempted": False,
                            "reason": "当前没有该目标的执行适配器；只保留规划输入"},
             "toolchain": matrix["toolchain"], "contract_only": True}
+    report["evidence_class"] = "unverified"
+    report["compatibility"] = platform_compatibility_declaration(
+        normalized["normalized"], status="unverified",
+        toolchain_status=matrix["toolchain"].get("status", "unverified"),
+        reason=report["execution"]["reason"],
+    )
+    return report
 
 
 def _capabilities(recommendation: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
@@ -133,6 +158,7 @@ class SyntheticAcceptanceMatrix:
                 "scenario_id": scenario.scenario_id,
                 "sentence": scenario.sentence,
                 "fixture": True,
+                "evidence_class": "synthetic",
                 "real_user": False,
                 "provider_used": False,
                 "expected_platform": normalize_target_platform(scenario.expected_platform),
@@ -147,7 +173,8 @@ class SyntheticAcceptanceMatrix:
                 "all_platform_status": [_platform_status(label) for label in SUPPORTED_TARGET_LABELS],
             })
         self._payload = {
-            "schema": MATRIX_SCHEMA, "fixture_label": "synthetic", "real_user": False,
+            "schema": MATRIX_SCHEMA, "fixture_label": "synthetic", "evidence_class": "synthetic",
+            "synthetic": True, "real_user": False,
             "provider_used": False, "external_actions": False,
             "questions": [deepcopy(item) for item in QUESTION_DEFINITIONS],
             "capability_ids": list(CAPABILITY_IDS),
@@ -175,7 +202,29 @@ class SyntheticAcceptanceMatrix:
     def preview(self) -> dict[str, Any]:
         return {"schema": MATRIX_SCHEMA, "status": "ready_for_review", "matrix": deepcopy(self._payload),
                 "preview_digest": self._digest, "synthetic": True, "writes": False,
-                "authorization_granted": False}
+                "authorization_granted": False, "external_audit": self.audit_snapshot(status="ready_for_review")}
+
+    def audit_snapshot(self, *, status: str | None = None) -> dict[str, Any]:
+        declarations = []
+        seen: set[str] = set()
+        for scenario in self._payload["scenarios"]:
+            for report in scenario["all_platform_status"]:
+                boundary = report.get("compatibility")
+                if isinstance(boundary, Mapping) and boundary.get("target") not in seen:
+                    declarations.append(boundary)
+                    seen.add(boundary["target"])
+        return build_read_only_audit_snapshot(
+            self._payload,
+            source=MATRIX_SCHEMA,
+            platform_declarations=declarations,
+            summary={
+                "scenario_count": len(self._payload["scenarios"]),
+                "platform_count": len(declarations),
+                "wave_count": len(self._waves),
+                "passed_wave_count": sum(1 for item in self._waves if item["status"] == "passed"),
+            },
+            status=status,
+        )
 
     def approve(self, *, expected_digest: str, synthetic: bool) -> dict[str, Any]:
         if synthetic is not True:
@@ -210,10 +259,10 @@ class SyntheticAcceptanceMatrix:
         required = {"clarify", "plan", "preview", "execute", "verify", "rollback", "review"}
         status = "passed" if self._rolled_back and {item["id"] for item in self._waves} == required and all(item["status"] == "passed" for item in self._waves) else "incomplete"
         return {"schema": MATRIX_SCHEMA, "status": status, "preview_digest": self._digest,
-                "synthetic": True, "real_user": False, "provider_used": False,
+                "evidence_class": "synthetic", "synthetic": True, "real_user": False, "provider_used": False,
                 "external_actions": False, "waves": deepcopy(self._waves),
                 "rollback": {"status": "simulated_receipt_scope" if self._rolled_back else "not_recorded",
-                             "automatic": False}}
+                             "automatic": False}, "external_audit": self.audit_snapshot(status=status)}
 
 
 def build_synthetic_acceptance_matrix() -> dict[str, Any]:

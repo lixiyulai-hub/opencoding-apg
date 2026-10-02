@@ -47,12 +47,25 @@ class AgentNativeDocsContractTests(unittest.TestCase):
         self.assertIn("clarify → plan → preview → execute → verify → rollback → review", report)
         self.assertIn("real_user=false", report)
         self.assertIn("receipt_covered_files_only", report)
+        self.assertIn("external_audit", report)
+        self.assertIn("prompt_included=false", report)
         plan = json.loads((ROOT / "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json").read_text(encoding="utf-8"))
         transaction = plan["current_w5_transaction"]
         self.assertEqual(transaction["id"], "agent-native-w5-synthetic-matrix")
         self.assertTrue(transaction["synthetic_only"])
         self.assertFalse(transaction["provider_used"])
         self.assertIn("opencoding/w5_acceptance.py", transaction["paths"])
+
+    def test_w5_evidence_boundary_report_keeps_read_only_privacy_contract(self):
+        report = (ROOT / "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W5_EVIDENCE_BOUNDARY_CN.md").read_text(encoding="utf-8")
+        for marker in ("real", "synthetic", "unverified", "read_only=true", "prompt_included=false", "api_key_included=false"):
+            self.assertIn(marker, report)
+        plan = json.loads((ROOT / "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json").read_text(encoding="utf-8"))
+        transaction = plan["current_w5_evidence_boundary_transaction"]
+        self.assertEqual(transaction["id"], "agent-native-w5-evidence-boundary")
+        self.assertTrue(transaction["read_only_audit"])
+        self.assertFalse(transaction["provider_used"])
+        self.assertIn("opencoding/evidence_boundary.py", transaction["paths"])
 
     def test_w4_report_and_plan_keep_external_gate_explicit(self):
         report = (ROOT / "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W4_CONTRACT_CN.md").read_text(encoding="utf-8")
@@ -80,8 +93,8 @@ class AgentNativeDocsContractTests(unittest.TestCase):
         self.assertEqual(plan["current_transaction"]["id"], "agent-native-package-r3")
         self.assertIn("opencoding/resources/skill/SKILL.md", plan["current_transaction"]["paths"])
         self.assertEqual(plan["package_resource_boundary"]["partial_resource"], "fail_closed")
-        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["total"], 663)
-        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["passed"], 654)
+        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["total"], 688)
+        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["passed"], 679)
         boundary = plan["retained_evidence_boundary"]
         self.assertFalse(boundary["checkout_contains"])
         self.assertFalse(boundary["source_bound"])

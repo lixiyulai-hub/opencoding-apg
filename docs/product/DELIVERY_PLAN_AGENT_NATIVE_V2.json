@@ -52,13 +52,13 @@
     "status": "passed",
     "commit": "0a49622",
     "full_unittest": {
-      "total": 663,
-      "passed": 654,
+      "total": 688,
+      "passed": 679,
       "skipped": 9,
       "failures": 0,
       "errors": 0,
       "returncode": 0,
-      "raw": "Ran 663 tests in 155.578s; OK (skipped=9)"
+      "raw": "Ran 688 tests in 161.611s; OK (skipped=9)"
     },
     "offline_cargo": {
       "tests_passed": 4,
@@ -137,11 +137,12 @@
     "w5_independent_evidence_root": "/workspace/stage28-validation-20261002/w5-independent",
     "w5_code_commit": "4979dc1"
   },
-  "following_stage": "Real user/platform/provider acceptance only after the explicit human Gate; otherwise W5 evidence-based publication boundaries.",
+  "following_stage": "Full W5 evidence-boundary regression and independent detached verification.",
   "ordered_successors": [
+    "Full W5 evidence-boundary regression with raw total/pass/skip/failure/error counts.",
+    "Independent detached W5 evidence-boundary, packaging and offline Cargo/skill verification, then checkpoint push.",
     "Real user/platform/provider acceptance only after the explicit human Gate.",
-    "W5 evidence-based publication boundaries, separately scoped and accepted.",
-    "Retain synthetic matrix and detached evidence for rollback or later review."
+    "W5 evidence-based publication boundaries, separately scoped and accepted."
   ],
   "retained_delivery_evidence": [
     {
@@ -351,5 +352,63 @@
     "independent_host_loaded": null,
     "independent_project_loader_exercised": true,
     "independent_boundary": "No real user, target platform, provider, connector, credentials, deployment, merge or Release."
+  },
+  "current_w5_evidence_boundary_transaction": {
+    "id": "agent-native-w5-evidence-boundary",
+    "status": "full_local_verification_pending_detached",
+    "paths": [
+      "opencoding/evidence_boundary.py",
+      "opencoding/safety.py",
+      "opencoding/w5_acceptance.py",
+      "opencoding/__init__.py",
+      "tests/test_evidence_boundary.py",
+      "tests/test_agent_native_docs_contract.py",
+      "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W5_EVIDENCE_BOUNDARY_CN.md",
+      "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W5_MATRIX_CN.md"
+    ],
+    "scope": "Classify real/synthetic/unverified evidence, declare platform compatibility without promotion, and expose a metadata-only external audit projection that omits prompts, cookies, tokens, API keys and user content.",
+    "evidence_classes": [
+      "real",
+      "synthetic",
+      "unverified"
+    ],
+    "platform_statuses": [
+      "observed",
+      "unverified",
+      "blocked"
+    ],
+    "read_only_audit": true,
+    "raw_values_included": false,
+    "prompt_included": false,
+    "cookie_included": false,
+    "token_included": false,
+    "api_key_included": false,
+    "user_content_included": false,
+    "real_user": false,
+    "provider_used": false,
+    "external_actions": false,
+    "human_gate": "Replace synthetic input with a real user or activate a concrete platform/provider/connector only after exact scope approval.",
+    "rollback": "git revert this W5 evidence-boundary transaction; the projection is pure and has no persistent external side effects.",
+    "full_unittest": {
+      "total": 688,
+      "passed": 679,
+      "skipped": 9,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "raw": "Ran 688 tests in 161.611s; OK (skipped=9)",
+      "evidence_root": "/workspace/stage28-validation-20261002/w5-evidence-full"
+    },
+    "evidence_root": "/workspace/stage28-validation-20261002/w5-evidence-full",
+    "focused_evidence_root": "/workspace/stage28-validation-20261002/w5-evidence-focused",
+    "focused_unittest": {
+      "total": 44,
+      "passed": 44,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "W5 evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
+    }
   }
 }

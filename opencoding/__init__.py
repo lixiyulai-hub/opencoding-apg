@@ -32,6 +32,12 @@ from .w5_acceptance import (
     W5AcceptanceError,
     build_synthetic_acceptance_matrix,
 )
+from .evidence_boundary import (
+    EvidenceBoundaryError,
+    build_read_only_audit_snapshot,
+    classify_evidence,
+    platform_compatibility_declaration,
+)
 from .agent_tasks import LocalAgentTaskExecutor, preview_agent_tasks
 from .target_adapters import (
     MacOSTargetAdapter,
@@ -69,6 +75,10 @@ __all__ = [
     "SyntheticBeginnerScenario",
     "W5AcceptanceError",
     "build_synthetic_acceptance_matrix",
+    "EvidenceBoundaryError",
+    "build_read_only_audit_snapshot",
+    "classify_evidence",
+    "platform_compatibility_declaration",
     "LocalAgentTaskExecutor",
     "preview_agent_tasks",
     "TargetAdapterError",

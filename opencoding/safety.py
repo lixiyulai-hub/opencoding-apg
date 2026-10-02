@@ -109,6 +109,16 @@ def _redaction_patterns() -> tuple[tuple[str, re.Pattern[str], str], ...]:
             r"\1[REDACTED]",
         ),
         (
+            "cookie_header",
+            re.compile(r"((?:\bCookie\b|\bSet-Cookie\b)\s*[:=]\s*)[^\r\n]+", re.I),
+            r"\1[REDACTED_COOKIE]",
+        ),
+        (
+            "prompt_assignment",
+            re.compile(r"((?:\bsystem[_ -]?prompt\b|\buser[_ -]?prompt\b|\bprompt\b)\s*[:=]\s*)[^\r\n]+", re.I),
+            r"\1[REDACTED_PROMPT]",
+        ),
+        (
             "credential_assignment",
             re.compile(
                 r"((?:api[_-]?key|access[_-]?key|secret|password|passwd|token|authorization)\s*[:=]\s*)([^\s,;]+)",
