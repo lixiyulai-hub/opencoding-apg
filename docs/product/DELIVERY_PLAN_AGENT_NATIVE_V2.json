@@ -41,12 +41,23 @@
   "immediate_transaction": {
     "id": "agent-native-docs-r2",
     "purpose": "Verify published session/document examples against installed bytes, distinguish source-only project execution, and preserve W2-C history with explicit evidence availability.",
-    "status": "in_progress_pending_independent_verification",
+    "status": "completed_with_independent_verification",
     "paths": [
       "docs/product/OFFLINE_INSTALLATION.md",
       "docs/product/AGENT_NATIVE_USE.md",
       "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json"
     ]
+  },
+  "current_checkout_verification": {
+    "status": "passed",
+    "commit": "d50c6c6cef5852d430900b01eef93da7f8b71f7e",
+    "full_unittest": "659 tests; 0 failures; 0 errors; 9 skipped",
+    "offline_cargo": "4 tests passed; 0 failed; doc-tests 0",
+    "independent_detached_focused": "67 tests passed",
+    "independent_skill": "format_valid_project_discovered_host_unverified",
+    "managed_loader": "unverified_host_api_has_no_project_skill_loader",
+    "real_user_acceptance": "not-run",
+    "evidence_root": "/workspace/stage28-validation-20261002/docs-r2-final/logs"
   },
   "following_stage": "Independent bounded agent-native workflow verification and documentation integration.",
   "ordered_successors": [
