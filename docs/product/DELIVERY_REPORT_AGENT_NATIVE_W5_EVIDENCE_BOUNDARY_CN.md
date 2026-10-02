@@ -22,6 +22,8 @@
 
 全量 `python -X utf8 -m unittest discover -s tests -p 'test*.py' -v` 已通过：`Ran 688 tests in 161.611s`、`OK (skipped=9)`，即 total=688、passed=679、skipped=9、failures=0、errors=0、returncode=0。原始日志位于 `/workspace/stage28-validation-20261002/w5-evidence-full/`。扩展定向证据边界/W5 矩阵/W4/packaging 回归为 44/44，原始日志位于 `/workspace/stage28-validation-20261002/w5-evidence-focused/`。
 
+独立 detached worktree 从提交 `11a1e55` 完成复核：44/44 定向测试、离线 Cargo 4/4，skill verifier 为 `format_valid_project_discovered_host_unverified`，`project_loader_exercised=true`、`host_loaded=null`。独立原始日志位于 `/workspace/stage28-validation-20261002/w5-evidence-independent/`。
+
 ## 风险、回滚与人工 Gate
 
 只读摘要是审计边界，不是身份认证、签名、沙箱或平台兼容承诺。若来源字段冲突，分类器 fail closed；若平台执行证据不足，状态保持 `unverified`。回滚为 `git revert` 本事务提交，既有 W5 矩阵和外部状态不受影响。唯一人工 Gate 是将合成输入替换为真实用户资料，或启用具体平台/provider/connector 前确认 exact root、targets、data、credentials、cost、network action 和 digest。

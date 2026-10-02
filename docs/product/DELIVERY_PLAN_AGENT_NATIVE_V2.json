@@ -135,14 +135,49 @@
     },
     "w5_independent_skill": "format_valid_project_discovered_host_unverified",
     "w5_independent_evidence_root": "/workspace/stage28-validation-20261002/w5-independent",
-    "w5_code_commit": "4979dc1"
+    "w5_code_commit": "4979dc1",
+    "w5_evidence_boundary_full_unittest": {
+      "total": 688,
+      "passed": 679,
+      "skipped": 9,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "raw": "Ran 688 tests in 161.611s; OK (skipped=9)",
+      "evidence_root": "/workspace/stage28-validation-20261002/w5-evidence-full"
+    },
+    "w5_evidence_boundary_focused": {
+      "total": 44,
+      "passed": 44,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "W5 evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
+    },
+    "w5_evidence_boundary_independent": {
+      "total": 44,
+      "passed": 44,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "W5 evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
+    },
+    "w5_evidence_boundary_independent_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
+    "w5_evidence_boundary_independent_skill": "format_valid_project_discovered_host_unverified",
+    "w5_evidence_boundary_independent_root": "/workspace/stage28-validation-20261002/w5-evidence-independent"
   },
-  "following_stage": "Full W5 evidence-boundary regression and independent detached verification.",
+  "following_stage": "W5 evidence-based publication boundaries, separately scoped and accepted.",
   "ordered_successors": [
-    "Full W5 evidence-boundary regression with raw total/pass/skip/failure/error counts.",
-    "Independent detached W5 evidence-boundary, packaging and offline Cargo/skill verification, then checkpoint push.",
+    "W5 evidence-based publication boundaries, separately scoped and accepted.",
     "Real user/platform/provider acceptance only after the explicit human Gate.",
-    "W5 evidence-based publication boundaries, separately scoped and accepted."
+    "Retain synthetic matrix and detached evidence for rollback or later review."
   ],
   "retained_delivery_evidence": [
     {
@@ -355,7 +390,7 @@
   },
   "current_w5_evidence_boundary_transaction": {
     "id": "agent-native-w5-evidence-boundary",
-    "status": "full_local_verification_pending_detached",
+    "status": "completed_with_independent_verification",
     "paths": [
       "opencoding/evidence_boundary.py",
       "opencoding/safety.py",
@@ -409,6 +444,27 @@
       "errors": 0,
       "returncode": 0,
       "coverage": "W5 evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
-    }
+    },
+    "independent_verified_commit": "11a1e55",
+    "independent_evidence_root": "/workspace/stage28-validation-20261002/w5-evidence-independent",
+    "independent_focused": {
+      "total": 44,
+      "passed": 44,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "W5 evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
+    },
+    "independent_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
+    "independent_skill": "format_valid_project_discovered_host_unverified",
+    "independent_host_loaded": null,
+    "independent_project_loader_exercised": true,
+    "independent_boundary": "No real user, target platform, provider, connector, credentials, deployment, merge or Release."
   }
 }
