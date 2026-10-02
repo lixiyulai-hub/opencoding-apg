@@ -52,13 +52,13 @@
     "status": "passed",
     "commit": "bb22308",
     "full_unittest": {
-      "total": 688,
-      "passed": 679,
+      "total": 693,
+      "passed": 684,
       "skipped": 9,
       "failures": 0,
       "errors": 0,
       "returncode": 0,
-      "raw": "Ran 688 tests in 161.611s; OK (skipped=9)"
+      "raw": "Ran 693 tests in 162.144s; OK (skipped=9)"
     },
     "offline_cargo": {
       "tests_passed": 4,
@@ -172,13 +172,24 @@
     },
     "w5_evidence_boundary_independent_skill": "format_valid_project_discovered_host_unverified",
     "w5_evidence_boundary_independent_root": "/workspace/stage28-validation-20261002/w5-evidence-independent",
-    "w5_evidence_boundary_code_commit": "11a1e55"
+    "w5_evidence_boundary_code_commit": "11a1e55",
+    "w5_publication_boundary_full_unittest": {
+      "total": 693,
+      "passed": 684,
+      "skipped": 9,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "raw": "Ran 693 tests in 162.144s; OK (skipped=9)",
+      "evidence_root": "/workspace/stage28-validation-20261002/w5-publication-full"
+    }
   },
-  "following_stage": "W5 evidence-based publication boundaries, separately scoped and accepted.",
+  "following_stage": "Full W5 publication-boundary regression and independent detached verification.",
   "ordered_successors": [
-    "W5 evidence-based publication boundaries, separately scoped and accepted.",
-    "Real user/platform/provider acceptance only after the explicit human Gate.",
-    "Retain synthetic matrix and detached evidence for rollback or later review."
+    "Full W5 publication-boundary regression with raw total/pass/skip/failure/error counts.",
+    "Independent detached publication preview, packaging and offline Cargo/skill verification, then checkpoint push.",
+    "Real public publication only after the explicit human Gate.",
+    "Retain the preview and rollback evidence for later review."
   ],
   "retained_delivery_evidence": [
     {
@@ -467,5 +478,58 @@
     "independent_host_loaded": null,
     "independent_project_loader_exercised": true,
     "independent_boundary": "No real user, target platform, provider, connector, credentials, deployment, merge or Release."
+  },
+  "current_w5_publication_boundary_transaction": {
+    "id": "agent-native-w5-publication-boundary",
+    "status": "full_local_verification_pending_detached",
+    "paths": [
+      "opencoding/publication_boundary.py",
+      "opencoding/__init__.py",
+      "tests/test_publication_boundary.py",
+      "tests/test_agent_native_docs_contract.py",
+      "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W5_PUBLICATION_BOUNDARY_CN.md"
+    ],
+    "scope": "Offline publication preview only: minimum evidence set, observed/unverified facts, privacy-safe read-only output, explicit public Gate and reversible rollback boundary.",
+    "minimum_evidence": [
+      "source_revision",
+      "test_baseline",
+      "independent_review",
+      "privacy_audit",
+      "rollback_plan"
+    ],
+    "fact_statuses": [
+      "observed",
+      "unverified",
+      "blocked"
+    ],
+    "preview_only": true,
+    "publish_executed": false,
+    "release_executed": false,
+    "deployment_executed": false,
+    "provider_used": false,
+    "credentials_read": false,
+    "external_actions": false,
+    "human_gate": "Before any public publication, confirm exact revision, public file scope, fact/unverified claims, privacy audit, license/contribution entry points, rollback plan and publication target.",
+    "rollback": "git revert this W5 publication-boundary transaction; no remote or deployment state is changed.",
+    "full_unittest": {
+      "total": 693,
+      "passed": 684,
+      "skipped": 9,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "raw": "Ran 693 tests in 162.144s; OK (skipped=9)",
+      "evidence_root": "/workspace/stage28-validation-20261002/w5-publication-full"
+    },
+    "focused_evidence_root": "/workspace/stage28-validation-20261002/w5-publication-focused",
+    "focused_unittest": {
+      "total": 49,
+      "passed": 49,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "W5 publication preview, evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
+    }
   }
 }

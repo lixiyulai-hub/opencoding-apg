@@ -38,6 +38,10 @@ from .evidence_boundary import (
     classify_evidence,
     platform_compatibility_declaration,
 )
+from .publication_boundary import (
+    PublicationBoundaryError,
+    build_publication_preview,
+)
 from .agent_tasks import LocalAgentTaskExecutor, preview_agent_tasks
 from .target_adapters import (
     MacOSTargetAdapter,
@@ -79,6 +83,8 @@ __all__ = [
     "build_read_only_audit_snapshot",
     "classify_evidence",
     "platform_compatibility_declaration",
+    "PublicationBoundaryError",
+    "build_publication_preview",
     "LocalAgentTaskExecutor",
     "preview_agent_tasks",
     "TargetAdapterError",

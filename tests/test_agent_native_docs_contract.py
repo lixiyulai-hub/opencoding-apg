@@ -67,6 +67,16 @@ class AgentNativeDocsContractTests(unittest.TestCase):
         self.assertFalse(transaction["provider_used"])
         self.assertIn("opencoding/evidence_boundary.py", transaction["paths"])
 
+    def test_w5_publication_boundary_report_keeps_gate_and_minimum_evidence(self):
+        report = (ROOT / "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W5_PUBLICATION_BOUNDARY_CN.md").read_text(encoding="utf-8")
+        for marker in ("source_revision", "test_baseline", "independent_review", "privacy_audit", "rollback_plan", "blocked_human_gate", "publish_executed=false"):
+            self.assertIn(marker, report)
+        plan = json.loads((ROOT / "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json").read_text(encoding="utf-8"))
+        transaction = plan["current_w5_publication_boundary_transaction"]
+        self.assertEqual(transaction["id"], "agent-native-w5-publication-boundary")
+        self.assertTrue(transaction["preview_only"])
+        self.assertFalse(transaction["publish_executed"])
+
     def test_w4_report_and_plan_keep_external_gate_explicit(self):
         report = (ROOT / "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W4_CONTRACT_CN.md").read_text(encoding="utf-8")
         self.assertIn("blocked_human_gate", report)
@@ -93,8 +103,8 @@ class AgentNativeDocsContractTests(unittest.TestCase):
         self.assertEqual(plan["current_transaction"]["id"], "agent-native-package-r3")
         self.assertIn("opencoding/resources/skill/SKILL.md", plan["current_transaction"]["paths"])
         self.assertEqual(plan["package_resource_boundary"]["partial_resource"], "fail_closed")
-        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["total"], 688)
-        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["passed"], 679)
+        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["total"], 693)
+        self.assertEqual(plan["current_checkout_verification"]["full_unittest"]["passed"], 684)
         boundary = plan["retained_evidence_boundary"]
         self.assertFalse(boundary["checkout_contains"])
         self.assertFalse(boundary["source_bound"])
