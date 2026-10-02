@@ -182,12 +182,28 @@
       "returncode": 0,
       "raw": "Ran 693 tests in 162.144s; OK (skipped=9)",
       "evidence_root": "/workspace/stage28-validation-20261002/w5-publication-full"
-    }
+    },
+    "w5_publication_boundary_independent": {
+      "total": 49,
+      "passed": 49,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "W5 publication preview, evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
+    },
+    "w5_publication_boundary_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
+    "w5_publication_boundary_skill": "format_valid_project_discovered_host_unverified",
+    "w5_publication_boundary_independent_root": "/workspace/stage28-validation-20261002/w5-publication-independent"
   },
-  "following_stage": "Full W5 publication-boundary regression and independent detached verification.",
+  "following_stage": "W5 evidence-based publication boundaries, separately scoped and accepted.",
   "ordered_successors": [
-    "Full W5 publication-boundary regression with raw total/pass/skip/failure/error counts.",
-    "Independent detached publication preview, packaging and offline Cargo/skill verification, then checkpoint push.",
+    "W5 evidence-based publication boundaries, separately scoped and accepted.",
     "Real public publication only after the explicit human Gate.",
     "Retain the preview and rollback evidence for later review."
   ],
@@ -481,7 +497,7 @@
   },
   "current_w5_publication_boundary_transaction": {
     "id": "agent-native-w5-publication-boundary",
-    "status": "full_local_verification_pending_detached",
+    "status": "completed_with_independent_verification",
     "paths": [
       "opencoding/publication_boundary.py",
       "opencoding/__init__.py",
@@ -530,6 +546,27 @@
       "errors": 0,
       "returncode": 0,
       "coverage": "W5 publication preview, evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
-    }
+    },
+    "independent_verified_commit": "929ffde",
+    "independent_evidence_root": "/workspace/stage28-validation-20261002/w5-publication-independent",
+    "independent_focused": {
+      "total": 49,
+      "passed": 49,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "W5 publication preview, evidence boundary, W5 matrix, docs, safety, W4 host connector, skill/host contract, wheel/sdist allowlist and clean synthetic loop"
+    },
+    "independent_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
+    "independent_skill": "format_valid_project_discovered_host_unverified",
+    "independent_host_loaded": null,
+    "independent_project_loader_exercised": true,
+    "independent_boundary": "No public publication, release, deployment, provider, connector, credential, merge or real-user acceptance."
   }
 }
