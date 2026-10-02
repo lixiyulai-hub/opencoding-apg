@@ -22,7 +22,7 @@
 
 `tests/test_w5_acceptance_matrix.py` 覆盖 6 项：问题/能力/平台覆盖、平台判断、摘要绑定的预览与波次、测试与回滚证据、网络/进程哨兵、敏感/不完整 fixture 拒绝。测试不会建立 socket、子进程、凭据或外部连接。
 
-全量回归已完成：`python -X utf8 -m unittest discover -s tests -p 'test*.py' -v` 原始输出为 `Ran 682 tests in 160.414s`、`OK (skipped=9)`，即 total=682、passed=673、skipped=9、failures=0、errors=0、unittest returncode=0。原始日志位于 `/workspace/stage28-validation-20261002/w5-matrix-full/`；此前采集器只解析 stdout（unittest 将详细输出写到 stderr）而留下 collector returncode=2，已在 `raw-summary.txt` 明确区分，不能解释为测试失败。定向 W5/W4/packaging 回归为 31/31，原始日志位于 `/workspace/stage28-validation-20261002/w5-matrix-focused/`。detached 独立验证将在本阶段提交后执行并补入路线图。当前 R3/W4 既有证据保持不变，不被合成矩阵升级为真实用户验收。
+全量回归已完成：`python -X utf8 -m unittest discover -s tests -p 'test*.py' -v` 原始输出为 `Ran 682 tests in 160.414s`、`OK (skipped=9)`，即 total=682、passed=673、skipped=9、failures=0、errors=0、unittest returncode=0。原始日志位于 `/workspace/stage28-validation-20261002/w5-matrix-full/`；此前采集器只解析 stdout（unittest 将详细输出写到 stderr）而留下 collector returncode=2，已在 `raw-summary.txt` 明确区分，不能解释为测试失败。定向 W5/W4/packaging 回归为 31/31，原始日志位于 `/workspace/stage28-validation-20261002/w5-matrix-focused/`。detached 独立验证已从提交 `4979dc1` 的干净 worktree `/tmp/opencoding-stage28-w5-detached` 完成：定向 31/31（skipped=0、failures=0、errors=0、returncode=0），services/domain 离线 Cargo 为 4 passed、0 failed、0 doc-tests，skill verifier 为 `format_valid_project_discovered_host_unverified`，`project_loader_exercised=true` 但 `host_loaded=null`。独立原始日志位于 `/workspace/stage28-validation-20261002/w5-independent/`。当前 R3/W4 既有证据保持不变，不被合成矩阵升级为真实用户验收。
 
 ## 风险、回滚和人工 Gate
 

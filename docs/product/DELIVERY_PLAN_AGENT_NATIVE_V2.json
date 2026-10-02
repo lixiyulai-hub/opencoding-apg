@@ -107,13 +107,40 @@
       "doc_tests": 0,
       "returncode": 0
     },
-    "w4_independent_skill": "format_valid_project_discovered_host_unverified"
+    "w4_independent_skill": "format_valid_project_discovered_host_unverified",
+    "w5_full_unittest": {
+      "total": 682,
+      "passed": 673,
+      "skipped": 9,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "raw": "Ran 682 tests in 160.414s; OK (skipped=9)",
+      "evidence_root": "/workspace/stage28-validation-20261002/w5-matrix-full"
+    },
+    "w5_independent_focused": {
+      "total": 31,
+      "passed": 31,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "W5 matrix, W4 host/connector contract, docs contract, codex adapter/skill contract, wheel/sdist allowlist and clean synthetic loop"
+    },
+    "w5_independent_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
+    "w5_independent_skill": "format_valid_project_discovered_host_unverified",
+    "w5_independent_evidence_root": "/workspace/stage28-validation-20261002/w5-independent"
   },
-  "following_stage": "Independent detached W5 matrix and packaging verification, then checkpoint push.",
+  "following_stage": "Real user/platform/provider acceptance only after the explicit human Gate; otherwise W5 evidence-based publication boundaries.",
   "ordered_successors": [
-    "Independent detached W5 matrix and packaging verification, then checkpoint push.",
     "Real user/platform/provider acceptance only after the explicit human Gate.",
-    "W5 evidence-based publication boundaries, separately scoped and accepted."
+    "W5 evidence-based publication boundaries, separately scoped and accepted.",
+    "Retain synthetic matrix and detached evidence for rollback or later review."
   ],
   "retained_delivery_evidence": [
     {
@@ -266,7 +293,7 @@
   },
   "current_w5_transaction": {
     "id": "agent-native-w5-synthetic-matrix",
-    "status": "full_local_verification_pending_detached",
+    "status": "completed_with_independent_verification",
     "paths": [
       "opencoding/w5_acceptance.py",
       "opencoding/__init__.py",
@@ -301,6 +328,27 @@
       "errors": 0,
       "returncode": 0,
       "coverage": "W5 matrix, W4 host/connector contract, docs contract, codex adapter/skill contract, wheel/sdist allowlist and clean synthetic loop"
-    }
+    },
+    "independent_verified_commit": "4979dc1",
+    "independent_evidence_root": "/workspace/stage28-validation-20261002/w5-independent",
+    "independent_focused": {
+      "total": 31,
+      "passed": 31,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "coverage": "W5 matrix, W4 host/connector contract, docs contract, codex adapter/skill contract, wheel/sdist allowlist and clean synthetic loop"
+    },
+    "independent_cargo": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "doc_tests": 0,
+      "returncode": 0
+    },
+    "independent_skill": "format_valid_project_discovered_host_unverified",
+    "independent_host_loaded": null,
+    "independent_project_loader_exercised": true,
+    "independent_boundary": "No real user, target platform, provider, connector, credentials, deployment, merge or Release."
   }
 }
