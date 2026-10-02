@@ -50,7 +50,7 @@
   },
   "current_checkout_verification": {
     "status": "passed",
-    "commit": "bb22308",
+    "commit": "8a79ffc",
     "full_unittest": {
       "total": 693,
       "passed": 684,
@@ -199,7 +199,8 @@
       "returncode": 0
     },
     "w5_publication_boundary_skill": "format_valid_project_discovered_host_unverified",
-    "w5_publication_boundary_independent_root": "/workspace/stage28-validation-20261002/w5-publication-independent"
+    "w5_publication_boundary_independent_root": "/workspace/stage28-validation-20261002/w5-publication-independent",
+    "w5_publication_boundary_code_commit": "929ffde"
   },
   "following_stage": "W5 evidence-based publication boundaries, separately scoped and accepted.",
   "ordered_successors": [
