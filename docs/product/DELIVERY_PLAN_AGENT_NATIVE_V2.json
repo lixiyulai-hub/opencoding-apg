@@ -84,11 +84,12 @@
     "independent_verified_commit": "0cd3183",
     "note": "Focused independent evidence was collected from 0cd3183 before this documentation-only checkpoint update."
   },
-  "following_stage": "W4 controlled Host and connector work, separately scoped and accepted.",
+  "following_stage": "Independent detached W4 contract verification and checkpoint push.",
   "ordered_successors": [
-    "Independent agent-native workflow verification and evidence-led documentation integration",
-    "W4 controlled Host and connector work, separately scoped and accepted",
-    "W5 independent beginner/platform acceptance and publication boundaries, separately scoped and accepted"
+    "Full W4 contract regression: raw total/pass/skip/failure/error counts and offline evidence.",
+    "Independent detached W4 contract verification and checkpoint push.",
+    "Real Host/connector activation only after the explicit human Gate.",
+    "W5 independent beginner/platform acceptance and publication boundaries, separately scoped and accepted."
   ],
   "retained_delivery_evidence": [
     {
@@ -194,5 +195,32 @@
     "real_provider": false,
     "real_user": false,
     "evidence_root": "/workspace/stage28-validation-20261002/package-r3-final"
+  },
+  "current_w4_transaction": {
+    "id": "agent-native-w4-offline-contract",
+    "status": "full_local_verification_pending_detached",
+    "paths": [
+      "opencoding/host_connector.py",
+      "opencoding/__init__.py",
+      "tests/test_host_connector_contract.py",
+      "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W4_CONTRACT_CN.md"
+    ],
+    "scope": "Offline Host observation, permission contract, eight connector declarations, synthetic fixture only.",
+    "real_provider": false,
+    "real_host": false,
+    "network": false,
+    "credentials": false,
+    "human_gate": "Before any real Host/connector activation, confirm exact target, provider, credentials, data, cost, network action and digest.",
+    "rollback": "git revert this W4 contract commit; no user project or external service changes.",
+    "evidence_root": "/workspace/stage28-validation-20261002/w4-offline-full",
+    "full_unittest": {
+      "total": 675,
+      "passed": 666,
+      "skipped": 9,
+      "failures": 0,
+      "errors": 0,
+      "returncode": 0,
+      "raw": "Ran 675 tests in 160.575s; OK (skipped=9)"
+    }
   }
 }

@@ -42,6 +42,19 @@ class AgentNativeDocsContractTests(unittest.TestCase):
         self.assertIn("A stale or busy result is a stop-and-reconcile condition", document)
         self.assertIn("installed wheel and sdist include the validated package skill resource", document)
 
+    def test_w4_report_and_plan_keep_external_gate_explicit(self):
+        report = (ROOT / "docs/product/DELIVERY_REPORT_AGENT_NATIVE_W4_CONTRACT_CN.md").read_text(encoding="utf-8")
+        self.assertIn("blocked_human_gate", report)
+        self.assertIn("live_verified=false", report)
+        self.assertIn("真实 Host、Provider、网络、凭据或外部服务", report)
+        plan = json.loads((ROOT / "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json").read_text(encoding="utf-8"))
+        transaction = plan["current_w4_transaction"]
+        self.assertEqual(transaction["id"], "agent-native-w4-offline-contract")
+        self.assertFalse(transaction["real_provider"])
+        self.assertFalse(transaction["real_host"])
+        self.assertEqual(transaction["network"], False)
+        self.assertIn("opencoding/host_connector.py", transaction["paths"])
+
     def test_delivery_plan_marks_retained_evidence_as_archive_only(self):
         plan = json.loads((ROOT / "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json").read_text(encoding="utf-8"))
         self.assertEqual(

@@ -19,6 +19,13 @@ from .product_loop import (
 )
 from .codex_host import CodexHostError, CodexSkillHost, install_skill
 from .agent_adapter import LocalAgentAdapter
+from .host_connector import (
+    ConnectorContract,
+    FixtureConnector,
+    HostConnectorError,
+    OfflineConnectorRegistry,
+    OfflineHostContract,
+)
 from .agent_tasks import LocalAgentTaskExecutor, preview_agent_tasks
 from .target_adapters import (
     MacOSTargetAdapter,
@@ -47,6 +54,11 @@ __all__ = [
     "CodexSkillHost",
     "install_skill",
     "LocalAgentAdapter",
+    "ConnectorContract",
+    "FixtureConnector",
+    "HostConnectorError",
+    "OfflineConnectorRegistry",
+    "OfflineHostContract",
     "LocalAgentTaskExecutor",
     "preview_agent_tasks",
     "TargetAdapterError",
