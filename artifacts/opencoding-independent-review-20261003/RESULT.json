@@ -1,0 +1,30 @@
+{
+  "transaction": "opencoding-independent-review-20261003",
+  "date": "2026-10-03",
+  "current_head": "faae5a6a7dfb2b0fa9cf2d65f7dcf512216617fb",
+  "previous_checkpoint": "4849a95d2e4e7bbf1597098b1acbe8dc5abdad4a",
+  "origin_main": "91a20392a856ff4717d230467d32fc154bcb82b1",
+  "stage28": {
+    "requested_short_sha": "9c05a5a",
+    "object_available": false,
+    "ref_available": false,
+    "merge_base": "not-computable",
+    "reason": "the local object database and refs do not contain the requested checkpoint"
+  },
+  "review": {
+    "finding": "pending marketplace text was previously classified as known",
+    "status": "fixed",
+    "fix_commit": "faae5a6a7dfb2b0fa9cf2d65f7dcf512216617fb",
+    "source_provenance": "no new requirements/source conflation found after fix"
+  },
+  "migration": {
+    "status": "blocked_until_stage28_bundle_is_available",
+    "preserve_refs": true,
+    "no_merge_or_force_push": true
+  },
+  "boundaries": [
+    "read-only git inspection only",
+    "no external service connection",
+    "no merge, deployment, release or production data"
+  ]
+}
