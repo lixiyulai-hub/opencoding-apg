@@ -25,7 +25,24 @@ QUESTION_DEFINITIONS = (
     {"id": "multi_user", "question": "是否需要多人一起使用或协作？", "why": "多人协作影响角色、数据同步和任务拆分。", "required": True},
 )
 
-_QUESTION_MAP = {item["id"]: item for item in QUESTION_DEFINITIONS}
+# These questions are activated only for a marketplace-shaped goal.  Keeping them
+# contextual preserves the small general intake while making the business
+# responsibilities explicit for the real second-hand luxury marketplace flow.
+MARKETPLACE_QUESTION_DEFINITIONS = (
+    {"id": "seller_onboarding", "question": "允许哪些第三方卖家入驻？入驻要提交什么资料、由谁审核？", "why": "卖家准入决定角色、审核责任和可追溯记录。", "required": True},
+    {"id": "identity_verification", "question": "买家和卖家的身份核验由谁负责，核验到什么程度？", "why": "身份核验责任不能由系统临时替用户决定。", "required": True},
+    {"id": "product_listing", "question": "卖家上架商品要填写哪些信息、上传哪些照片，谁可以修改或下架？", "why": "商品发布字段和权限决定真实交易前的数据边界。", "required": True},
+    {"id": "authentication_responsibility", "question": "商品真伪由谁鉴定、在什么时候鉴定，平台承担什么责任？", "why": "鉴定责任和免责声明属于核心交易规则。", "required": True},
+    {"id": "orders_commissions_settlement", "question": "订单、平台佣金和卖家结算怎么处理？结算时点、扣费规则和退款影响是什么？", "why": "交易资金和结算规则需要用户明确后才能拆解。", "required": True},
+    {"id": "logistics", "question": "谁负责发货、收货和物流追踪？是否需要指定物流或保价？", "why": "物流责任影响订单状态、证据和售后路径。", "required": True},
+    {"id": "after_sales_disputes", "question": "退货、退款、鉴定争议和买卖双方纠纷怎么处理？谁裁决、时限多久？", "why": "售后和争议处理需要可执行的责任边界。", "required": True},
+    {"id": "risk_governance", "question": "平台后台要怎样做风控和治理？例如违规商品、欺诈、账号封禁、申诉和审计。", "why": "后台治理决定平台能否安全承载多用户交易。", "required": True},
+)
+
+ALL_QUESTION_DEFINITIONS = QUESTION_DEFINITIONS + MARKETPLACE_QUESTION_DEFINITIONS
+
+_QUESTION_MAP = {item["id"]: item for item in ALL_QUESTION_DEFINITIONS}
+_MARKETPLACE_QUESTION_IDS = {item["id"] for item in MARKETPLACE_QUESTION_DEFINITIONS}
 _PLATFORM_ALIASES = {
     "windows": ("windows", "win", "微软电脑"),
     "macos": ("macos", "mac os", "mac", "苹果电脑", "mac桌面"),
@@ -36,11 +53,12 @@ _PLATFORM_ALIASES = {
     "cli": ("cli", "命令行", "终端"),
 }
 SUPPORTED_PLATFORMS = tuple(_PLATFORM_ALIASES)
-_UNKNOWN_MARKERS = ("暂时不知道", "无法判断", "不确定", "不清楚", "没想好", "不知道", "unsure", "unknown")
+_UNKNOWN_MARKERS = ("暂时不知道", "无法判断", "不确定", "不清楚", "没想好", "不知道", "待确认", "待澄清", "需要确认", "尚未确认", "未确定", "还没决定", "unsure", "unknown")
 _NO_MARKERS = ("不需要", "不支持", "不是", "并不是", "并非", "不可以", "不能", "不希望", "不愿意", "不想要", "不想", "不要", "不用", "无需", "不涉及", "没有", "否", "no", "false", "拒绝")
 _YES_MARKERS = ("需要", "想要", "要", "是", "有", "可以", "支持", "希望", "yes", "true")
 _NEGATION_RE = re.compile(r"(?:不需要|不支持|不是|并不是|并非|不可以|不能|不希望|不愿意|不想要|不想|不要|不用|无需|不涉及|没有|否|拒绝|no|false)")
 _UNCONSUMED_NEGATION_RE = re.compile(r"(?<!不)不[\u4e00-\u9fff]{1,8}")
+_MARKETPLACE_GOAL_MARKERS = ("二手奢侈品", "奢侈品交易", "奢侈品", "独立站", "卖家入驻", "商品上架", "平台佣金", "卖家结算")
 
 _SECRET_PATTERNS = (
     re.compile(r"(?is)-----BEGIN [^-\r\n]*PRIVATE KEY-----.*?-----END [^-\r\n]*PRIVATE KEY-----"),
@@ -63,6 +81,21 @@ def sanitize_text(text: str) -> str:
 
 def _normalise(value: str) -> str:
     return " ".join(value.strip().lower().split())
+
+
+def is_marketplace_goal(goal: str) -> bool:
+    """Return whether the user's goal clearly names the marketplace flow."""
+
+    if not isinstance(goal, str):
+        return False
+    normalised = _normalise(goal)
+    return any(marker in normalised for marker in _MARKETPLACE_GOAL_MARKERS)
+
+
+def question_definitions_for_goal(goal: str) -> tuple[dict[str, Any], ...]:
+    """Select the fixed base questions plus only the relevant domain questions."""
+
+    return ALL_QUESTION_DEFINITIONS if is_marketplace_goal(goal) else QUESTION_DEFINITIONS
 
 
 def _contains_marker(normalised: str, markers: tuple[str, ...]) -> bool:
@@ -145,7 +178,7 @@ def new_session(goal: str) -> dict[str, Any]:
         "goal": sanitize_text(goal.strip()),
         "answers": {},
         "requirements": {},
-        "questions": deepcopy(list(QUESTION_DEFINITIONS)),
+        "questions": deepcopy(list(question_definitions_for_goal(goal.strip()))),
         "answer_history": [],
         "state": "clarifying",
     }
@@ -169,17 +202,18 @@ def _validate_session_shape(session: dict[str, Any]) -> None:
         raise ValueError("session answers and requirements must be dictionaries")
     if session["state"] not in {"clarifying", "recommendation_ready"}:
         raise ValueError("unsupported session state")
-    if not isinstance(session["questions"], list) or len(session["questions"]) != len(QUESTION_DEFINITIONS):
+    expected_questions = question_definitions_for_goal(session["goal"])
+    if not isinstance(session["questions"], list) or len(session["questions"]) != len(expected_questions):
         raise ValueError("session questions do not match schema")
-    for actual, expected_question in zip(session["questions"], QUESTION_DEFINITIONS):
+    for actual, expected_question in zip(session["questions"], expected_questions):
         if not isinstance(actual, dict) or set(actual) != {"id", "question", "why", "required"} or actual != expected_question:
             raise ValueError("invalid session question shape")
     if not isinstance(session["answer_history"], list):
         raise ValueError("answer_history must be a list")
     for expected_revision, history in enumerate(session["answer_history"], start=1):
-        if not isinstance(history, dict) or set(history) != {"revision", "question_id", "previous", "answer", "changed", "conflict"}:
+        if not isinstance(history, dict) or set(history) != {"revision", "question_id", "previous", "answer", "changed", "conflict", "source"}:
             raise ValueError("invalid answer_history shape")
-        if isinstance(history["revision"], bool) or not isinstance(history["revision"], int) or not isinstance(history["question_id"], str):
+        if isinstance(history["revision"], bool) or not isinstance(history["revision"], int) or not isinstance(history["question_id"], str) or history["source"] != "user":
             raise ValueError("invalid answer_history values")
         if history["revision"] != expected_revision:
             raise ValueError("invalid answer_history revision")
@@ -191,11 +225,12 @@ def _validate_session_shape(session: dict[str, Any]) -> None:
             raise ValueError("invalid answer_history values")
     if len(session["answer_history"]) != session["revision"]:
         raise ValueError("answer_history must match revision")
+    allowed_question_ids = {item["id"] for item in expected_questions}
     for question_id, answer in session["answers"].items():
-        if question_id not in _QUESTION_MAP or not isinstance(answer, str) or not answer.strip():
+        if question_id not in allowed_question_ids or not isinstance(answer, str) or not answer.strip():
             raise ValueError("invalid session answer")
     for question_id, requirement in session["requirements"].items():
-        if question_id not in _QUESTION_MAP or not isinstance(requirement, dict):
+        if question_id not in allowed_question_ids or not isinstance(requirement, dict):
             raise ValueError("invalid session requirement")
         if set(requirement) != {"kind", "value", "platforms", "reason_codes", "source", "changed", "conflict"}:
             raise ValueError("invalid session requirement shape")
@@ -244,7 +279,7 @@ def _validate_session_shape(session: dict[str, Any]) -> None:
         replay_requirements[question_id] = interpretation
     if replay_answers != session["answers"] or replay_requirements != session["requirements"]:
         raise ValueError("session answers or requirements do not match answer history")
-    required_ids = {item["id"] for item in QUESTION_DEFINITIONS if item["required"]}
+    required_ids = {item["id"] for item in expected_questions if item["required"]}
     expected_state = "recommendation_ready" if required_ids.issubset(replay_requirements) and all(_resolved(replay_requirements[item]) for item in required_ids) else "clarifying"
     if session["state"] != expected_state:
         raise ValueError("session state is inconsistent with requirements")
@@ -275,6 +310,10 @@ def interpret_answer(question_id: str, answer: str) -> dict[str, Any]:
     if question_id in {"data_persistence", "cross_device", "file_storage", "external_data", "admin_access", "account_access", "notifications", "payments", "multi_user"}:
         kind, value, reason = _interpret_boolean(clean)
         return {"kind": kind, "value": value, "platforms": [], "reason_codes": reason, "source": "user"}
+    if question_id in _MARKETPLACE_QUESTION_IDS:
+        if _contains_marker(normalised, _UNKNOWN_MARKERS):
+            return {"kind": "unknown", "value": None, "platforms": [], "reason_codes": ["answer_unknown"], "source": "user"}
+        return {"kind": "known", "value": clean, "platforms": [], "reason_codes": [], "source": "user"}
     if _contains_marker(normalised, _UNKNOWN_MARKERS):
         return {"kind": "unknown", "value": None, "platforms": [], "reason_codes": ["answer_unknown"], "source": "user"}
     return {"kind": "known", "value": clean, "platforms": [], "reason_codes": [], "source": "user"}
@@ -300,7 +339,7 @@ def answer_question(session: dict[str, Any], question_id: str, answer: str) -> d
     """Return a new immutable session revision and preserve every change in history."""
 
     _validate_session_shape(session)
-    if question_id not in _QUESTION_MAP:
+    if question_id not in {item["id"] for item in session["questions"]}:
         raise ValueError(f"unknown question_id: {question_id}")
     if not isinstance(answer, str) or not answer.strip():
         raise ValueError("answer must be a non-empty string")
@@ -329,8 +368,9 @@ def answer_question(session: dict[str, Any], question_id: str, answer: str) -> d
         "answer": clean,
         "changed": changed,
         "conflict": conflict,
+        "source": "user",
     })
-    required_ids = {item["id"] for item in QUESTION_DEFINITIONS if item["required"]}
+    required_ids = {item["id"] for item in updated["questions"] if item["required"]}
     all_resolved = required_ids.issubset(updated["requirements"]) and all(_resolved(updated["requirements"][item]) for item in required_ids)
     updated["state"] = "recommendation_ready" if all_resolved else "clarifying"
     return updated
@@ -341,7 +381,7 @@ def next_questions(session: dict[str, Any]) -> list[dict[str, Any]]:
 
     _validate_session_shape(session)
     result = []
-    for question in QUESTION_DEFINITIONS:
+    for question in session["questions"]:
         question_id = question["id"]
         requirement = session["requirements"].get(question_id)
         if question_id not in session["answers"]:
@@ -359,4 +399,4 @@ def next_questions(session: dict[str, Any]) -> list[dict[str, Any]]:
     return result
 
 
-__all__ = ["QUESTION_DEFINITIONS", "SCHEMA_VERSION", "SUPPORTED_PLATFORMS", "answer_question", "interpret_answer", "new_session", "next_questions", "sanitize_text"]
+__all__ = ["ALL_QUESTION_DEFINITIONS", "MARKETPLACE_QUESTION_DEFINITIONS", "QUESTION_DEFINITIONS", "SCHEMA_VERSION", "SUPPORTED_PLATFORMS", "answer_question", "interpret_answer", "is_marketplace_goal", "new_session", "next_questions", "question_definitions_for_goal", "sanitize_text"]

@@ -102,7 +102,10 @@ def _question_status(session: Mapping[str, Any], question_id: str) -> str:
 def derive_frontier(session: Mapping[str, Any]) -> list[dict[str, Any]]:
     """Derive the current dependency frontier without persisting a new schema."""
 
-    by_id = {item["id"]: item for item in QUESTION_DEFINITIONS}
+    questions = session.get("questions")
+    if not isinstance(questions, list):
+        questions = list(QUESTION_DEFINITIONS)
+    by_id = {item["id"]: item for item in questions}
     ids: list[str] = []
     if not _settled(session, "audience"):
         ids.append("audience")
@@ -111,7 +114,7 @@ def derive_frontier(session: Mapping[str, Any]) -> list[dict[str, Any]]:
     if _settled(session, "audience") and not _settled(session, "outcome"):
         ids.append("outcome")
     if _settled(session, "audience") and _settled(session, "outcome") and _settled(session, "platform"):
-        ids.extend(item_id for item_id in _CAPABILITY_IDS if not _settled(session, item_id))
+        ids.extend(item["id"] for item in questions if item["id"] not in {"audience", "platform", "outcome"} and not _settled(session, item["id"]))
     result: list[dict[str, Any]] = []
     for question_id in ids:
         item = deepcopy(by_id[question_id])

@@ -1,0 +1,25 @@
+OpenCoding marketplace clarification checkpoint
+Transaction: opencoding-marketplace-clarification-20261003
+Implementation commit: 81105b6
+
+Targeted offline regression:
+  python -X utf8 -m unittest tests.test_marketplace_flow tests.test_product_intake tests.test_product_decisions tests.test_product_documents tests.test_product_planning tests.test_product_sessions tests.test_product_service
+  Ran 74 tests in 2.822s; OK; exit=0
+
+Real local service flow (synthetic answers, no network/provider):
+  questions=20; revision=20; recommendation=ready; tasks=29; preview_targets=14; apply=applied; rollback=rolled_back; exit=0
+
+Repository checks:
+  git diff --check; exit=0
+  worktree clean after implementation commit
+
+Full repository baseline (environment-limited):
+  python -X utf8 -m unittest
+  Ran 225 tests; 19 failures and 5 errors remain in pre-existing scheduler/transaction platform behavior and missing cargo.
+  The new marketplace tests pass; no new failure is attributed to this checkpoint.
+
+Rollback:
+  Revert implementation checkpoint 81105b6 with ROLLBACK.sh, or requeue the last valid local transaction receipt.
+
+Boundaries not verified here:
+  No real seller identity provider, payment/escrow, logistics provider, authentication service, legal policy, external network, deployment, production data, or public release was used.
