@@ -96,13 +96,22 @@ def _stack(primary: str, needs: dict[str, str]) -> dict[str, dict[str, Any]]:
 
 
 def _need(requirement: dict[str, Any] | None, source: str, *, positive: str = "required", negative: str = "not_needed") -> tuple[str, str]:
-    if not requirement or requirement.get("kind") in {"unknown", "ambiguous", "conflict"}:
-        return "unknown", f"user.answers.{source}:用户尚未给出可确定的答案。"
+    if requirement is None:
+        return "unknown", f"system.unresolved.{source}:尚未收到用户回答。"
+    if requirement.get("kind") in {"unknown", "ambiguous", "conflict"}:
+        return "unknown", f"user.answers.{source}:用户回答仍待确认。"
     if requirement.get("value") is True:
         return positive, f"user.answers.{source}:用户明确表示需要。"
     if requirement.get("value") is False:
         return negative, f"user.answers.{source}:用户明确表示不需要。"
     return "unknown", f"user.answers.{source}:答案不是可执行的明确判断。"
+
+
+def _source_refs(requirements: dict[str, dict[str, Any]], *question_ids: str) -> str:
+    """List only sources that actually exist in the current user answer set."""
+
+    refs = [f"user.answers.{question_id}" for question_id in sorted(set(question_ids)) if question_id in requirements]
+    return ",".join(refs) or "system.derived"
 
 
 def _capability(capability_id: str, need: str, reason: str, source: str) -> dict[str, str]:
@@ -197,14 +206,14 @@ def build_recommendation(session: dict[str, Any]) -> dict[str, Any]:
     database_reason = data_reason if not domain_known else "用户确认的卖家、商品、订单、履约或治理记录需要可追溯的数据保存。"
     storage_reason = file_reason if "product_listing" not in domain_known else "用户确认的商品照片和附件需要受控文件存储。"
     capabilities = [
-        _capability("server", server_need, "跨设备、第三方内容、后台、多人协作或交易责任共同决定是否需要远程服务。", "user.answers.cross_device,user.answers.external_data,user.answers.admin_access,user.answers.multi_user,user.answers.marketplace"),
-        _capability("database", database_need, database_reason, "user.answers.data_persistence,marketplace"),
-        _capability("api", api_need, external_reason if external_need != "not_needed" else "订单和物流等业务接口需求取决于用户确认的交易流程。", "user.answers.external_data,user.answers.orders_commissions_settlement,user.answers.logistics"),
-        _capability("auth", account_need, account_reason if account_need != "required" or not domain_known else "卖家、买家和鉴定责任需要用户确认的身份与角色边界。", "user.answers.account_access,user.answers.identity_verification,user.answers.authentication_responsibility"),
-        _capability("payment", payment_need, payment_reason if payment_need != "required" or "orders_commissions_settlement" not in domain_known else "订单、佣金、结算和退款规则来自用户确认的交易问题。", "user.answers.payments,user.answers.orders_commissions_settlement"),
-        _capability("notifications", notification_need, notification_reason, "user.answers.notifications"),
-        _capability("admin", admin_need, admin_reason if admin_need != "required" or not domain_known else "卖家审核、售后争议和风控治理需要用户确认的后台责任。", "user.answers.admin_access,user.answers.seller_onboarding,user.answers.after_sales_disputes,user.answers.risk_governance"),
-        _capability("storage", storage_need, storage_reason if file_need != "not_needed" else data_reason, "user.answers.file_storage,user.answers.data_persistence,user.answers.product_listing"),
+        _capability("server", server_need, "跨设备、第三方内容、后台、多人协作或交易责任共同决定是否需要远程服务。", _source_refs(requirements, "cross_device", "external_data", "admin_access", "multi_user", *domain_known)),
+        _capability("database", database_need, database_reason, _source_refs(requirements, "data_persistence", *domain_known)),
+        _capability("api", api_need, external_reason if external_need != "not_needed" else "订单和物流等业务接口需求取决于用户确认的交易流程。", _source_refs(requirements, "external_data", "orders_commissions_settlement", "logistics")),
+        _capability("auth", account_need, account_reason if account_need != "required" or not domain_known else "卖家、买家和鉴定责任需要用户确认的身份与角色边界。", _source_refs(requirements, "account_access", "identity_verification", "authentication_responsibility")),
+        _capability("payment", payment_need, payment_reason if payment_need != "required" or "orders_commissions_settlement" not in domain_known else "订单、佣金、结算和退款规则来自用户确认的交易问题。", _source_refs(requirements, "payments", "orders_commissions_settlement")),
+        _capability("notifications", notification_need, notification_reason, _source_refs(requirements, "notifications")),
+        _capability("admin", admin_need, admin_reason if admin_need != "required" or not domain_known else "卖家审核、售后争议和风控治理需要用户确认的后台责任。", _source_refs(requirements, "admin_access", "seller_onboarding", "after_sales_disputes", "risk_governance")),
+        _capability("storage", storage_need, storage_reason if file_need != "not_needed" else data_reason, _source_refs(requirements, "file_storage", "data_persistence", "product_listing")),
     ]
     unresolved = list(platform_info["unresolved"])
     unresolved.extend(project_unresolved)

@@ -20,13 +20,13 @@ BASE_ANSWERS = {
     "payments": "需要",
     "multi_user": "需要",
     "seller_onboarding": "允许第三方卖家入驻，提交主体和商品资质，由平台审核；平台不自行收购或囤货。",
-    "identity_verification": "平台负责基础实名，卖家提交主体资料，具体核验服务待确认。",
+    "identity_verification": "平台负责基础实名，卖家提交主体资料；平台承担基础核验责任。",
     "product_listing": "卖家填写品牌、成色、价格并上传照片，平台审核后可修改或下架。",
-    "authentication_responsibility": "第三方鉴定机构负责真伪鉴定，平台展示结果，责任边界待法务确认。",
-    "orders_commissions_settlement": "买家付款后平台暂存，成交收取佣金，鉴定和售后期结束后结算给卖家。",
-    "logistics": "卖家发货，买家收货，平台展示物流追踪，是否保价待确认。",
-    "after_sales_disputes": "平台受理退货退款和鉴定争议，按规则裁决，时限和责任待确认。",
-    "risk_governance": "后台处理违规商品、欺诈、封禁和申诉并保留审计记录，规则待确认。",
+    "authentication_responsibility": "第三方鉴定机构负责真伪鉴定，平台展示结果；争议由平台按规则处理。",
+    "orders_commissions_settlement": "买家付款后平台暂存，成交收取佣金，鉴定和售后期结束后结算给卖家；退款按订单规则冲正。",
+    "logistics": "卖家发货，买家收货，平台展示物流追踪；首发阶段不提供保价。",
+    "after_sales_disputes": "平台受理退货退款和鉴定争议，按规则裁决；申请时限为收货后七天。",
+    "risk_governance": "后台处理违规商品、欺诈、封禁和申诉并保留审计记录；高风险账号进入人工复核。",
 }
 
 
@@ -76,6 +76,13 @@ class MarketplaceFlowTests(unittest.TestCase):
         self.assertIn("user.answers.seller_onboarding", docs["product.md"])
         self.assertIn("Agent 临时假设", docs["memory.md"])
         self.assertIn("不自行收购或囤货", docs["memory.md"])
+
+    def test_pending_phrase_cannot_become_a_confirmed_requirement(self):
+        session = complete_marketplace_session({"logistics": "卖家发货，物流规则待确认。"})
+        self.assertEqual(session["requirements"]["logistics"]["kind"], "unknown")
+        recommendation = build_recommendation(session)
+        self.assertEqual(recommendation["status"], "draft")
+        self.assertTrue(any(item.startswith("logistics:") for item in recommendation["unresolved"]))
 
 
 if __name__ == "__main__":
