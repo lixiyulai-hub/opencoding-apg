@@ -30,6 +30,15 @@ answer_history、state。新增业务问题采用以下固定 ID，问题正文�
 | external_data | 是否要从别的服务获取内容，比如地图、天气或智能问答？ | 第三方接口，不要求用户懂 API |
 | admin_access | 是否需要专人管理内容、成员或处理订单？ | 后台，不等同于所有多人使用 |
 
+当 `goal` 明确包含二手奢侈品交易、独立站或同义业务时，Session 会在上述问题后追加一组必答的领域问题：
+`seller_onboarding`、`identity_verification`、`product_listing`、
+`authentication_responsibility`、`orders_commissions_settlement`、`logistics`、
+`after_sales_disputes`、`risk_governance`。这些问题分别覆盖卖家入驻、身份核验、商品发布、
+鉴定责任、订单/佣金/结算、物流、售后争议和平台风控治理；用户回答“未知”时必须保持
+`unknown` 和待确认状态，不能由 agent 代填。`answer_history.source` 固定为 `user`，
+Recommendation 中的场景 source 使用 `user.answers.<question_id>`；任何临时推断只允许放在
+`assumptions` 并标记 `agent.assumption:`，不得伪装成用户需求。
+
 原有 data_persistence 问题只问是否保存，不能把本地保存和跨设备同步合并。
 新问题必须进入版本化问答流程，不能只出现在说明文档。
 缺失、未知、否定、修改、冲突是不同状态；复杂语义可以追问，但不能冒充理解。
