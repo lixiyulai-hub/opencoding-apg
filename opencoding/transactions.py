@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import stat
 import tempfile
 import uuid
 from contextlib import contextmanager
@@ -124,7 +125,14 @@ def _identity(path: Path) -> list[int] | None:
         info = os.stat(path, follow_symlinks=False)
     except (FileNotFoundError, OSError):
         return None
-    if path.is_symlink() or _is_reparse(path) or getattr(info, "st_nlink", 1) > 1:
+    # Regular files must not be hard-linked because replacing or restoring one
+    # path could otherwise mutate another user's path. Directories commonly
+    # report link counts greater than one on POSIX (for ``.`` and ``..``), and
+    # directory hard links are not a supported filesystem primitive, so that
+    # count cannot be used to reject directory identities.
+    if path.is_symlink() or _is_reparse(path) or (
+        stat.S_ISREG(info.st_mode) and getattr(info, "st_nlink", 1) > 1
+    ):
         return None
     return [int(getattr(info, "st_dev", 0)), int(getattr(info, "st_ino", 0))]
 

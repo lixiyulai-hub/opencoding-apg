@@ -1,0 +1,76 @@
+name: Offline validation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python-windows:
+    name: Python ${{ matrix.python-version }} (Windows full suite)
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set up Rust for the domain contract test
+        uses: dtolnay/rust-toolchain@stable
+      # The zero-write scheduler snapshot contract is Windows-specific because
+      # it uses the Windows shared-byte locking primitive.
+      - name: Run the repository unittest entry point
+        run: python -X utf8 -m unittest
+      - name: Run the packaging contract directly
+        run: python -X utf8 -m unittest tests.test_product_packaging
+
+  package-static:
+    name: Package and static checks (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the declared build backend
+        run: python -m pip install --upgrade "setuptools>=83"
+      - name: Compile Python sources
+        run: python -X utf8 -m compileall -q opencoding scripts tests
+      - name: Run the packaging contract
+        run: python -X utf8 -m unittest tests.test_product_packaging
+      - name: Build sdist and wheel through the declared backend
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib
+          import setuptools.build_meta as backend
+
+          output = pathlib.Path("dist")
+          output.mkdir(exist_ok=True)
+          print(backend.build_sdist(str(output)))
+          print(backend.build_wheel(str(output)))
+          PY
+
+  rust:
+    name: Rust domain tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run domain tests
+        run: cargo test --manifest-path services/domain/Cargo.toml
