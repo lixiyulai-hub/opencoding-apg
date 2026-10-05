@@ -20,7 +20,22 @@ _NEEDS = {"required", "optional", "not_needed", "unknown"}
 _STATUSES = {"draft", "ready"}
 _CONFIDENCE = {"low", "medium", "high"}
 _SCENARIO_ID = re.compile(r"^[a-z][a-z0-9-]*$")
+_SCENARIO_SOURCE = re.compile(r"^user\.answers\.[a-z][a-z0-9_]*$")
 _BASE_DOCUMENT_NAMES = ("AGENTS.md", "memory.md", "PRG.md", "plan.md", "product.md", "architecture.md", "ui.md", "security.md")
+_INTEGRATION_CAPABILITY_DOCS = {
+    "server": ("integrations/server.md", "服务端边界"),
+    "database": ("integrations/database.md", "数据库边界"),
+    "auth": ("integrations/auth.md", "身份与认证边界"),
+    "storage": ("integrations/storage.md", "文件与对象存储边界"),
+    "api": ("integrations/api.md", "接口边界"),
+}
+_MARKETPLACE_INTEGRATION_DOCS = {
+    "marketplace-seller-onboarding": ("integrations/kyc.md", "卖家准入与 KYC 边界"),
+    "marketplace-identity-verification": ("integrations/identity.md", "身份核验边界"),
+    "marketplace-logistics": ("integrations/logistics.md", "物流履约边界"),
+    "marketplace-authentication-responsibility": ("integrations/authentication.md", "商品鉴定边界"),
+    "marketplace-risk-governance": ("integrations/risk.md", "风控与治理边界"),
+}
 
 
 def _non_empty(value: Any, field: str) -> None:
@@ -48,6 +63,8 @@ def _validate_scenarios(value: Any) -> None:
         seen.add(scenario_id)
         for field in _SCENARIO_KEYS - {"id"}:
             _non_empty(scenario[field], f"scenario.{field}")
+        if not _SCENARIO_SOURCE.fullmatch(scenario["source"]):
+            raise ValueError("scenario.source must be user.answers.<question_id>")
 
 
 def validate_recommendation(recommendation: Mapping[str, Any]) -> None:
@@ -165,6 +182,13 @@ def document_names(recommendation: Mapping[str, Any]) -> list[str]:
         names.append("payment.md")
     if _need(capabilities, "notifications") != "not_needed":
         names.append("notifications.md")
+    for capability_id, (path, _title) in _INTEGRATION_CAPABILITY_DOCS.items():
+        if _need(capabilities, capability_id) != "not_needed":
+            names.append(path)
+    for scenario in recommendation["project"]["scenarios"]:
+        path_title = _MARKETPLACE_INTEGRATION_DOCS.get(scenario["id"])
+        if path_title and path_title[0] not in names:
+            names.append(path_title[0])
     if any(_need(capabilities, item) != "not_needed" for item in ("server", "storage", "api", "payment", "notifications")):
         names.append("deployment.md")
     return names
@@ -180,6 +204,45 @@ def _business_context(recommendation: Mapping[str, Any]) -> list[str]:
     if project["scenarios"]:
         lines.append("- 业务场景：" + "；".join(item["title"] for item in project["scenarios"]))
     return lines
+
+
+def _integration_document(
+    title: str,
+    *,
+    need: str,
+    reason: str,
+    source: str,
+    scenario: Mapping[str, Any] | None = None,
+) -> str:
+    scenario_lines = []
+    if scenario is not None:
+        scenario_lines = [
+            f"- 用户场景：{scenario['title']}；{scenario['action']}；预期结果：{scenario['result']}。",
+            f"- 场景来源：{scenario['source']}。",
+        ]
+    return "\n".join([
+        f"# {title}",
+        "",
+        "本文件只记录离线方案编排，不连接真实服务、不创建账号、不读取或保存密钥，也不发送网络请求。",
+        "",
+        "## 当前判断",
+        "",
+        f"- 需求状态：{need}。",
+        f"- 判断依据：{reason}",
+        f"- 来源：{source}",
+        *scenario_lines,
+        "",
+        "## 编排与人工 Gate",
+        "",
+        "- 编排顺序：定义最小数据与接口 → 使用离线 fixture 验证 → 明确责任、费用、地域、保留期和审计 → 由人确认精确供应商与范围。",
+        "- 人工 Gate：只有调用方对目标、数据范围、凭据、费用、法律责任和回滚方案作出新的精确确认，才可进入后续激活事务。",
+        "- 当前状态：未启用（offline_design_only）；本轮不把方案、TaskPlan 或文档写成已接通。",
+        "",
+        "## 回滚与停用",
+        "",
+        "- 本轮回滚：只移除本地草案，保留 receipt、哈希和用户修改；不触碰任何外部系统。",
+        "- 未来激活前必须准备停用、数据导出/删除、密钥轮换、重试补偿和人工接管 runbook；本轮不执行这些动作。",
+    ])
 
 
 def render_documents(recommendation: dict, task_plan: Mapping[str, Any] | None = None) -> dict[str, str]:
@@ -217,10 +280,10 @@ def render_documents(recommendation: dict, task_plan: Mapping[str, Any] | None =
     scenario_lines = [f"{item['id']}：{item['title']}（{item['actor']}）→ {item['action']}，结果：{item['result']}。来源：{item['source']}" for item in project["scenarios"]]
     docs: dict[str, str] = {
         "AGENTS.md": "\n".join(["# 项目工作规则", "", "本文件规定本项目计划阶段的范围、验证方式和确认边界。", "", "## 允许范围", "", _bullet(["只围绕已确认的业务目标与场景编写计划。", "所有实现任务均为待执行计划，不代表代码已经存在或已经通过验证。", "不调用 Host、Provider、网络、凭据或真实业务服务。", "外部服务激活、部署、发布和真实数据使用必须单独确认。"]), "", "## 当前业务上下文", "", *context, "", "## 验证", "", "- 使用离线单元测试和任务图校验；失败时保留证据并停止自动推进。"]),
-        "memory.md": "\n".join(["# 决策记忆", "", "这里记录业务事实、选择理由和未解决问题，不替代执行日志。", "", "## 已确认事实", "", *context, "", "## 业务场景", "", _bullet(scenario_lines), "", "## 方案选择", "", _bullet([f"{key}：{value['technology']}。理由：{value['reason']}。替代方案：{', '.join(value['alternatives']) or '无'}。" for key, value in recommendation["stack"].items()]), "", "## 未解决问题", "", _bullet(unresolved)]),
+        "memory.md": "\n".join(["# 决策记忆", "", "这里记录业务事实、选择理由和未解决问题，不替代执行日志。", "", "## 用户已确认事实（source=user.answers）", "", *context, "", "## 业务场景（由用户回答生成，保留 source）", "", _bullet(scenario_lines), "", "## 方案选择", "", _bullet([f"{key}：{value['technology']}。理由：{value['reason']}。替代方案：{', '.join(value['alternatives']) or '无'}。" for key, value in recommendation["stack"].items()]), "", "## Agent 临时假设（source=agent.assumption，不是用户需求）", "", _bullet(recommendation["assumptions"]), "", "## 未解决问题", "", _bullet(unresolved)]),
         "PRG.md": "\n".join(["# 自动推进规则", "", "本文件描述规划事务如何自动推进，不是第二份产品需求书。", "", "## 状态循环", "", _bullet(["INSPECT：读取当前事实、版本和既有证据。", "PROGRESS：记录当前阶段和可计算的进展。", "PLAN：从同一任务图生成顺序、依赖和验收。", "DISPATCH：仅派发离线、可逆的本地规划工作。", "VALIDATE：校验结构、路径、依赖、证据和业务结果。", "REPORT：写入结果、哈希、失败项和限制。", "REQUEUE：只有在失败项可定位且恢复条件满足时重新排队。"]), "", "## FREEZE 与恢复", "", _bullet(["首次失败立即 FREEZE，保留原始输入、receipt、快照和部分结果，不覆盖后续用户修改。", "只有修复原因、重新通过结构校验、确认输入与证据哈希未漂移后，才可从失败任务重新排队。", "普通本地事务可自动继续；Provider、Host、凭据、真实数据、部署和发布到达边界时必须重新确认。"]), "", "## 当前范围", "", *context, "", "## 当前状态", "", f"- Recommendation：{status}；平台：{platform}。", f"- 版本：session `{recommendation['session_id']}` revision {recommendation['revision']}。"]),
         "plan.md": "\n".join(["# 交付计划", "", "本文件由同一份 TaskPlan 任务图生成，只描述待执行工作，不执行命令或写入用户项目。", "", "## 业务目标", "", *context, "", "## 任务顺序", "", _bullet([f"{task['id']}：{task['title']}（依赖：{', '.join(task['depends_on']) or '无'}；产物：{', '.join(task['outputs']) or '无'}；验收：{'；'.join(task['acceptance']) or '无'}；回滚：{task['rollback']}；激活边界：{task['activation_gate']['reason']}）" for task in task_plan.get("tasks", [])] if task_plan else ["等待 TaskPlan 生成后注入任务图。"]), "", "## 波次", "", _bullet([f"第 {index + 1} 波：{', '.join(wave)}" for index, wave in enumerate(task_plan.get("waves", []))] if task_plan else []), "", "## 验收与回滚", "", _bullet(["每项任务必须绑定具体业务结果、源码或测试输出路径。", "失败时只保留可识别的部分结果，按 receipt 和 before/after 哈希恢复。", *recommendation["acceptance"]]), "", "## 待解决问题", "", _bullet(unresolved)]),
-        "product.md": "\n".join(["# 产品定义", "", *context, "", "## 业务场景", "", _bullet(scenario_lines), "", "## 业务验收", "", _bullet(recommendation["acceptance"])]),
+        "product.md": "\n".join(["# 产品定义", "", *context, "", "## 业务场景（来源可追溯）", "", _bullet(scenario_lines), "", "## 业务验收", "", _bullet(recommendation["acceptance"]), "", "## 来源边界", "", "- `user.answers.*` 是用户回答。", "- `agent.assumption:*` 只是系统工作假设，不得写回用户需求或作为已确认规则。"]),
         "architecture.md": "\n".join(["# 实现边界", "", *context, "", "## 技术方案", "", _bullet([f"{key}：{value['technology']}。{value['reason']}" for key, value in recommendation["stack"].items()]), "", "## 能力判断", "", _bullet([f"{item['id']}：{item['need']}。{item['reason']}（激活边界：{item['activation_gate']}）" for item in recommendation["capabilities"]])]),
         "ui.md": "\n".join(["# 界面与用户流程", "", f"围绕目标“{project['goal']}”服务于{project['audience'] or '待确认使用者'}。", "", "## 流程", "", _bullet([f"场景“{item['title']}”：{item['actor']}执行“{item['action']}”，得到“{item['result']}”。" for item in project["scenarios"]] or ["场景尚未确认，不编造用户流程。"]), "", "## 交互验收", "", _bullet(["流程能完成项目业务结果。", "未解决问题在任何写入或外部动作前可见。"])]),
         "security.md": "\n".join(["# 安全与证据边界", "", "本轮只生成离线计划，不连接外部系统。", "", "## 规则", "", _bullet(["不在文档、日志或任务参数中保存秘密。", "未知能力保持 unknown，不等同于授权。", "计划完成不等同于实现、连接、部署或发布完成。", "所有失败保留证据并按精确恢复条件继续。"])]),
@@ -235,6 +298,35 @@ def render_documents(recommendation: dict, task_plan: Mapping[str, Any] | None =
         docs["payment.md"] = "\n".join(["# 支付边界", "", f"支付需求：{_need(capabilities, 'payment')}。", "", "这里只设计业务与风险边界，不连接支付服务；服务商、凭据、费用和撤销流程需要单独确认。"])
     if _need(capabilities, "notifications") != "not_needed":
         docs["notifications.md"] = "\n".join(["# 通知边界", "", f"通知需求：{_need(capabilities, 'notifications')}。", "", "这里只描述收件人、触发条件和退出方式，不联系通知服务。"])
+    for capability_id, (path, title) in _INTEGRATION_CAPABILITY_DOCS.items():
+        if _need(capabilities, capability_id) != "not_needed":
+            capability = capabilities[capability_id]
+            docs[path] = _integration_document(
+                title,
+                need=capability["need"],
+                reason=capability["reason"],
+                source=capability["source"],
+            )
+    if _need(capabilities, "api") != "not_needed":
+        api_capability = capabilities["api"]
+        docs["integrations/external-data.md"] = _integration_document(
+            "外部数据边界",
+            need=api_capability["need"],
+            reason="外部数据是否需要真实服务仍须按用户回答和人工 Gate 单独确认；接口设计不等于连接。",
+            source=api_capability["source"],
+        )
+    scenarios_by_id = {scenario["id"]: scenario for scenario in project["scenarios"]}
+    for scenario_id, (path, title) in _MARKETPLACE_INTEGRATION_DOCS.items():
+        scenario = scenarios_by_id.get(scenario_id)
+        if scenario is not None:
+            question_id = scenario_id.removeprefix("marketplace-").replace("-", "_")
+            docs[path] = _integration_document(
+                title,
+                need="required",
+                reason=f"用户确认的 marketplace 责任边界需要单独设计，避免把业务责任交给默认集成。",
+                source=f"user.answers.{question_id}",
+                scenario=scenario,
+            )
     if any(_need(capabilities, item) != "not_needed" for item in ("server", "storage", "api", "payment", "notifications")):
         docs["deployment.md"] = "\n".join(["# 部署边界", "", "部署是后续事务，不由文档渲染执行。", "", "- 在目标、数据范围、凭据、费用和回滚条件确认前不得激活。", "- 本地规划结果不是部署或发布证据。"])
     return docs

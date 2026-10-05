@@ -3,6 +3,7 @@
 from .service import (
     apply_approved,
     approve_preview,
+    build_caller_confirmation,
     create_session,
     derive_frontier,
     list_sessions,
@@ -15,6 +16,7 @@ from .service import (
 __all__ = [
     "apply_approved",
     "approve_preview",
+    "build_caller_confirmation",
     "create_session",
     "derive_frontier",
     "list_sessions",

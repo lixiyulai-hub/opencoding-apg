@@ -9,6 +9,17 @@ from .intake import QUESTION_DEFINITIONS, SCHEMA_VERSION, SUPPORTED_PLATFORMS, _
 
 CAPABILITY_IDS = ("server", "database", "api", "auth", "payment", "notifications", "admin", "storage")
 
+_MARKETPLACE_SCENARIOS = {
+    "seller_onboarding": ("卖家入驻", "卖家与平台", "按用户确认的资料和审核规则申请、审核卖家入驻", "卖家身份、审核责任和状态可追溯"),
+    "identity_verification": ("身份核验", "买家、卖家与平台", "按用户确认的责任边界完成身份核验", "核验责任、结果和留痕可追溯"),
+    "product_listing": ("商品发布", "卖家与平台", "按用户确认的字段和权限发布、修改或下架商品", "商品信息、照片和上下架记录可追溯"),
+    "authentication_responsibility": ("商品鉴定", "平台、卖家与鉴定方", "按用户确认的鉴定时点和责任处理真伪判断", "鉴定结论、责任边界和证据可追溯"),
+    "orders_commissions_settlement": ("订单与结算", "买家、卖家与平台", "按用户确认的订单、佣金、结算和退款规则完成交易", "订单资金、佣金、结算状态和退款影响可追溯"),
+    "logistics": ("物流履约", "卖家、买家与物流方", "按用户确认的发货、收货、追踪和保价规则履约", "物流节点、责任和凭证可追溯"),
+    "after_sales_disputes": ("售后与争议", "买家、卖家与平台", "按用户确认的退货、退款、鉴定争议和裁决规则处理售后", "售后时限、裁决责任和证据可追溯"),
+    "risk_governance": ("平台风控治理", "平台运营与管理人员", "按用户确认的违规、欺诈、封禁、申诉和审计规则治理", "风控动作、申诉和审计记录可追溯"),
+}
+
 
 def _requirements(session: dict[str, Any]) -> dict[str, dict[str, Any]]:
     _validate_session_shape(session)
@@ -85,13 +96,22 @@ def _stack(primary: str, needs: dict[str, str]) -> dict[str, dict[str, Any]]:
 
 
 def _need(requirement: dict[str, Any] | None, source: str, *, positive: str = "required", negative: str = "not_needed") -> tuple[str, str]:
-    if not requirement or requirement.get("kind") in {"unknown", "ambiguous", "conflict"}:
-        return "unknown", f"{source}:用户尚未给出可确定的答案。"
+    if requirement is None:
+        return "unknown", f"system.unresolved.{source}:尚未收到用户回答。"
+    if requirement.get("kind") in {"unknown", "ambiguous", "conflict"}:
+        return "unknown", f"user.answers.{source}:用户回答仍待确认。"
     if requirement.get("value") is True:
-        return positive, f"{source}:用户明确表示需要。"
+        return positive, f"user.answers.{source}:用户明确表示需要。"
     if requirement.get("value") is False:
-        return negative, f"{source}:用户明确表示不需要。"
-    return "unknown", f"{source}:答案不是可执行的明确判断。"
+        return negative, f"user.answers.{source}:用户明确表示不需要。"
+    return "unknown", f"user.answers.{source}:答案不是可执行的明确判断。"
+
+
+def _source_refs(requirements: dict[str, dict[str, Any]], *question_ids: str) -> str:
+    """List only sources that actually exist in the current user answer set."""
+
+    refs = [f"user.answers.{question_id}" for question_id in sorted(set(question_ids)) if question_id in requirements]
+    return ",".join(refs) or "system.derived"
 
 
 def _capability(capability_id: str, need: str, reason: str, source: str) -> dict[str, str]:
@@ -128,7 +148,20 @@ def _business_project(session: dict[str, Any]) -> tuple[dict[str, Any], list[str
             "actor": audience,
             "action": outcome,
             "result": outcome,
-            "source": "answers.outcome",
+            "source": "user.answers.outcome",
+        })
+    for question_id, (title, actor, action, result) in _MARKETPLACE_SCENARIOS.items():
+        requirement = requirements.get(question_id)
+        if not requirement or requirement.get("kind") != "known" or requirement.get("conflict"):
+            continue
+        answer = sanitize_text(str(requirement["value"]))
+        scenarios.append({
+            "id": f"marketplace-{question_id.replace('_', '-')}",
+            "title": title,
+            "actor": actor,
+            "action": f"{action}；用户补充：{answer}",
+            "result": result,
+            "source": f"user.answers.{question_id}",
         })
     return {"goal": goal, "audience": audience, "outcome": outcome, "scenarios": scenarios}, unresolved
 
@@ -151,27 +184,40 @@ def build_recommendation(session: dict[str, Any]) -> dict[str, Any]:
     notification_need, notification_reason = _need(requirements.get("notifications"), "notifications")
     payment_need, payment_reason = _need(requirements.get("payments"), "payments")
     multi_need, multi_reason = _need(requirements.get("multi_user"), "multi_user")
-    if "required" in {cross_need, external_need, admin_need, multi_need}:
+    domain_requirements = {question_id: requirements.get(question_id, {}) for question_id in _MARKETPLACE_SCENARIOS}
+    domain_known = {question_id for question_id, requirement in domain_requirements.items() if requirement.get("kind") == "known" and not requirement.get("conflict")}
+    if domain_known or "required" in {cross_need, external_need, admin_need, multi_need}:
         server_need = "required"
     elif "unknown" in {cross_need, external_need, admin_need, multi_need}:
         server_need = "unknown"
     else:
         server_need = "not_needed"
-    api_need = "required" if external_need == "required" else "unknown" if external_need == "unknown" else "optional"
-    storage_need = "required" if file_need == "required" or data_need == "required" else "unknown" if file_need == "unknown" or data_need == "unknown" else "not_needed"
+    api_need = "required" if external_need == "required" or domain_known.intersection({"orders_commissions_settlement", "logistics"}) else "unknown" if external_need == "unknown" else "optional"
+    storage_need = "required" if file_need == "required" or data_need == "required" or domain_known.intersection({"product_listing", "orders_commissions_settlement", "logistics", "after_sales_disputes"}) else "unknown" if file_need == "unknown" or data_need == "unknown" else "not_needed"
+    if domain_known.intersection({"seller_onboarding", "identity_verification", "authentication_responsibility", "risk_governance"}):
+        account_need = "required"
+    if domain_known.intersection({"seller_onboarding", "identity_verification", "after_sales_disputes", "risk_governance"}):
+        admin_need = "required"
+    if "orders_commissions_settlement" in domain_known:
+        payment_need = "required"
+    if "product_listing" in domain_known:
+        file_need = "required"
+    database_need = "required" if data_need == "required" or domain_known else "unknown" if data_need == "unknown" else "not_needed"
+    database_reason = data_reason if not domain_known else "用户确认的卖家、商品、订单、履约或治理记录需要可追溯的数据保存。"
+    storage_reason = file_reason if "product_listing" not in domain_known else "用户确认的商品照片和附件需要受控文件存储。"
     capabilities = [
-        _capability("server", server_need, "跨设备、第三方内容、后台或多人协作共同决定是否需要远程服务。", "cross_device,external_data,admin_access,multi_user"),
-        _capability("database", data_need, data_reason, "data_persistence"),
-        _capability("api", api_need, external_reason if external_need != "not_needed" else "当前未确认需要第三方内容。", "external_data"),
-        _capability("auth", account_need, account_reason, "account_access"),
-        _capability("payment", payment_need, payment_reason, "payments"),
-        _capability("notifications", notification_need, notification_reason, "notifications"),
-        _capability("admin", admin_need, admin_reason, "admin_access"),
-        _capability("storage", storage_need, file_reason if file_need != "not_needed" else data_reason, "file_storage,data_persistence"),
+        _capability("server", server_need, "跨设备、第三方内容、后台、多人协作或交易责任共同决定是否需要远程服务。", _source_refs(requirements, "cross_device", "external_data", "admin_access", "multi_user", *domain_known)),
+        _capability("database", database_need, database_reason, _source_refs(requirements, "data_persistence", *domain_known)),
+        _capability("api", api_need, external_reason if external_need != "not_needed" else "订单和物流等业务接口需求取决于用户确认的交易流程。", _source_refs(requirements, "external_data", "orders_commissions_settlement", "logistics")),
+        _capability("auth", account_need, account_reason if account_need != "required" or not domain_known else "卖家、买家和鉴定责任需要用户确认的身份与角色边界。", _source_refs(requirements, "account_access", "identity_verification", "authentication_responsibility")),
+        _capability("payment", payment_need, payment_reason if payment_need != "required" or "orders_commissions_settlement" not in domain_known else "订单、佣金、结算和退款规则来自用户确认的交易问题。", _source_refs(requirements, "payments", "orders_commissions_settlement")),
+        _capability("notifications", notification_need, notification_reason, _source_refs(requirements, "notifications")),
+        _capability("admin", admin_need, admin_reason if admin_need != "required" or not domain_known else "卖家审核、售后争议和风控治理需要用户确认的后台责任。", _source_refs(requirements, "admin_access", "seller_onboarding", "after_sales_disputes", "risk_governance")),
+        _capability("storage", storage_need, storage_reason if file_need != "not_needed" else data_reason, _source_refs(requirements, "file_storage", "data_persistence", "product_listing")),
     ]
     unresolved = list(platform_info["unresolved"])
     unresolved.extend(project_unresolved)
-    for question in QUESTION_DEFINITIONS:
+    for question in session["questions"]:
         question_id = question["id"]
         requirement = requirements.get(question_id)
         if question_id not in session["answers"]:
@@ -183,11 +229,11 @@ def build_recommendation(session: dict[str, Any]) -> dict[str, Any]:
             unresolved.append(f"{question_id}:answer_conflict")
     unresolved = list(dict.fromkeys(unresolved))
     assumptions = [
-        "本推荐只代表离线方案，不表示已经连接服务器、数据库、账号、支付或通知服务。",
-        "技术版本、平台工具链和费用未在本次离线事务中联网核实。",
+        "agent.assumption:本推荐只代表离线方案，不表示已经连接服务器、数据库、账号、支付或通知服务。",
+        "agent.assumption:技术版本、平台工具链和费用未在本次离线事务中联网核实。",
     ]
     if not platform_info["requested"]:
-        assumptions.append("平台暂未确认，网页只是低置信度占位建议。")
+        assumptions.append("agent.assumption:平台暂未确认，网页只是低置信度占位建议。")
     status = "ready" if session["state"] == "recommendation_ready" and not unresolved else "draft"
     acceptance = [
         f"业务目标：{project['goal']}",
@@ -201,7 +247,7 @@ def build_recommendation(session: dict[str, Any]) -> dict[str, Any]:
         "status": status,
         "project": project,
         "platforms": platform_info,
-        "stack": _stack(platform_info["primary"], {"server": server_need, "database": data_need, "api": api_need}),
+        "stack": _stack(platform_info["primary"], {"server": server_need, "database": database_need, "api": api_need}),
         "capabilities": capabilities,
         "assumptions": assumptions,
         "unresolved": unresolved,

@@ -18,6 +18,7 @@ from opencoding.service import (
     ServiceError,
     apply_approved,
     approve_preview,
+    build_caller_confirmation,
     create_session,
     execution_status,
     preview_session,
@@ -61,7 +62,7 @@ def _apply_child(root_text: str, approval: dict, ready, release, queue) -> None:
 
     service_module.session_write_lock = checkpoint
     try:
-        queue.put(("apply", apply_approved(Path(root_text), approval)))
+        queue.put(("apply", apply_approved(Path(root_text), approval, authorization_context=approval["authorization_context"])))
     except BaseException as exc:  # pragma: no cover - child diagnostic
         queue.put(("apply-error", type(exc).__name__, str(exc)))
         raise
@@ -73,6 +74,15 @@ def _save_child(root_text: str, session_id: str, revision: int, queue) -> None:
     except BaseException as exc:  # pragma: no cover - child diagnostic
         queue.put(("save-error", type(exc).__name__, str(exc)))
         raise
+
+
+def _approve(preview: dict) -> dict:
+    receipt = build_caller_confirmation(
+        preview,
+        statement="用户确认精确预览范围，只生成本地文档。",
+        actor="test-human",
+    )
+    return approve_preview(preview, confirmation=receipt)
 
 
 class ProductServiceTests(unittest.TestCase):
@@ -125,7 +135,7 @@ class ProductServiceTests(unittest.TestCase):
             preview = preview_session(root, view["session"]["id"])
             self.assertEqual(preview["root"], preview["file_plan"]["root"])
             self.assertEqual(preview["root"], str(root.resolve(strict=True)))
-            self.assertTrue(approve_preview(preview)["approved"])
+            self.assertTrue(_approve(preview)["approved"])
 
     def test_frontier_follows_dependencies_and_changed_answer_is_visible(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -146,11 +156,11 @@ class ProductServiceTests(unittest.TestCase):
             root = Path(directory)
             view = _complete(root)
             preview = preview_session(root, view["session"]["id"])
-            approval = approve_preview(preview)
+            approval = _approve(preview)
             self.assertEqual(approval["action"]["kind"], "local_write")
             self.assertFalse(approval["action"]["external"])
             self.assertEqual(approval["action"]["cost_limit"], 0)
-            applied = apply_approved(root, approval)
+            applied = apply_approved(root, approval, authorization_context=approval["authorization_context"])
             self.assertEqual(applied["status"], "applied")
             transaction = applied["transaction"]
             self.assertTrue(transaction["changed_paths"])
@@ -169,13 +179,13 @@ class ProductServiceTests(unittest.TestCase):
                 approve_preview(dict(preview, unknown_field=True))
             with self.assertRaises(ServiceError):
                 approve_preview(preview, expires_in_seconds=-1)
-            approval = approve_preview(preview)
+            approval = _approve(preview)
             wrong_targets = deepcopy(approval)
             wrong_targets["targets"] = list(reversed(wrong_targets["targets"]))
             with self.assertRaises(ServiceError):
                 apply_approved(root, wrong_targets)
             (root / "memory.md").write_text("用户后来修改的内容", encoding="utf-8")
-            result = apply_approved(root, approval)
+            result = apply_approved(root, approval, authorization_context=approval["authorization_context"])
             self.assertEqual(result["status"], "stale")
             self.assertIn("business_or_file_plan_drift", result["reason_codes"])
             self.assertEqual((root / "memory.md").read_text(encoding="utf-8"), "用户后来修改的内容")
@@ -185,10 +195,10 @@ class ProductServiceTests(unittest.TestCase):
             root = Path(directory)
             view = _complete(root)
             preview = preview_session(root, view["session"]["id"])
-            approval = approve_preview(preview)
+            approval = _approve(preview)
             changed = submit_answer(root, view["session"]["id"], view["session"]["revision"], "audience", "后来用户")
             self.assertEqual(changed["status"], "saved")
-            result = apply_approved(root, approval)
+            result = apply_approved(root, approval, authorization_context=approval["authorization_context"])
             self.assertEqual(result["status"], "stale")
             current = session_view(root, view["session"]["id"])
             self.assertEqual(current["session"]["answers"]["audience"], "后来用户")
@@ -198,7 +208,7 @@ class ProductServiceTests(unittest.TestCase):
             root = Path(directory)
             view = _complete(root)
             preview = preview_session(root, view["session"]["id"])
-            approval = approve_preview(preview)
+            approval = _approve(preview)
             context = multiprocessing.get_context("spawn")
             ready = context.Event()
             release = context.Event()

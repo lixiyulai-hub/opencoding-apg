@@ -1,0 +1,50 @@
+{
+  "transaction": "opencoding-marketplace-clarification-20261003",
+  "confirmed_date": "2026-10-03",
+  "implementation_commit": "81105b6",
+  "scope": "contextual second-hand luxury marketplace clarification, source separation, offline planning and reversible preview flow",
+  "targeted_checks": {
+    "command": "python -X utf8 -m unittest tests.test_marketplace_flow tests.test_product_intake tests.test_product_decisions tests.test_product_documents tests.test_product_planning tests.test_product_sessions tests.test_product_service",
+    "tests": 74,
+    "status": "passed",
+    "exit_status": 0
+  },
+  "service_flow": {
+    "questions": 20,
+    "revision": 20,
+    "recommendation": "ready",
+    "tasks": 29,
+    "preview_targets": 14,
+    "apply": "applied",
+    "rollback": "rolled_back"
+  },
+  "full_baseline": {
+    "command": "python -X utf8 -m unittest",
+    "tests": 225,
+    "failures": 19,
+    "errors": 5,
+    "status": "environment_limited",
+    "blockers": [
+      "cargo executable is unavailable",
+      "zero-write scheduler snapshot tests require a supported platform",
+      "pre-existing transaction rollback expectations fail in this environment"
+    ]
+  },
+  "source_boundaries": [
+    "answer_history.source=user",
+    "marketplace scenario source=user.answers.<question_id>",
+    "agent assumptions are prefixed agent.assumption: and rendered outside confirmed facts",
+    "unknown marketplace answers remain draft and unresolved"
+  ],
+  "rollback": {
+    "command": "bash artifacts/opencoding-marketplace-clarification-20261003/ROLLBACK.sh 81105b6",
+    "executed": false,
+    "reason": "checkpoint is retained for review; rollback path is recorded and the local service rollback was exercised"
+  },
+  "boundaries": [
+    "no external provider or network",
+    "no credentials or real payment",
+    "no deployment, merge, release or public registration",
+    "no production data or legal policy decision"
+  ]
+}

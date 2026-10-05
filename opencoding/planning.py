@@ -22,6 +22,7 @@ _ACTION_FIELDS = {
     "verify_feature": {"type", "scenario_id", "platform"},
 }
 _CAPABILITIES = {"server", "database", "api", "auth", "payment", "notifications", "admin", "storage", "deployment"}
+_INTEGRATION_CAPABILITIES = _CAPABILITIES | {"external_data", "identity", "kyc", "logistics", "authentication", "risk"}
 _PLATFORMS = {"windows", "macos", "ios", "android", "web", "mini_program", "cli"}
 _TASK_KEYS = {"id", "title", "description", "depends_on", "inputs", "outputs", "action", "acceptance", "rollback", "retry", "activation_gate"}
 _PLAN_KEYS = {"schema_version", "session_id", "revision", "tasks", "waves", "unresolved"}
@@ -33,7 +34,7 @@ _ACTION_CAPABILITIES = {
     "define_schema": {"database"},
     "define_interface": {"api"},
     "define_access": {"auth", "admin"},
-    "integration_design": {"payment", "notifications", "deployment"},
+    "integration_design": _INTEGRATION_CAPABILITIES,
 }
 
 
@@ -43,6 +44,33 @@ def _gate(reason: str, required: bool = False) -> dict[str, Any]:
 
 def _task(task_id: str, title: str, description: str, depends_on: list[str], inputs: list[str], outputs: list[str], action: dict[str, Any], acceptance: list[str], activation_gate: dict[str, Any] | None = None) -> dict[str, Any]:
     return {"id": task_id, "title": title, "description": description, "depends_on": depends_on, "inputs": inputs, "outputs": outputs, "action": action, "acceptance": acceptance, "rollback": "仅移除本任务生成的草案输出，保留此前证据和用户修改。", "retry": {"max_attempts": 2}, "activation_gate": activation_gate or _gate("仅离线规划，不激活外部服务。")}
+
+
+def _integration_task(
+    task_id: str,
+    title: str,
+    capability: str,
+    output: str,
+    dependencies: list[str],
+    inputs: list[str],
+) -> dict[str, Any]:
+    return {
+        "id": task_id,
+        "title": title,
+        "description": f"为 {title} 生成离线方案编排；不连接真实服务、不创建账号、不读取密钥，未来激活必须经过人工 Gate。",
+        "depends_on": dependencies,
+        "inputs": inputs,
+        "outputs": [output],
+        "action": {"type": "integration_design", "capability": capability},
+        "acceptance": [
+            "明确数据、责任、费用、失败补偿和人工接管边界。",
+            "当前状态保持 offline_design_only，未创建账号、未接通服务、未使用密钥。",
+            "人工 Gate、停用路径和本地草案回滚条件可复核。",
+        ],
+        "rollback": "只移除本任务生成的离线方案草案，保留 receipt、哈希和用户修改；未来外部停用另需独立人工 Gate。",
+        "retry": {"max_attempts": 2},
+        "activation_gate": _gate("人工 Gate：精确确认供应商、数据范围、凭据、费用、责任和回滚后才可激活；当前保持未启用。", True),
+    }
 
 
 def _feature_artifacts(platform: str, technology: str) -> tuple[str, str] | None:
@@ -343,11 +371,35 @@ def build_task_plan(recommendation: dict) -> dict:
         tasks.append(_task("permissions", "定义角色权限", "定义谁可以执行已确认的业务动作。", ["product-and-ui"], ["product.md", "ui.md"], ["permissions.md"], {"type": "define_access", "capability": access_capability}, ["角色边界清楚。", "未回答的权限不被授予。"]))
     security_deps = ["architecture"] + (["permissions"] if any(task["id"] == "permissions" for task in tasks) else [])
     tasks.append(_task("security-review", "检查安全与证据边界", "检查秘密、外部影响和未解决事项是否仍受控。", security_deps, ["architecture.md"], ["security.md"], {"type": "security_review"}, ["无秘密进入生成内容。", "外部激活仍有确认边界。"]))
+    integration_specs = {
+        "server": ("integration-server", "编排服务端边界", "integrations/server.md"),
+        "database": ("integration-database", "编排数据库边界", "integrations/database.md"),
+        "auth": ("integration-auth", "编排身份与认证边界", "integrations/auth.md"),
+        "storage": ("integration-storage", "编排文件与对象存储边界", "integrations/storage.md"),
+        "api": ("integration-api", "编排接口边界", "integrations/api.md"),
+    }
+    for capability_id, (task_id, title, output) in integration_specs.items():
+        if capabilities[capability_id]["need"] != "not_needed":
+            tasks.append(_integration_task(task_id, title, capability_id, output, ["architecture", "security-review"], ["architecture.md", "security.md"]))
+    if capabilities["api"]["need"] != "not_needed":
+        tasks.append(_integration_task("integration-external-data", "编排外部数据边界", "external_data", "integrations/external-data.md", ["architecture", "security-review"], ["architecture.md", "security.md", "interface.md"]))
+    marketplace_specs = {
+        "marketplace-seller-onboarding": ("integration-kyc", "编排卖家准入与 KYC 边界", "kyc", "integrations/kyc.md"),
+        "marketplace-identity-verification": ("integration-identity", "编排身份核验边界", "identity", "integrations/identity.md"),
+        "marketplace-logistics": ("integration-logistics", "编排物流履约边界", "logistics", "integrations/logistics.md"),
+        "marketplace-authentication-responsibility": ("integration-authentication", "编排商品鉴定边界", "authentication", "integrations/authentication.md"),
+        "marketplace-risk-governance": ("integration-risk", "编排风控与治理边界", "risk", "integrations/risk.md"),
+    }
+    for scenario in recommendation["project"]["scenarios"]:
+        spec = marketplace_specs.get(scenario["id"])
+        if spec is not None:
+            task_id, title, capability_id, output = spec
+            tasks.append(_integration_task(task_id, title, capability_id, output, ["architecture", "security-review"], ["architecture.md", "security.md", "product.md"]))
     for capability_id, task_id, title, output in (("payment", "payment-boundary", "定义支付边界", "payment.md"), ("notifications", "notification-boundary", "定义通知边界", "notifications.md")):
         if capabilities[capability_id]["need"] != "not_needed":
-            tasks.append(_task(task_id, title, f"描述 {capability_id} 对业务结果的影响，不连接服务商。", ["architecture", "security-review"], ["architecture.md", "security.md"], [output], {"type": "integration_design", "capability": capability_id}, ["能力被标记为计划而非已接通。", "风险和费用边界清楚。"], _gate("当前仅设计产物；未来激活外部服务时另行确认。")))
+            tasks.append(_task(task_id, title, f"描述 {capability_id} 对业务结果的影响，不连接服务商、不创建账号、不读取密钥。", ["architecture", "security-review"], ["architecture.md", "security.md"], [output], {"type": "integration_design", "capability": capability_id}, ["能力被标记为计划而非已接通。", "风险、费用、人工 Gate 和回滚边界清楚。", "当前保持 offline_design_only。"], _gate("人工 Gate：精确确认供应商、数据范围、费用、责任和回滚后才可激活；当前保持未启用。", True)))
     if "deployment.md" in available_docs:
-        tasks.append(_task("deployment-boundary", "定义交付边界", "记录部署条件但不执行部署。", ["architecture", "security-review"], ["architecture.md", "security.md"], ["deployment.md"], {"type": "integration_design", "capability": "deployment"}, ["目标、回滚和数据范围已列出。", "没有执行部署。"], _gate("当前仅设计产物；部署激活时另行确认。")))
+        tasks.append(_task("deployment-boundary", "定义交付边界", "记录部署条件但不执行部署、不创建账号或写入密钥。", ["architecture", "security-review"], ["architecture.md", "security.md"], ["deployment.md"], {"type": "integration_design", "capability": "deployment"}, ["目标、回滚和数据范围已列出。", "没有执行部署。", "当前保持 offline_design_only。"], _gate("人工 Gate：精确确认目标、凭据、费用、数据范围和回滚后才可激活。", True)))
     design_dependencies = [task["id"] for task in tasks]
     scenario_platform = recommendation["platforms"]["primary"] or (recommendation["platforms"]["requested"][0] if recommendation["platforms"]["requested"] else None)
     plan_unresolved = list(recommendation["unresolved"]) + list(recommendation["platforms"]["unresolved"])

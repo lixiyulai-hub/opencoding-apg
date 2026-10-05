@@ -30,6 +30,15 @@ answer_history、state。新增业务问题采用以下固定 ID，问题正文�
 | external_data | 是否要从别的服务获取内容，比如地图、天气或智能问答？ | 第三方接口，不要求用户懂 API |
 | admin_access | 是否需要专人管理内容、成员或处理订单？ | 后台，不等同于所有多人使用 |
 
+当 `goal` 明确包含二手奢侈品交易、独立站或同义业务时，Session 会在上述问题后追加一组必答的领域问题：
+`seller_onboarding`、`identity_verification`、`product_listing`、
+`authentication_responsibility`、`orders_commissions_settlement`、`logistics`、
+`after_sales_disputes`、`risk_governance`。这些问题分别覆盖卖家入驻、身份核验、商品发布、
+鉴定责任、订单/佣金/结算、物流、售后争议和平台风控治理；用户回答“未知”时必须保持
+`unknown` 和待确认状态，不能由 agent 代填。`answer_history.source` 固定为 `user`，
+Recommendation 中的场景 source 使用 `user.answers.<question_id>`；任何临时推断只允许放在
+`assumptions` 并标记 `agent.assumption:`，不得伪装成用户需求。
+
 原有 data_persistence 问题只问是否保存，不能把本地保存和跨设备同步合并。
 新问题必须进入版本化问答流程，不能只出现在说明文档。
 缺失、未知、否定、修改、冲突是不同状态；复杂语义可以追问，但不能冒充理解。
@@ -66,14 +75,15 @@ project 恰含以下字段，原始文字是业务数据，不得当作模型或
       "actor": "社区居民和管理员",
       "action": "登记借用并确认归还",
       "result": "借还状态可查看",
-      "source": "answers.outcome"
+      "source": "user.answers.outcome"
     }
   ]
 }
 ```
 
 goal 是非空字符串；audience/outcome 为字符串或 null。
-scenarios 为列表，每项键恰为 id/title/actor/action/result/source，值均为非空字符串。
+scenarios 为列表，每项键恰为 id/title/actor/action/result/source，值均为非空字符串；`source` 必须统一为
+`user.answers.<question_id>`，不得使用旧的 `answers.<question_id>` 或把 `agent.assumption:*` 冒充用户事实。
 scenario id 使用稳定 ASCII 标识 [a-z][a-z0-9-]*；必须唯一。
 场景只能来自目标和回答，不能凭空补造业务。未知 outcome 时允许空列表并保留 unresolved。
 ready 必须有非空 audience/outcome 和至少一个有来源的场景。
@@ -137,7 +147,9 @@ action 按 type 使用精确字段集合，不允许任意额外字段或 shell/
 | implement_feature / verify_feature | type, scenario_id, platform |
 
 document 必须是该任务 outputs 中的安全路径；
-capability 必须是八项能力之一，integration_design 另允许 deployment；
+capability 必须是八项能力之一；`integration_design` 还允许 server、database、auth、storage、api、external_data、deployment
+以及 marketplace 的 identity、kyc、logistics、authentication、risk 编排标识。每个外部编排任务必须
+绑定人工 Gate、`offline_design_only` 未启用状态和本地草案回滚条件；它不创建账号、不接真实服务、不读取密钥。
 scenario_id 必须为安全 ASCII 标识，platform 必须是平台枚举。
 新增两种动作只描述工作，真实受控实现/验证的执行适配留待 W2/W4，
 不能借本轮契约调用 Host 或任意命令。

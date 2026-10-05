@@ -32,7 +32,7 @@ python -m opencoding --root C:\path\to\authorized-project --status --json
 
 交互式 CLI 会在开始时创建或恢复会话；创建/回答会写本地会话，只有在操作者确认精确 preview 范围后才会尝试生成本地文档。`--preview` 和 `--status` 是查看入口；`--rollback TRANSACTION_ID` 是本地回滚操作。
 
-已安装包中可直接调用的会话/文档 API 是：`create_session(root, goal)`、`session_view(root, session_id, *, include_preview=False)`、`list_sessions(root)`、`submit_answer(root, session_id, expected_revision, question_id, answer)`、`preview_session(root, session_id)`、`approve_preview(preview, *, expires_in_seconds=300)`、`apply_approved(root, approval)` 和 `rollback(root, transaction_id)`。创建会话和提交回答会在文档 apply 前写入本地会话；`preview_session` 是查看精确 targets 和 diff 的零写入步骤；`approve_preview` 只校验完整 preview 并在内存中生成到期的本地 approval；只有调用方已记录用户对该 exact reviewed root、targets 和 diff 的授权后，才应调用 `apply_approved`。不能自行构造 approval，也不能把其中的 `approved` 字段当成外部授权。对 `busy` 或 `stale` 结果，停止当前流程、重新读取并重新 preview，不得继续 apply。
+已安装包中可直接调用的会话/文档 API 是：`create_session(root, goal)`、`session_view(root, session_id, *, include_preview=False)`、`list_sessions(root)`、`submit_answer(root, session_id, expected_revision, question_id, answer)`、`preview_session(root, session_id)`、`build_caller_confirmation(preview, *, statement, actor=...)`、`approve_preview(preview, *, confirmation, expires_in_seconds=300)`、`apply_approved(root, approval, authorization_context=...)` 和 `rollback(root, transaction_id)`。创建会话和提交回答会在文档 apply 前写入本地会话；`preview_session` 是查看精确 targets 和 diff 的零写入步骤；调用方必须先让人确认该 exact reviewed root、session revision、targets 和 diff，再生成 caller-issued receipt。`approve_preview` 会把该 receipt 绑定到到期的本地 approval；`apply_approved` 必须收到同一份 `authorization_context`，否则拒绝。不能自行构造或编辑 approval，也不能把其中的 `approved` 字段当成外部授权。对 `busy` 或 `stale` 结果，停止当前流程、重新读取并重新 preview，不得继续 apply。
 
 已安装包也导出 `opencoding.scheduler.read_snapshot(root, task_id=None)`、`recover(root)` 和 `requeue(root, task_id, idempotency_key)`。只有 `read_snapshot` 以及 CLI 的 `--status` 是零写入状态查看；它们不会初始化、迁移或恢复 scheduler。`recover` 和 `requeue` 都会构造 `Scheduler`，而构造 scheduler 会初始化/迁移本地状态并执行恢复；它们是需要授权本地范围的写入操作。`get_task` 与 `list_runs` 也构造 scheduler，因此不能仅因最后查询而标记为零写入。`requeue` 需要匹配 idempotency key，可能因状态或 attempt 限制被拒绝；`recover` 仅恢复遗留运行记录，二者都不会单独执行任务，也不会把 TaskPlan 变成真实执行。
 
@@ -56,4 +56,4 @@ python -c "import pathlib, setuptools.build_meta as backend; out=pathlib.Path('d
 python -m opencoding --root C:\path\to\local-project --status --json
 ```
 
-该包不连接 Host、Provider、网络、凭据或真实外部服务。生成文档仍需在本地交互流程中确认精确写入范围，生成的本地事务可通过 `--rollback` 回滚。
+该包不连接 Host、Provider、网络、凭据或真实外部服务。服务端、数据库、身份/KYC、存储、外部数据、支付、通知、物流、鉴定和风控集成只生成带人工 Gate、未启用状态和回滚说明的离线方案；不会创建账号或写入密钥。生成文档仍需在本地交互流程中确认精确写入范围，生成的本地事务可通过 `--rollback` 回滚。

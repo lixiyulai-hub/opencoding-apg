@@ -13,6 +13,7 @@ from .service import (
     apply_approved,
     approve_preview,
     as_json,
+    build_caller_confirmation,
     create_session,
     execution_status,
     preview_session,
@@ -232,8 +233,13 @@ def _wizard(root: str, resume: str | None, input_fn: Callable[[str], str]) -> in
     if confirmation not in {"确认", "同意", "yes", "y"}:
         print("已拒绝；未写入业务文件。")
         return 0
-    approval = approve_preview(preview)
-    result = apply_approved(root, approval)
+    caller_receipt = build_caller_confirmation(
+        preview,
+        statement="用户确认以上方案、精确范围和差异，只生成本地文档。",
+        actor="interactive-cli",
+    )
+    approval = approve_preview(preview, confirmation=caller_receipt)
+    result = apply_approved(root, approval, authorization_context=caller_receipt)
     if result.get("status") != "applied":
         print("应用未完成：" + as_json(result))
         return 2

@@ -35,7 +35,7 @@ def recommendation(*, revision=1, status="ready", payment="not_needed", notifica
             "actor": "社区居民和管理员",
             "action": "登记借用并确认归还",
             "result": "借还状态可查看",
-            "source": "answers.outcome",
+            "source": "user.answers.outcome",
         }],
     }
     return {
