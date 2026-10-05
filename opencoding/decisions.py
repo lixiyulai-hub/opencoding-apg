@@ -148,7 +148,7 @@ def _business_project(session: dict[str, Any]) -> tuple[dict[str, Any], list[str
             "actor": audience,
             "action": outcome,
             "result": outcome,
-            "source": "answers.outcome",
+            "source": "user.answers.outcome",
         })
     for question_id, (title, actor, action, result) in _MARKETPLACE_SCENARIOS.items():
         requirement = requirements.get(question_id)

@@ -20,7 +20,22 @@ _NEEDS = {"required", "optional", "not_needed", "unknown"}
 _STATUSES = {"draft", "ready"}
 _CONFIDENCE = {"low", "medium", "high"}
 _SCENARIO_ID = re.compile(r"^[a-z][a-z0-9-]*$")
+_SCENARIO_SOURCE = re.compile(r"^user\.answers\.[a-z][a-z0-9_]*$")
 _BASE_DOCUMENT_NAMES = ("AGENTS.md", "memory.md", "PRG.md", "plan.md", "product.md", "architecture.md", "ui.md", "security.md")
+_INTEGRATION_CAPABILITY_DOCS = {
+    "server": ("integrations/server.md", "服务端边界"),
+    "database": ("integrations/database.md", "数据库边界"),
+    "auth": ("integrations/auth.md", "身份与认证边界"),
+    "storage": ("integrations/storage.md", "文件与对象存储边界"),
+    "api": ("integrations/api.md", "接口边界"),
+}
+_MARKETPLACE_INTEGRATION_DOCS = {
+    "marketplace-seller-onboarding": ("integrations/kyc.md", "卖家准入与 KYC 边界"),
+    "marketplace-identity-verification": ("integrations/identity.md", "身份核验边界"),
+    "marketplace-logistics": ("integrations/logistics.md", "物流履约边界"),
+    "marketplace-authentication-responsibility": ("integrations/authentication.md", "商品鉴定边界"),
+    "marketplace-risk-governance": ("integrations/risk.md", "风控与治理边界"),
+}
 
 
 def _non_empty(value: Any, field: str) -> None:
@@ -48,6 +63,8 @@ def _validate_scenarios(value: Any) -> None:
         seen.add(scenario_id)
         for field in _SCENARIO_KEYS - {"id"}:
             _non_empty(scenario[field], f"scenario.{field}")
+        if not _SCENARIO_SOURCE.fullmatch(scenario["source"]):
+            raise ValueError("scenario.source must be user.answers.<question_id>")
 
 
 def validate_recommendation(recommendation: Mapping[str, Any]) -> None:
@@ -165,6 +182,13 @@ def document_names(recommendation: Mapping[str, Any]) -> list[str]:
         names.append("payment.md")
     if _need(capabilities, "notifications") != "not_needed":
         names.append("notifications.md")
+    for capability_id, (path, _title) in _INTEGRATION_CAPABILITY_DOCS.items():
+        if _need(capabilities, capability_id) != "not_needed":
+            names.append(path)
+    for scenario in recommendation["project"]["scenarios"]:
+        path_title = _MARKETPLACE_INTEGRATION_DOCS.get(scenario["id"])
+        if path_title and path_title[0] not in names:
+            names.append(path_title[0])
     if any(_need(capabilities, item) != "not_needed" for item in ("server", "storage", "api", "payment", "notifications")):
         names.append("deployment.md")
     return names
@@ -180,6 +204,45 @@ def _business_context(recommendation: Mapping[str, Any]) -> list[str]:
     if project["scenarios"]:
         lines.append("- 业务场景：" + "；".join(item["title"] for item in project["scenarios"]))
     return lines
+
+
+def _integration_document(
+    title: str,
+    *,
+    need: str,
+    reason: str,
+    source: str,
+    scenario: Mapping[str, Any] | None = None,
+) -> str:
+    scenario_lines = []
+    if scenario is not None:
+        scenario_lines = [
+            f"- 用户场景：{scenario['title']}；{scenario['action']}；预期结果：{scenario['result']}。",
+            f"- 场景来源：{scenario['source']}。",
+        ]
+    return "\n".join([
+        f"# {title}",
+        "",
+        "本文件只记录离线方案编排，不连接真实服务、不创建账号、不读取或保存密钥，也不发送网络请求。",
+        "",
+        "## 当前判断",
+        "",
+        f"- 需求状态：{need}。",
+        f"- 判断依据：{reason}",
+        f"- 来源：{source}",
+        *scenario_lines,
+        "",
+        "## 编排与人工 Gate",
+        "",
+        "- 编排顺序：定义最小数据与接口 → 使用离线 fixture 验证 → 明确责任、费用、地域、保留期和审计 → 由人确认精确供应商与范围。",
+        "- 人工 Gate：只有调用方对目标、数据范围、凭据、费用、法律责任和回滚方案作出新的精确确认，才可进入后续激活事务。",
+        "- 当前状态：未启用（offline_design_only）；本轮不把方案、TaskPlan 或文档写成已接通。",
+        "",
+        "## 回滚与停用",
+        "",
+        "- 本轮回滚：只移除本地草案，保留 receipt、哈希和用户修改；不触碰任何外部系统。",
+        "- 未来激活前必须准备停用、数据导出/删除、密钥轮换、重试补偿和人工接管 runbook；本轮不执行这些动作。",
+    ])
 
 
 def render_documents(recommendation: dict, task_plan: Mapping[str, Any] | None = None) -> dict[str, str]:
@@ -235,6 +298,35 @@ def render_documents(recommendation: dict, task_plan: Mapping[str, Any] | None =
         docs["payment.md"] = "\n".join(["# 支付边界", "", f"支付需求：{_need(capabilities, 'payment')}。", "", "这里只设计业务与风险边界，不连接支付服务；服务商、凭据、费用和撤销流程需要单独确认。"])
     if _need(capabilities, "notifications") != "not_needed":
         docs["notifications.md"] = "\n".join(["# 通知边界", "", f"通知需求：{_need(capabilities, 'notifications')}。", "", "这里只描述收件人、触发条件和退出方式，不联系通知服务。"])
+    for capability_id, (path, title) in _INTEGRATION_CAPABILITY_DOCS.items():
+        if _need(capabilities, capability_id) != "not_needed":
+            capability = capabilities[capability_id]
+            docs[path] = _integration_document(
+                title,
+                need=capability["need"],
+                reason=capability["reason"],
+                source=capability["source"],
+            )
+    if _need(capabilities, "api") != "not_needed":
+        api_capability = capabilities["api"]
+        docs["integrations/external-data.md"] = _integration_document(
+            "外部数据边界",
+            need=api_capability["need"],
+            reason="外部数据是否需要真实服务仍须按用户回答和人工 Gate 单独确认；接口设计不等于连接。",
+            source=api_capability["source"],
+        )
+    scenarios_by_id = {scenario["id"]: scenario for scenario in project["scenarios"]}
+    for scenario_id, (path, title) in _MARKETPLACE_INTEGRATION_DOCS.items():
+        scenario = scenarios_by_id.get(scenario_id)
+        if scenario is not None:
+            question_id = scenario_id.removeprefix("marketplace-").replace("-", "_")
+            docs[path] = _integration_document(
+                title,
+                need="required",
+                reason=f"用户确认的 marketplace 责任边界需要单独设计，避免把业务责任交给默认集成。",
+                source=f"user.answers.{question_id}",
+                scenario=scenario,
+            )
     if any(_need(capabilities, item) != "not_needed" for item in ("server", "storage", "api", "payment", "notifications")):
         docs["deployment.md"] = "\n".join(["# 部署边界", "", "部署是后续事务，不由文档渲染执行。", "", "- 在目标、数据范围、凭据、费用和回滚条件确认前不得激活。", "- 本地规划结果不是部署或发布证据。"])
     return docs

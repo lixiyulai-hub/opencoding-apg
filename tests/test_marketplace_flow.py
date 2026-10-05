@@ -64,7 +64,7 @@ class MarketplaceFlowTests(unittest.TestCase):
         validate_recommendation(recommendation)
         self.assertEqual(recommendation["status"], "ready")
         self.assertEqual(len(recommendation["project"]["scenarios"]), 9)
-        self.assertTrue(all(item["source"].startswith("user.answers.") or item["source"] == "answers.outcome" for item in recommendation["project"]["scenarios"]))
+        self.assertTrue(all(item["source"].startswith("user.answers.") for item in recommendation["project"]["scenarios"]))
         capabilities = {item["id"]: item for item in recommendation["capabilities"]}
         for capability_id in ("server", "database", "api", "auth", "payment", "admin", "storage"):
             self.assertEqual(capabilities[capability_id]["need"], "required", capability_id)
@@ -76,6 +76,21 @@ class MarketplaceFlowTests(unittest.TestCase):
         self.assertIn("user.answers.seller_onboarding", docs["product.md"])
         self.assertIn("Agent 临时假设", docs["memory.md"])
         self.assertIn("不自行收购或囤货", docs["memory.md"])
+        integration_tasks = {
+            task["action"]["capability"]: task
+            for task in plan["tasks"]
+            if task["action"]["type"] == "integration_design"
+        }
+        for capability in ("server", "database", "auth", "storage", "api", "external_data", "payment", "notifications", "identity", "kyc", "logistics", "authentication", "risk"):
+            self.assertIn(capability, integration_tasks)
+            self.assertTrue(integration_tasks[capability]["activation_gate"]["required"], capability)
+            self.assertIn("人工 Gate", integration_tasks[capability]["activation_gate"]["reason"])
+            self.assertIn("offline_design_only", " ".join(integration_tasks[capability]["acceptance"]))
+        for path in ("integrations/server.md", "integrations/database.md", "integrations/auth.md", "integrations/storage.md", "integrations/api.md", "integrations/external-data.md", "integrations/identity.md", "integrations/kyc.md", "integrations/logistics.md", "integrations/authentication.md", "integrations/risk.md"):
+            self.assertIn(path, docs)
+            self.assertIn("不连接真实服务", docs[path])
+            self.assertIn("人工 Gate", docs[path])
+            self.assertIn("offline_design_only", docs[path])
 
     def test_pending_phrase_cannot_become_a_confirmed_requirement(self):
         session = complete_marketplace_session({"logistics": "卖家发货，物流规则待确认。"})

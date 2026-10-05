@@ -4,7 +4,7 @@ This guide is for Codex and other agents that work in a local repository. It des
 
 ## Scope and authority
 
-Every call uses an explicit existing local project root. The caller must establish that the root, user goal, reviewed preview, and any local write are within the user's authorization. An `approved` field inside an approval object is part of the local integrity check; it is not evidence that a user authorized an arbitrary scope, and it is never authorization for external work.
+Every call uses an explicit existing local project root. The caller must establish that the root, user goal, reviewed preview, and any local write are within the user's authorization. An `approved` field inside an approval object is only a local integrity flag; it is not evidence that a user authorized an arbitrary scope, and it is never authorization for external work. The caller must issue a human confirmation receipt bound to the exact root, session revision, service digest, targets, and diff before an approval can be created or applied.
 
 The current package does not connect to a Host, provider, network, credentials, real production data, deployment target, or publication channel. Path checks and application locks are not an operating-system sandbox. A TaskPlan is a planning result, not a scheduler success record or permission to run arbitrary code.
 
@@ -32,8 +32,9 @@ The following service functions have these signatures and effects:
 | `execution_status(root, task_id=None)` | Zero-write scheduler snapshot; it does not initialize, migrate, or recover scheduler state. |
 | `create_session(root, goal)` | Writes a persisted local session. |
 | `submit_answer(root, session_id, expected_revision, question_id, answer)` | Writes a revisioned answer, or returns `busy`/`stale`. |
-| `approve_preview(preview, *, expires_in_seconds=300)` | Validates a complete ready preview and returns an in-memory, expiring local approval object. |
-| `apply_approved(root, approval)` | Revalidates identity, revision, digests, targets, expiry, and file-plan drift before local document writes. |
+| `build_caller_confirmation(preview, *, statement, actor=...)` | Records the caller's receipt after a person confirms the exact preview; it does not approve or write. |
+| `approve_preview(preview, *, confirmation, expires_in_seconds=300)` | Validates a complete ready preview and binds the caller-issued receipt into an in-memory, expiring local approval object. |
+| `apply_approved(root, approval, authorization_context=...)` | Requires the same caller-issued receipt, then revalidates identity, revision, digests, targets, expiry, and file-plan drift before local document writes. |
 | `rollback(root, transaction_id)` | Performs the transaction layer's local rollback. |
 
 The normal agent sequence is shown below as a calling pattern, not an automatically executed script. `goal` and each `answer` must come from the user or an authorized local task context. The conflict branch returns to the caller before it can obtain a preview or approval.
@@ -44,6 +45,7 @@ from opencoding.service import (
     ServiceError,
     apply_approved,
     approve_preview,
+    build_caller_confirmation,
     create_session,
     preview_session,
     submit_answer,
@@ -84,10 +86,14 @@ def apply_after_exact_user_authorization(prepared):
         # Return the conflict to the calling control loop unchanged.
         return prepared
     preview = prepared["preview"]
-    # Call this function only after the user has authorized this exact reviewed root,
-    # targets, and diff through the caller's own recorded authority process.
-    approval = approve_preview(preview)
-    return apply_approved(preview["root"], approval)
+    # The caller's authority process must record this exact root, targets, and diff.
+    receipt = build_caller_confirmation(
+        preview,
+        statement="用户确认以上方案、精确范围和差异，只生成本地文档。",
+        actor="your-caller-id",
+    )
+    approval = approve_preview(preview, confirmation=receipt)
+    return apply_approved(preview["root"], approval, authorization_context=receipt)
 
 
 root = Path(r"C:\path\to\authorized-project")
@@ -95,7 +101,7 @@ prepared = collect_preview(root, goal, answer_for)
 result = apply_after_exact_user_authorization(prepared)
 ```
 
-`create_session` and `submit_answer` write session state even when documents are not applied. A `busy` or `stale` answer result has no session payload for the example to continue with; return it to the caller, re-read and reconcile there, and obtain a fresh preview later. `preview_session` is the point to inspect exact proposed document paths and diff. `approve_preview` accepts only a complete, ready, canonical preview and gives the caller an expiry-bound object; callers must not synthesize an approval dictionary. `apply_after_exact_user_authorization` is an illustrative caller-side guard, not an authorization mechanism: it must be invoked only after separate authorization for that exact reviewed local scope. `apply_approved` can return `applied`, `stale`, or `busy` outcomes. A stale or busy result is a stop-and-reconcile condition, not a signal to reuse or broaden the prior approval. `rollback` returns the transaction layer result; inspect its `status` and receipt information before declaring recovery complete.
+`create_session` and `submit_answer` write session state even when documents are not applied. A `busy` or `stale` answer result has no session payload for the example to continue with; return it to the caller, re-read and reconcile there, and obtain a fresh preview later. `preview_session` is the point to inspect exact proposed document paths and diff. `build_caller_confirmation` is a caller-side receipt assertion after the person has reviewed that exact scope; it is not a service-generated grant. `approve_preview` rejects calls without that receipt, and `apply_approved` rejects calls without the same `authorization_context`. Callers must not synthesize or edit an approval dictionary. `apply_approved` can return `applied`, `stale`, or `busy` outcomes. A stale or busy result is a stop-and-reconcile condition, not a signal to reuse or broaden the prior approval. `rollback` returns the transaction layer result; inspect its `status` and receipt information before declaring recovery complete.
 
 `ServiceError` exposes a `code`, but codes are specific to the called service operation. The CLI only promises the machine-readable status-error convention for `--status --json`; the interactive wizard and other CLI failures are not a complete, uniform JSON protocol.
 
@@ -127,5 +133,7 @@ Use scheduler controls only for an already authorized, schema-valid local task. 
 ## Verification and boundaries
 
 Before reporting a local operation as complete, inspect the returned structured result, relevant receipt or rollback result, and the applicable local verification evidence. Do not infer that planning, a preview, an approval object, a nonzero CLI exit code, or an unavailable scheduler store proves execution success.
+
+External integration tasks for server, database, authentication/identity, storage, external data, payment, notifications, and marketplace KYC, logistics, authentication, and risk are design-only. Each task carries an explicit human Gate, an `offline_design_only` state, and a local draft rollback path. They never create provider accounts, contact real services, or accept secrets. A later activation or deactivation is a separate transaction requiring a new exact confirmation.
 
 This guide does not claim universal Codex, agent, operating-system, or platform compatibility. W4 controlled Host/connectors and W5 independent beginner/platform/release acceptance remain later work. Activating a real Host or connector, using credentials or cost-bearing resources, and publication each require a separately authorized Gate.

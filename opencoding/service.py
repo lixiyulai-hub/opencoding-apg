@@ -7,7 +7,9 @@ from datetime import datetime, timedelta, timezone
 import difflib
 import json
 from pathlib import Path
+import re
 from typing import Any, Mapping
+import uuid
 
 from .decisions import build_recommendation
 from .documents import render_documents, validate_recommendation
@@ -28,6 +30,7 @@ from .transactions import apply_changes, preview_changes, rollback_changes
 
 SCHEMA_VERSION = "1.0"
 APPROVAL_SCHEMA_VERSION = "1.0"
+CONFIRMATION_SCHEMA_VERSION = "1.0"
 _APPROVAL_FIELDS = {
     "schema_version",
     "root",
@@ -42,11 +45,28 @@ _APPROVAL_FIELDS = {
     "task_plan_digest",
     "documents_digest",
     "file_plan_digest",
+    "diff_digest",
     "targets",
     "action",
     "expires_at",
     "approved",
+    "authorization_context",
 }
+_CONFIRMATION_FIELDS = {
+    "schema_version",
+    "kind",
+    "root",
+    "session_id",
+    "revision",
+    "service_digest",
+    "targets",
+    "diff_digest",
+    "statement",
+    "actor",
+    "confirmed_at",
+    "receipt_id",
+}
+_RECEIPT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$")
 _CAPABILITY_IDS = tuple(item["id"] for item in QUESTION_DEFINITIONS if item["id"] not in {"audience", "outcome", "platform"})
 
 
@@ -262,7 +282,91 @@ def preview_session(root: str | Path, session_id: str) -> dict[str, Any]:
     return session_view(root, session_id, include_preview=True)
 
 
-def approve_preview(preview: Mapping[str, Any], *, expires_in_seconds: int = 300) -> dict[str, Any]:
+def build_caller_confirmation(
+    preview: Mapping[str, Any],
+    *,
+    statement: str,
+    actor: str = "human-caller",
+    receipt_id: str | None = None,
+    confirmed_at: str | None = None,
+) -> dict[str, Any]:
+    """Build a caller-owned receipt after a person confirms the exact preview.
+
+    This helper only records the caller's assertion.  It does not approve or
+    apply anything; :func:`approve_preview` and :func:`apply_approved` still
+    bind and revalidate the receipt against the exact preview scope.
+    """
+
+    if not isinstance(preview, Mapping):
+        raise ServiceError("preview_required", "人类确认必须绑定完整的只读预览")
+    if not isinstance(statement, str) or not statement.strip():
+        raise ServiceError("human_confirmation_invalid", "人类确认必须包含可追溯的确认语句")
+    if not isinstance(actor, str) or not actor.strip():
+        raise ServiceError("human_confirmation_invalid", "人类确认必须标记调用方")
+    if receipt_id is None:
+        receipt_id = "receipt-" + uuid.uuid4().hex
+    if confirmed_at is None:
+        confirmed_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    confirmation = {
+        "schema_version": CONFIRMATION_SCHEMA_VERSION,
+        "kind": "human_confirmation",
+        "root": preview.get("root"),
+        "session_id": preview.get("session", {}).get("id") if isinstance(preview.get("session"), Mapping) else None,
+        "revision": preview.get("session", {}).get("revision") if isinstance(preview.get("session"), Mapping) else None,
+        "service_digest": preview.get("service_digest"),
+        "targets": preview.get("targets"),
+        "diff_digest": _digest(preview.get("diff")),
+        "statement": sanitize_text(statement.strip()),
+        "actor": sanitize_text(actor.strip()),
+        "confirmed_at": confirmed_at,
+        "receipt_id": receipt_id,
+    }
+    _validate_confirmation_scope(confirmation, preview)
+    return _json_value(confirmation)
+
+
+def _validate_confirmation_scope(confirmation: Mapping[str, Any], preview: Mapping[str, Any]) -> None:
+    if not isinstance(confirmation, Mapping) or set(confirmation) != _CONFIRMATION_FIELDS:
+        raise ServiceError("human_confirmation_invalid", "人类确认收据字段不完整或包含未知字段")
+    if confirmation["schema_version"] != CONFIRMATION_SCHEMA_VERSION or confirmation["kind"] != "human_confirmation":
+        raise ServiceError("human_confirmation_invalid", "人类确认收据版本或类型无效")
+    if not isinstance(confirmation["root"], str) or confirmation["root"] != preview.get("root"):
+        raise ServiceError("human_confirmation_scope_mismatch", "人类确认未绑定预览根目录")
+    session = preview.get("session")
+    if not isinstance(session, Mapping) or confirmation["session_id"] != session.get("id") or confirmation["revision"] != session.get("revision"):
+        raise ServiceError("human_confirmation_scope_mismatch", "人类确认未绑定预览会话版本")
+    if confirmation["service_digest"] != preview.get("service_digest"):
+        raise ServiceError("human_confirmation_scope_mismatch", "人类确认未绑定预览摘要")
+    if confirmation["targets"] != preview.get("targets") or not isinstance(confirmation["targets"], list) or any(not isinstance(item, str) for item in confirmation["targets"]):
+        raise ServiceError("human_confirmation_scope_mismatch", "人类确认未绑定精确目标范围")
+    if confirmation["diff_digest"] != _digest(preview.get("diff")):
+        raise ServiceError("human_confirmation_scope_mismatch", "人类确认未绑定精确差异")
+    if not isinstance(confirmation["statement"], str) or not confirmation["statement"].strip() or not isinstance(confirmation["actor"], str) or not confirmation["actor"].strip():
+        raise ServiceError("human_confirmation_invalid", "人类确认语句和调用方不能为空")
+    if not isinstance(confirmation["receipt_id"], str) or not _RECEIPT_ID.fullmatch(confirmation["receipt_id"]):
+        raise ServiceError("human_confirmation_invalid", "人类确认 receipt_id 无效")
+    try:
+        confirmed_at = datetime.fromisoformat(str(confirmation["confirmed_at"]).replace("Z", "+00:00"))
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise ServiceError("human_confirmation_invalid", "人类确认时间无效") from exc
+    if confirmed_at.tzinfo is None or confirmed_at > datetime.now(timezone.utc) + timedelta(minutes=5):
+        raise ServiceError("human_confirmation_invalid", "人类确认时间无效")
+
+
+def approve_preview(
+    preview: Mapping[str, Any],
+    *,
+    confirmation: Mapping[str, Any] | None = None,
+    authorization_context: Mapping[str, Any] | None = None,
+    expires_in_seconds: int = 300,
+) -> dict[str, Any]:
+    """Validate a preview and bind a caller-issued human confirmation receipt."""
+
+    if confirmation is not None and authorization_context is not None and _json_value(confirmation) != _json_value(authorization_context):
+        raise ServiceError("human_confirmation_invalid", "confirmation 与 authorization_context 不一致")
+    confirmation = confirmation if confirmation is not None else authorization_context
+    if confirmation is None:
+        raise ServiceError("human_confirmation_required", "必须先取得调用方对精确预览的人工确认")
     if not isinstance(preview, Mapping) or not isinstance(preview.get("file_plan"), Mapping):
         raise ServiceError("preview_required", "审批必须来自完整的只读预览")
     try:
@@ -301,6 +405,7 @@ def approve_preview(preview: Mapping[str, Any], *, expires_in_seconds: int = 300
         expected = _view(root, session, include_preview=True)
         if _json_value(dict(preview)) != _json_value(expected):
             raise ServiceError("preview_content_mismatch", "预览内容与当前本地状态不一致")
+        _validate_confirmation_scope(confirmation, preview)
         validate_recommendation(recommendation)
         plan_result = validate_task_plan(task_plan)
         if not plan_result["valid"]:
@@ -337,10 +442,12 @@ def approve_preview(preview: Mapping[str, Any], *, expires_in_seconds: int = 300
             "task_plan_digest": _digest(task_plan),
             "documents_digest": _digest(documents),
             "file_plan_digest": _digest(file_plan),
+            "diff_digest": _digest(preview["diff"]),
             "targets": targets,
             "action": action,
             "expires_at": expiry.isoformat().replace("+00:00", "Z"),
             "approved": True,
+            "authorization_context": _json_value(confirmation),
         }
         _validate_approval(root, approval)
         return _json_value(approval)
@@ -363,7 +470,13 @@ def _expected_action(root: Path, file_plan: Mapping[str, Any], targets: list[str
     }
 
 
-def _validate_approval(root: Path, approval: Mapping[str, Any]) -> None:
+def _validate_approval(
+    root: Path,
+    approval: Mapping[str, Any],
+    *,
+    authorization_context: Mapping[str, Any] | None = None,
+    require_external_authorization: bool = False,
+) -> None:
     if set(approval) != _APPROVAL_FIELDS:
         raise ServiceError("approval_fields_invalid", "审批字段不完整或包含未知字段")
     if approval["schema_version"] != APPROVAL_SCHEMA_VERSION or approval["root"] != str(root):
@@ -380,6 +493,41 @@ def _validate_approval(root: Path, approval: Mapping[str, Any]) -> None:
         raise ServiceError("approval_expired", "审批已过期")
     if not isinstance(approval["targets"], list) or any(not isinstance(item, str) for item in approval["targets"]):
         raise ServiceError("approval_targets_invalid", "审批目标范围无效")
+    if not isinstance(approval.get("diff_digest"), str) or not approval["diff_digest"]:
+        raise ServiceError("approval_diff_invalid", "审批差异摘要无效")
+    embedded_context = approval.get("authorization_context")
+    if not isinstance(embedded_context, Mapping):
+        raise ServiceError("human_confirmation_required", "审批缺少调用方人工确认收据")
+    expected_context = {
+        "schema_version": CONFIRMATION_SCHEMA_VERSION,
+        "kind": "human_confirmation",
+        "root": approval["root"],
+        "session_id": approval["session_id"],
+        "revision": approval["revision"],
+        "service_digest": approval["service_digest"],
+        "targets": approval["targets"],
+        "diff_digest": approval["diff_digest"],
+    }
+    for key, expected in expected_context.items():
+        if embedded_context.get(key) != expected:
+            raise ServiceError("human_confirmation_scope_mismatch", "审批人工确认未绑定精确范围")
+    if set(embedded_context) != _CONFIRMATION_FIELDS:
+        raise ServiceError("human_confirmation_invalid", "审批人工确认收据字段不完整或包含未知字段")
+    if not isinstance(embedded_context.get("statement"), str) or not embedded_context["statement"].strip() or not isinstance(embedded_context.get("actor"), str) or not embedded_context["actor"].strip():
+        raise ServiceError("human_confirmation_invalid", "审批人工确认语句和调用方不能为空")
+    if not isinstance(embedded_context.get("receipt_id"), str) or not _RECEIPT_ID.fullmatch(embedded_context["receipt_id"]):
+        raise ServiceError("human_confirmation_invalid", "审批人工确认 receipt_id 无效")
+    try:
+        confirmed_at = datetime.fromisoformat(str(embedded_context.get("confirmed_at")).replace("Z", "+00:00"))
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise ServiceError("human_confirmation_invalid", "审批人工确认时间无效") from exc
+    if confirmed_at.tzinfo is None or confirmed_at > datetime.now(timezone.utc) + timedelta(minutes=5):
+        raise ServiceError("human_confirmation_invalid", "审批人工确认时间无效")
+    if require_external_authorization:
+        if authorization_context is None:
+            raise ServiceError("human_confirmation_required", "apply 必须收到调用方人工确认 authorization_context")
+        if _json_value(dict(authorization_context)) != _json_value(dict(embedded_context)):
+            raise ServiceError("human_confirmation_scope_mismatch", "apply 的 authorization_context 与审批收据不一致")
     if not isinstance(approval["recommendation"], dict) or not isinstance(approval["task_plan"], dict) or not isinstance(approval["documents"], dict):
         raise ServiceError("approval_content_invalid", "审批内容结构无效")
     if not isinstance(approval["file_plan"], dict) or not isinstance(approval["action"], dict):
@@ -432,10 +580,19 @@ def _validate_approval(root: Path, approval: Mapping[str, Any]) -> None:
         raise ServiceError("approval_safety_blocked", "审批未通过本地写入安全校验")
 
 
-def apply_approved(root: str | Path, approval: Mapping[str, Any]) -> dict[str, Any]:
+def apply_approved(
+    root: str | Path,
+    approval: Mapping[str, Any],
+    authorization_context: Mapping[str, Any] | None = None,
+    *,
+    confirmation: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    if authorization_context is not None and confirmation is not None and _json_value(authorization_context) != _json_value(confirmation):
+        raise ServiceError("human_confirmation_invalid", "authorization_context 与 confirmation 不一致")
+    authorization_context = authorization_context if authorization_context is not None else confirmation
     project_root = _root_path(root)
     try:
-        _validate_approval(project_root, approval)
+        _validate_approval(project_root, approval, authorization_context=authorization_context, require_external_authorization=True)
         with session_write_lock(project_root):
             current = read_session_snapshot(project_root, approval["session_id"])
             if current["revision"] != approval["revision"]:
@@ -476,11 +633,13 @@ def as_json(value: Any) -> str:
 
 __all__ = [
     "APPROVAL_SCHEMA_VERSION",
+    "CONFIRMATION_SCHEMA_VERSION",
     "SCHEMA_VERSION",
     "ServiceError",
     "apply_approved",
     "as_json",
     "approve_preview",
+    "build_caller_confirmation",
     "create_session",
     "derive_frontier",
     "execution_status",

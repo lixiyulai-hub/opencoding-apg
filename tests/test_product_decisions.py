@@ -49,7 +49,7 @@ class DecisionTests(unittest.TestCase):
         self.assertEqual(recommendation["project"]["goal"], "做一个家庭任务工具")
         self.assertEqual(recommendation["project"]["audience"], "家长和孩子")
         self.assertEqual(recommendation["project"]["outcome"], "孩子完成任务，家长查看结果")
-        self.assertEqual(recommendation["project"]["scenarios"][0]["source"], "answers.outcome")
+        self.assertEqual(recommendation["project"]["scenarios"][0]["source"], "user.answers.outcome")
         self.assertTrue(any("孩子完成任务" in item for item in recommendation["acceptance"]))
 
     def test_mac_desktop_and_iphone_are_distinct_platform_recommendations(self):

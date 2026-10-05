@@ -139,7 +139,7 @@ class ProductFoundationIntegrationTests(unittest.TestCase):
             and task["action"]["capability"] in {"payment", "notifications"}
         ]
         self.assertEqual(len(integrations), 2)
-        self.assertTrue(all(not task["activation_gate"]["required"] for task in integrations))
+        self.assertTrue(all(task["activation_gate"]["required"] for task in integrations))
         self.assertTrue(all("\u786e\u8ba4" in task["activation_gate"]["reason"] for task in integrations))
 
     def test_revision_change_invalidates_old_documents_plan_pair(self):
