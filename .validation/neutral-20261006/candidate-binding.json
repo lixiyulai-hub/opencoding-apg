@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "6c91c76da7af87854db3b7885c2d7b64fc42e7c0",
+  "candidate_tree": "704dff71a4e93e5ac02e42997b0d4a961e0d26fb",
+  "restored_product_base": "537c1506a05beb8daabdaca4e667afb9fbbe8196",
+  "tracked_file_count": 686,
+  "source_files_sha256": "c0c3d960f2f74470a82d8f2be8b5b9fb0186ec5cc516b36cf1752a1633d4cf70",
+  "verifier_sha256": "5dfe1c825af08c019f68802ffd0a1c2ae93102026e6da296e4e5f65a608e9856",
+  "windows_runner_sha256": "77e9ad8a44f818e07a590bb0bebc5d8dc0b0f89f88c1a10cc1d40070d12b607c",
+  "summary_tools_sha256": {
+    "public_output.py": "6bb41c07a36fd9341d563fc798dc869c9a197b4c5f30620500dc21635ea6d836",
+    "capture_unittest.py": "e236793eddc451a2fbb2c6236a64778bcbc7b9f04c56c4fca59db9fc87fe5fcd",
+    "summarize_pinned.py": "a9573bb03b8997ece6aa2e0eb2cbd694e428cb3fef365c504af95711317b4f23",
+    "prepare_context.py": "db63ed927ce57ec60618e6bd2efa42dcc0220a60323091bba7419c841985920a"
+  },
+  "windows_historical_symlink_files": [
+    "artifacts/w1-isolated-integration-20260905/test-temp/full/tmp31n7obii/linked",
+    "artifacts/w1-isolated-integration-20260905/test-temp/full/tmpniw3c91p/.opencoding",
+    "artifacts/w1-isolated-integration-20260905/test-temp/full/tmpu93b7__1/link.txt",
+    "artifacts/w1-isolated-integration-20260905/test-temp/tmp_ut0oki2/link.txt",
+    "artifacts/w1-isolated-integration-20260905/test-temp/tmpo3n1oapj/.opencoding",
+    "artifacts/w1-isolated-integration-20260905/test-temp/tmptpyufsjo/linked"
+  ],
+  "windows_required_python_versions": [
+    "3.11",
+    "3.12"
+  ],
+  "test_counts": {
+    "adapter": 19,
+    "cli_preview": 15,
+    "evidence_projection": 21,
+    "installed_taskplan": 5,
+    "strict_validator": 20,
+    "transaction_regression": 29,
+    "full": 314,
+    "packaging": 6,
+    "rust": 4
+  }
+}

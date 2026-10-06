@@ -29,7 +29,46 @@ jobs:
       # The zero-write scheduler snapshot contract is Windows-specific because
       # it uses the Windows shared-byte locking primitive.
       - name: Run the repository unittest entry point
+        if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/validation/windows-neutral-20261006') }}
         run: python -X utf8 -m unittest
+      - name: Capture the neutral validation branch full suite
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/validation/windows-neutral-20261006' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $wrapperExit = $null
+          try {
+            $python = (Get-Command python -CommandType Application).Source
+            # Extract exact reviewed Git bytes without changing this source checkout.
+            $bootstrap = @'
+          import os, pathlib, re, subprocess
+          root = pathlib.Path(os.environ['GITHUB_WORKSPACE'])
+          head = subprocess.check_output(['git','-C',str(root),'rev-parse','HEAD'], stderr=subprocess.PIPE).decode().strip()
+          if not re.fullmatch('[0-9a-f]{40}',head) or head != os.environ.get('GITHUB_SHA'):
+              raise SystemExit(1)
+          folder = pathlib.Path(os.environ['RUNNER_TEMP']) / 'neutral-full-tools'
+          folder.mkdir()
+          names = ('candidate-binding.json','source-files.json','verify_source.py','run_windows_validation.ps1','public_output.py','capture_unittest.py','summarize_pinned.py','prepare_context.py')
+          for name in names:
+              data = subprocess.check_output(['git','-C',str(root),'show',head+':.validation/neutral-20261006/'+name], stderr=subprocess.PIPE)
+              (folder/name).write_bytes(data)
+          '@
+            $bootstrapOutput = @(& $python -B -X utf8 -c $bootstrap 2>&1)
+            if ($LASTEXITCODE -ne 0) { throw 'validation_unavailable' }
+            $tools = Join-Path $env:RUNNER_TEMP 'neutral-full-tools'
+            $context = Join-Path $env:RUNNER_TEMP 'neutral-full-context.json'
+            $contextDigest = @(& $python -B -X utf8 (Join-Path $tools 'prepare_context.py') --checkout $env:GITHUB_WORKSPACE --binding (Join-Path $tools 'candidate-binding.json') --binding-sha256 'db7f6a52d9aee51882cec533ec46c79c479472e85d627a6f7ee07533930a2480' --python-version '${{ matrix.python-version }}' --output $context 2>&1)
+            if ($LASTEXITCODE -ne 0 -or $contextDigest.Count -ne 1 -or "$($contextDigest[0])" -notmatch '^[0-9a-f]{64}$') { throw 'validation_unavailable' }
+            $ErrorActionPreference = 'Continue'
+            & $python -B -X utf8 (Join-Path $tools 'capture_unittest.py') --context $context --context-sha256 "$($contextDigest[0])" --log-directory (Join-Path $env:RUNNER_TEMP 'neutral-full-evidence') 2> (Join-Path $env:RUNNER_TEMP 'neutral-full-wrapper-errors.log')
+            $wrapperExit = $LASTEXITCODE
+            exit $wrapperExit
+          } catch {
+            Write-Output '{"kind":"public_summary_unavailable","status":"incomplete"}'
+            if ($null -ne $wrapperExit -and $wrapperExit -ne 0) { exit $wrapperExit }
+            exit 1
+          }
       - name: Run the packaging contract directly
         run: python -X utf8 -m unittest tests.test_product_packaging
 

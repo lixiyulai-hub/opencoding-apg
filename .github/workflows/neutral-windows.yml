@@ -1,0 +1,100 @@
+name: Neutral candidate Windows validation
+
+on:
+  push:
+    branches: [validation/windows-neutral-20261006]
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    name: Pinned candidate / Python ${{ matrix.python-version }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      GIT_CONFIG_COUNT: '2'
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+      GIT_CONFIG_KEY_1: core.symlinks
+      GIT_CONFIG_VALUE_1: 'false'
+    steps:
+      - name: Check out validation tools at the pushed commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: validation-tools
+          persist-credentials: false
+      - name: Check out the exact product candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 6c91c76da7af87854db3b7885c2d7b64fc42e7c0
+          path: candidate
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install the declared build backend
+        run: python -m pip install --upgrade "setuptools>=83"
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Prepare the source-bound temporary summary context
+        id: context
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          try {
+            $python = (Get-Command python -CommandType Application).Source
+            $tools = Join-Path $env:GITHUB_WORKSPACE 'validation-tools/.validation/neutral-20261006'
+            $context = Join-Path $env:RUNNER_TEMP 'neutral-candidate-context.json'
+            $digest = @(& $python -B -X utf8 (Join-Path $tools 'prepare_context.py') --checkout (Join-Path $env:GITHUB_WORKSPACE 'validation-tools') --binding (Join-Path $tools 'candidate-binding.json') --binding-sha256 'db7f6a52d9aee51882cec533ec46c79c479472e85d627a6f7ee07533930a2480' --python-version '${{ matrix.python-version }}' --output $context 2>&1)
+            if ($LASTEXITCODE -ne 0 -or $digest.Count -ne 1 -or "$($digest[0])" -notmatch '^[0-9a-f]{64}$') { throw 'validation_unavailable' }
+            "context_sha256=$($digest[0])" >> $env:GITHUB_OUTPUT
+          } catch {
+            Write-Output '{"kind":"public_summary_unavailable","status":"incomplete"}'
+            exit 1
+          }
+      - name: Verify candidate identity and execute Windows checks
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          $runnerExit = $null
+          try {
+            & ./validation-tools/.validation/neutral-20261006/run_windows_validation.ps1 `
+              -Repository (Join-Path $env:GITHUB_WORKSPACE 'candidate') `
+              -PythonVersion '${{ matrix.python-version }}' `
+              -PythonExecutable (Get-Command python).Source `
+              -BindingSha256 'db7f6a52d9aee51882cec533ec46c79c479472e85d627a6f7ee07533930a2480' `
+              -EvidenceDirectory (Join-Path $env:RUNNER_TEMP 'neutral-candidate-evidence') 2> (Join-Path $env:RUNNER_TEMP 'neutral-candidate-runner-errors.log')
+            $runnerExit = $LASTEXITCODE
+            exit $runnerExit
+          } catch {
+            Write-Output '{"kind":"public_summary_unavailable","status":"incomplete"}'
+            if ($null -ne $runnerExit -and $runnerExit -ne 0) { exit $runnerExit }
+            exit 1
+          }
+      - name: Publish only the validated public summary
+        if: always()
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          try {
+            $digest = '${{ steps.context.outputs.context_sha256 }}'
+            if ($digest -notmatch '^[0-9a-f]{64}$') { throw 'validation_unavailable' }
+            $python = (Get-Command python -CommandType Application).Source
+            $tools = Join-Path $env:GITHUB_WORKSPACE 'validation-tools/.validation/neutral-20261006'
+            $evidence = Join-Path $env:RUNNER_TEMP 'neutral-candidate-evidence'
+            $ErrorActionPreference = 'Continue'
+            & $python -B -X utf8 (Join-Path $tools 'summarize_pinned.py') --context (Join-Path $env:RUNNER_TEMP 'neutral-candidate-context.json') --context-sha256 $digest --result (Join-Path $evidence 'result.json') --source-before (Join-Path $evidence 'source-before.log') --source-after (Join-Path $evidence 'source-after.log') 2> (Join-Path $env:RUNNER_TEMP 'neutral-candidate-summary-errors.log')
+            exit $LASTEXITCODE
+          } catch {
+            Write-Output '{"kind":"public_summary_unavailable","status":"incomplete"}'
+            exit 1
+          }
