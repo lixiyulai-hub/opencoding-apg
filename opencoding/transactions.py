@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import stat
 import tempfile
 import uuid
@@ -35,8 +34,15 @@ from .safety import (
     sha256_bytes,
 )
 
-_HEX64 = re.compile(r"^[0-9a-f]{64}$")
-_TRANSACTION_ID = re.compile(r"^tx-[0-9]{8}T[0-9]{6}[0-9]{6}Z-[0-9a-f]{12}$")
+from . import transaction_evidence_validation as _evidence_validation
+from .transaction_evidence_validation import (
+    _HEX64,
+    _TRANSACTION_ID,
+    _event_payload,
+    _strict_json_bytes,
+    _valid_hash,
+    _validate_event,
+)
 # Retained for compatibility with the historical fault probe; lock recovery no
 # longer uses age as an ownership signal.
 _LOCK_STALE_SECONDS = 300.0
@@ -303,10 +309,6 @@ def preview_changes(root: Path, files: dict[str, str]) -> dict[str, Any]:
     return {**core, "plan_digest": _plan_digest(core), "status": "preview"}
 
 
-def _valid_hash(value: Any, *, allow_none: bool = False) -> bool:
-    return (value is None and allow_none) or (isinstance(value, str) and bool(_HEX64.fullmatch(value)))
-
-
 def _validate_plan(root: Path, plan: Mapping[str, Any]) -> tuple[dict[str, Any], list[tuple[dict[str, Any], Path]]]:
     if not isinstance(plan, Mapping) or plan.get("schema_version") != SCHEMA_VERSION:
         raise ValueError("unsupported or missing plan schema")
@@ -438,28 +440,6 @@ def _safe_receipt_paths(value: Mapping[str, Any]) -> dict[str, Any]:
     return sanitized
 
 
-def _strict_json_bytes(raw: bytes, label: str) -> Any:
-    """Load canonical JSON and reject duplicate keys or trailing bytes."""
-
-    def pairs(items: list[tuple[str, Any]]) -> dict[str, Any]:
-        result: dict[str, Any] = {}
-        for key, value in items:
-            if key in result:
-                raise ValueError(f"{label} contains duplicate fields")
-            result[key] = value
-        return result
-
-    if not raw.endswith(b"\n") or raw.count(b"\n") != 1:
-        raise ValueError(f"{label} is not canonical JSON")
-    try:
-        value = json.loads(raw[:-1].decode("utf-8"), object_pairs_hook=pairs)
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ValueError(f"{label} is not valid JSON") from error
-    if canonical_json(value) + b"\n" != raw:
-        raise ValueError(f"{label} is not canonical JSON")
-    return value
-
-
 def _safe_evidence_file(path: Path, evidence: Path) -> None:
     """Require an ordinary, unaliased file contained by the evidence dir."""
 
@@ -474,10 +454,6 @@ def _safe_evidence_file(path: Path, evidence: Path) -> None:
         raise ValueError("transaction evidence file is unavailable") from error
 
 
-def _event_payload(event: Mapping[str, Any]) -> dict[str, Any]:
-    return {key: value for key, value in event.items() if key not in {"event_sha256", "previous_event_sha256"}}
-
-
 def _append_event(directory: Path, event: Mapping[str, Any]) -> str:
     path = directory / "events.jsonl"
     if path.exists():
@@ -490,92 +466,11 @@ def _append_event(directory: Path, event: Mapping[str, Any]) -> str:
     return str(path)
 
 
-def _validate_event(event: Any, previous_bytes: bytes, transaction_id: str) -> None:
-    if not isinstance(event, dict):
-        raise ValueError("event is not an object")
-    required = {"transaction_id", "status", "changed_paths", "at", "previous_event_sha256", "event_sha256"}
-    allowed = required | {
-        "path", "reason_codes", "before_sha256", "after_sha256", "before_identity",
-        "after_identity", "parent_paths", "parent_identities",
-    }
-    if not required.issubset(event) or set(event) - allowed:
-        raise ValueError("event fields are incompatible")
-    if event["transaction_id"] != transaction_id or not isinstance(event["status"], str):
-        raise ValueError("event identity is invalid")
-    if event["status"] not in {"write_intent", "write_applied", "rollback_intent", "applied", "failed", "partial_failure", "rollback_item", "rolled_back", "blocked"}:
-        raise ValueError("event status is invalid")
-    if not isinstance(event["changed_paths"], list) or any(not isinstance(path, str) for path in event["changed_paths"]):
-        raise ValueError("event paths are invalid")
-    if len(set(event["changed_paths"])) != len(event["changed_paths"]):
-        raise ValueError("event paths contain duplicates")
-    for path in event["changed_paths"]:
-        if "/".join(_relative_parts(path)) != path:
-            raise ValueError("event path is not canonical")
-    if not isinstance(event["at"], str):
-        raise ValueError("event timestamp is invalid")
-    expected_previous = sha256_bytes(previous_bytes) if previous_bytes else None
-    if event["previous_event_sha256"] != expected_previous:
-        raise ValueError("event chain is broken")
-    if not _valid_hash(event.get("event_sha256")):
-        raise ValueError("event digest is invalid")
-    if sha256_bytes(canonical_json(_event_payload(event))) != event["event_sha256"]:
-        raise ValueError("event digest mismatch")
-    if "path" in event and (not isinstance(event["path"], str) or event["path"] not in event["changed_paths"]):
-        raise ValueError("event item path is invalid")
-    if "reason_codes" in event and (not isinstance(event["reason_codes"], list) or any(not isinstance(item, str) for item in event["reason_codes"])):
-        raise ValueError("event reason codes are invalid")
-    if event["status"] in {"write_intent", "rollback_intent"}:
-        if not _valid_hash(event.get("before_sha256"), allow_none=True) or not _valid_hash(event.get("after_sha256")):
-            raise ValueError("write intent hashes are invalid")
-        identity = event.get("before_identity")
-        if identity is not None and (not isinstance(identity, list) or len(identity) != 2 or any(not isinstance(item, int) for item in identity)):
-            raise ValueError("write intent identity is invalid")
-    if "after_identity" in event:
-        identity = event["after_identity"]
-        if not isinstance(identity, list) or len(identity) != 2 or any(not isinstance(item, int) for item in identity):
-            raise ValueError("write result identity is invalid")
-    if "parent_paths" in event:
-        paths = event["parent_paths"]
-        if not isinstance(paths, list) or any(not isinstance(path, str) for path in paths):
-            raise ValueError("parent paths are invalid")
-        if len(set(paths)) != len(paths) or any("/".join(_relative_parts(path)) != path for path in paths):
-            raise ValueError("parent paths are not canonical")
-    if "parent_identities" in event:
-        identities = event["parent_identities"]
-        if not isinstance(identities, dict):
-            raise ValueError("parent identities are invalid")
-        if any(
-            not isinstance(path, str)
-            or "/".join(_relative_parts(path)) != path
-            or not isinstance(identity, list)
-            or len(identity) != 2
-            or any(not isinstance(item, int) for item in identity)
-            for path, identity in identities.items()
-        ):
-            raise ValueError("parent identities are invalid")
-
-
 def _load_events(evidence: Path, transaction_id: str) -> list[dict[str, Any]]:
     path = evidence / "events.jsonl"
     _safe_evidence_file(path, evidence)
-    events: list[dict[str, Any]] = []
-    previous = b""
     raw = path.read_bytes()
-    for line in raw.splitlines(keepends=True):
-        if not line.strip():
-            raise ValueError("events evidence contains an empty line")
-        if not line.endswith(b"\n"):
-            raise ValueError("events evidence is not newline terminated")
-        try:
-            event = _strict_json_bytes(line, "event")
-        except ValueError:
-            raise
-        _validate_event(event, previous, transaction_id)
-        events.append(event)
-        previous += line
-    if not events:
-        raise ValueError("events evidence is empty")
-    return events
+    return _evidence_validation._parse_events_bytes(raw, transaction_id)
 
 
 def _load_receipt_manifest(root: Path, transaction_id: str) -> tuple[Path, dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
@@ -586,99 +481,25 @@ def _load_receipt_manifest(root: Path, transaction_id: str) -> tuple[Path, dict[
     _safe_evidence_file(manifest_path, evidence)
     receipt = _strict_json_bytes(receipt_path.read_bytes(), "receipt")
     manifest_doc = _strict_json_bytes(manifest_path.read_bytes(), "manifest")
-    if not isinstance(receipt, dict) or not isinstance(manifest_doc, dict):
-        raise ValueError("transaction evidence is not an object")
-    receipt_fields = {
-        "schema_version", "transaction_id", "plan_digest", "status", "changed_paths", "planned_paths",
-        "uncertain_paths", "started_at", "finished_at", "reason_codes", "manifest_sha256", "rollback_status",
-        "rollback_changed_paths", "rollback_reason_codes", "rollback_residual_paths",
-    }
-    required_receipt = {"schema_version", "transaction_id", "plan_digest", "status", "changed_paths", "planned_paths", "started_at", "manifest_sha256", "rollback_status", "rollback_changed_paths"}
-    if set(receipt) - receipt_fields or not required_receipt.issubset(receipt):
-        raise ValueError("receipt fields are incompatible")
-    if receipt["schema_version"] != SCHEMA_VERSION or receipt["transaction_id"] != transaction_id:
-        raise ValueError("receipt identity is invalid")
-    if not _valid_hash(receipt["plan_digest"]) or not isinstance(receipt["status"], str):
-        raise ValueError("receipt digest or status is invalid")
-    if receipt["status"] not in {"started", "applied", "partial_failure", "failed"}:
-        raise ValueError("receipt status is invalid")
-    if not isinstance(receipt["planned_paths"], list) or not isinstance(receipt["changed_paths"], list):
-        raise ValueError("receipt paths are invalid")
-    if "uncertain_paths" in receipt and not isinstance(receipt["uncertain_paths"], list):
-        raise ValueError("receipt uncertain paths are invalid")
-    receipt_uncertain = receipt.get("uncertain_paths", [])
-    if any(not isinstance(path, str) for path in receipt["planned_paths"] + receipt["changed_paths"] + receipt_uncertain):
-        raise ValueError("receipt path type is invalid")
-    for path in receipt["planned_paths"] + receipt["changed_paths"] + receipt_uncertain:
-        if "/".join(_relative_parts(path)) != path:
-            raise ValueError("receipt path is not canonical")
-    if len(set(receipt["planned_paths"])) != len(receipt["planned_paths"]):
-        raise ValueError("receipt planned paths contain duplicates")
-    if len(set(receipt["changed_paths"])) != len(receipt["changed_paths"]):
-        raise ValueError("receipt changed paths contain duplicates")
-    if len(set(receipt_uncertain)) != len(receipt_uncertain):
-        raise ValueError("receipt uncertain paths contain duplicates")
-    if not isinstance(receipt["rollback_status"], (str, type(None))) or not isinstance(receipt["rollback_changed_paths"], list):
-        raise ValueError("rollback receipt state is invalid")
-    if any(not isinstance(path, str) for path in receipt["rollback_changed_paths"]):
-        raise ValueError("rollback receipt paths are invalid")
-    if any(path not in receipt["changed_paths"] for path in receipt["rollback_changed_paths"]):
-        raise ValueError("rollback receipt paths disagree")
-    residual_paths = receipt.get("rollback_residual_paths", [])
-    if not isinstance(residual_paths, list) or any(not isinstance(path, str) for path in residual_paths):
-        raise ValueError("rollback residual paths are invalid")
-    if len(set(residual_paths)) != len(residual_paths):
-        raise ValueError("rollback residual paths contain duplicates")
-    for path in residual_paths:
-        if "/".join(_relative_parts(path)) != path:
-            raise ValueError("rollback residual path is not canonical")
-    for field in ("started_at", "finished_at"):
-        if field in receipt and receipt[field] is not None and not isinstance(receipt[field], str):
-            raise ValueError("receipt timestamp is invalid")
-    for field in ("reason_codes", "rollback_reason_codes"):
-        if field in receipt and (not isinstance(receipt[field], list) or any(not isinstance(item, str) for item in receipt[field])):
-            raise ValueError("receipt reason codes are invalid")
-    if not _valid_hash(receipt["manifest_sha256"]):
-        raise ValueError("manifest digest is invalid")
+    _evidence_validation._validate_receipt_fields(receipt, manifest_doc, transaction_id)
     manifest_bytes = manifest_path.read_bytes()
-    if sha256_bytes(manifest_bytes.rstrip(b"\n")) != receipt["manifest_sha256"]:
-        raise ValueError("manifest digest mismatch")
-    if set(manifest_doc) != {"schema_version", "transaction_id", "plan_digest", "entries"}:
-        raise ValueError("manifest fields are incompatible")
-    if manifest_doc["schema_version"] != SCHEMA_VERSION or manifest_doc["transaction_id"] != transaction_id or manifest_doc["plan_digest"] != receipt["plan_digest"]:
-        raise ValueError("manifest identity is invalid")
+    _evidence_validation._validate_manifest_digest(manifest_bytes, receipt["manifest_sha256"])
+    _evidence_validation._validate_manifest_header(manifest_doc, receipt, transaction_id)
     entries = manifest_doc["entries"]
-    if not isinstance(entries, list) or not entries:
-        raise ValueError("manifest entries are invalid")
     manifest_paths: set[str] = set()
     for index, item in enumerate(entries):
-        required = {"path", "before_exists", "before_sha256", "after_sha256", "preimage_file", "before_identity"}
-        if not isinstance(item, dict) or set(item) != required:
-            raise ValueError("manifest entry fields are incompatible")
-        if not isinstance(item["path"], str) or item["path"] in manifest_paths:
-            raise ValueError("manifest path is invalid")
-        if "/".join(_relative_parts(item["path"])) != item["path"]:
-            raise ValueError("manifest path is not canonical")
+        _evidence_validation._validate_manifest_entry_path(item, manifest_paths)
         safe_target(root, item["path"], allow_missing=True)
         manifest_paths.add(item["path"])
-        if type(item["before_exists"]) is not bool or not _valid_hash(item["before_sha256"], allow_none=True) or not _valid_hash(item["after_sha256"]):
-            raise ValueError("manifest hashes are invalid")
-        expected_preimage = f"preimage/{index}.bin" if item["before_exists"] else None
-        if item["preimage_file"] != expected_preimage:
-            raise ValueError("manifest preimage path is invalid")
-        if item["before_exists"] and (not isinstance(item["before_identity"], list) or len(item["before_identity"]) != 2):
-            raise ValueError("manifest identity is invalid")
-        if not item["before_exists"] and item["before_identity"] is not None:
-            raise ValueError("manifest identity is invalid")
+        _evidence_validation._validate_manifest_entry_metadata(item, index)
         if item["before_exists"]:
             preimage = evidence / item["preimage_file"]
             _safe_evidence_file(preimage, evidence)
-            if sha256_bytes(preimage.read_bytes()) != item["before_sha256"]:
-                raise ValueError("preimage digest mismatch")
+            _evidence_validation._validate_preimage_bytes(preimage.read_bytes(), item["before_sha256"])
     preimage_dir = evidence / "preimage"
     if not preimage_dir.is_dir() or preimage_dir.is_symlink() or _is_reparse(preimage_dir):
         raise ValueError("transaction preimage directory is missing or unsafe")
-    expected_preimages = {item["preimage_file"] for item in entries if item["preimage_file"] is not None}
+    expected_preimages = _evidence_validation._expected_preimages(entries)
     actual_preimages = set()
     for candidate in preimage_dir.iterdir():
         if candidate.is_dir() or candidate.is_symlink() or _is_reparse(candidate):
@@ -686,10 +507,8 @@ def _load_receipt_manifest(root: Path, transaction_id: str) -> tuple[Path, dict[
         relative = candidate.relative_to(evidence).as_posix()
         _safe_evidence_file(candidate, evidence)
         actual_preimages.add(relative)
-    if actual_preimages != expected_preimages:
-        raise ValueError("transaction preimage inventory disagrees")
-    if set(receipt["planned_paths"]) != manifest_paths or not set(receipt["changed_paths"]).issubset(manifest_paths):
-        raise ValueError("receipt and manifest paths disagree")
+    _evidence_validation._validate_preimage_inventory(expected_preimages, actual_preimages)
+    _evidence_validation._validate_receipt_manifest_paths(receipt, manifest_paths)
     return evidence, receipt, manifest_doc, entries
 
 

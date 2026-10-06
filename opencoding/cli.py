@@ -21,6 +21,7 @@ from .service import (
     session_view,
     submit_answer,
 )
+from .taskplan_scheduler import preview_task_plan
 
 
 _TASK_STATE_LABELS = {
@@ -51,6 +52,7 @@ def _parser() -> argparse.ArgumentParser:
     mode.add_argument("--resume", metavar="SESSION_ID", help="恢复指定会话")
     mode.add_argument("--list", action="store_true", help="列出本地会话")
     mode.add_argument("--preview", metavar="SESSION_ID", help="只读显示指定会话的方案、文件范围和差异")
+    mode.add_argument("--task-preview", metavar="SESSION_ID", help="只读显示指定会话的 TaskPlan 任务、依赖和预计效果；不执行")
     mode.add_argument("--change", nargs=3, metavar=("SESSION_ID", "QUESTION_ID", "ANSWER"), help="修改已有会话答案并显示新方案差异")
     mode.add_argument("--rollback", metavar="TRANSACTION_ID", help="回滚指定的本地文档事务")
     mode.add_argument("--status", action="store_true", help="只读显示本地任务与运行状态")
@@ -79,6 +81,53 @@ def _show_plan(view: dict[str, Any]) -> None:
     if "diff" in view:
         print("本地文件差异：")
         print(view["diff"] or "（无差异）")
+
+
+def _show_task_preview(preview: dict[str, Any]) -> None:
+    print("TaskPlan 只读预览（未执行、未写入）：")
+    print(f"项目根目录：{preview['root']}")
+    print(f"当前会话：{preview['session']['id']}；版本：{preview['session']['revision']}")
+    print(f"方案状态：{preview['status']}（仅表示方案状态，不表示任务运行成功）")
+    print("Host 未接通；以下任务均未由本次预览执行，未查询实际运行或冻结状态。")
+    unresolved = preview["service_preview"]["task_plan"]["unresolved"]
+    if unresolved:
+        print("仍待确认：" + "；".join(unresolved))
+    print("精确目标范围：")
+    for target in preview["targets"]:
+        print("- " + target)
+    print("本地文件差异：")
+    print(preview["diff"] or "（无差异）")
+    print("任务与依赖（预计映射，均未激活）：")
+    classifications = {
+        "document": "document（本地文档，未激活）",
+        "offline_design": "offline_design（仅离线设计，未激活外部能力）",
+        "host_missing": "host_missing（缺少 Host 执行器，无法执行实现或验证）",
+    }
+    for task in preview["tasks"]:
+        print(f"- 任务 ID：{task['task_id']}；方案任务 ID：{task['input']['plan_task_id']}")
+        print("  依赖：" + ("、".join(task["depends_on"]) or "无"))
+        print("  分类：" + classifications[task["input"]["classification"]])
+    print("预计效果（仅在另外确认并调用执行 API 后可能发生，本次未发生）：")
+    print("- 本地 Scheduler 初始化、入队与回执；会话协作写锁；按文档事务回滚。")
+    print("- 不接通或激活外部能力。")
+    print("预览结束：未审批、未执行、未创建或恢复 Scheduler；输入“确认”也不会执行。")
+
+
+def _task_preview(root: str, session_id: str, *, json_output: bool) -> int:
+    try:
+        result = preview_task_plan(root, session_id)
+    except (OSError, ValueError, TypeError) as exc:
+        code = exc.code if isinstance(exc, ServiceError) else "task_preview_read_failed"
+        if json_output:
+            print(as_json({"error": {"code": code}}), file=sys.stderr)
+        else:
+            print(f"无法读取 TaskPlan 预览（{code}）；未执行、未写入，请检查根目录及会话。", file=sys.stderr)
+        return 2
+    if json_output:
+        print(as_json(result))
+    else:
+        _show_task_preview(result)
+    return 0
 
 
 def _status_text(value: Any, *, limit: int = 96) -> str:
@@ -255,6 +304,8 @@ def main(argv: list[str] | None = None, *, input_fn: Callable[[str], str] = inpu
     if args.task_id is not None and not args.status:
         parser.error("--task-id 只能与 --status 一起使用")
     try:
+        if args.task_preview is not None:
+            return _task_preview(args.root, args.task_preview, json_output=args.json)
         if args.status:
             try:
                 result = execution_status(args.root, args.task_id)

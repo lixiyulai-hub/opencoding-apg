@@ -4,7 +4,34 @@
 `execute_task_plan`，以及专用 `build_task_plan_confirmation` 确认构造器。它增量使用当前会话/TaskPlan、Scheduler 和文档事务层。
 不要求安装 Host，不接入任意 Python/Node 动作或真实业务执行器。
 
-## 使用顺序
+## 只读 CLI 预览
+
+使用已有项目根目录和已有会话 ID 查看任务图；该命令与 `--preview`、`--status`、
+`--resume` 等其他模式互斥，`--task-id` 仍仅适用于 `--status`：
+
+```powershell
+python -m opencoding --root C:\path\to\authorized-project --task-preview SESSION_ID
+python -m opencoding --root C:\path\to\authorized-project --task-preview SESSION_ID --json
+```
+
+中文输出显示 root、会话 ID 与 revision、方案状态、精确 targets、diff、任务 ID、
+依赖和分类。`ready` 仅表示方案就绪；`document` 是预计本地文档任务，
+`offline_design` 是未激活的外部能力设计，`host_missing` 表示缺少实现/验证执行器。
+预览不查询实际运行或冻结状态，不能据此报告任务已经成功或 `frozen`。
+`effects` 描述另行确认并调用执行 API 后可能发生的效果，不是本次预览产生的效果。
+
+`--json` 直接序列化同一 `preview_task_plan(root, session_id)` 返回值，包括完整
+`service_preview`、`tasks`、`effects` 和摘要；不改变既有 `--status --json` 协议。
+成功读取预览退出 `0`，不代表方案已 ready 或任务已执行；读取失败退出 `2`。
+JSON 模式的读取失败以 `{"error":{"code":"..."}}` 输出到标准错误，参数错误仍由
+CLI 参数解析器报告，不能将其视为所有模式通用的 JSON 协议。
+
+本模式不创建、初始化、迁移、恢复或修复会话/Scheduler，不审批、执行、派发、
+重排或回滚，也不进入交互式向导；标准输入中的“确认”不会触发执行。
+root/session 不存在、会话 ID 非法、模式冲突、坏数据或读取锁失败时，均不会
+创建缺失路径或自动修复状态。TaskPlan 的确认、审批和执行仍仅由 Python API 显式调用。
+
+## Python API 使用顺序
 
 ```python
 from opencoding.taskplan_scheduler import (
@@ -31,7 +58,8 @@ result = execute_task_plan(root, approval, authorization_context=caller_receipt)
 执行必须收到调用方独立保存的完整确认上下文，修改审批内期限会被拒绝。
 过期必须重新取得调用方确认，不能通过重新 approve 旧收据续期。
 普通 service 收据不包含调度期限，因此不能替代调度确认。
-这是 Python API 入口，没有新增 CLI 子命令或自动派发入口。
+上述确认、审批和执行是 Python API 入口；`--task-preview` 只提供零写入预览，
+不提供 CLI 审批、执行或自动派发入口。
 
 执行会取得现有 session 写锁，复核同源会话/方案，初始化 Scheduler 并持久化任务及
 receipt。仅派发本图中的任务，不执行数据库中其他 queued 任务。
@@ -85,11 +113,13 @@ rollback_ref 和 uncertain_paths。部分失败保留现场，之前成功节点
 ## 验证
 
 ```bash
+python -X utf8 -m unittest tests.test_taskplan_cli -v
 python -X utf8 -m unittest tests.test_taskplan_scheduler -v
 python -X utf8 -m unittest
 python -X utf8 -m unittest tests.test_product_packaging
 ```
 
+新增 CLI 的 Windows 验证仍待执行；此处的命令和使用示例不是平台测试通过证据。
 本适配的文档事务测试可在 Linux 执行。work 既有已初始化 Scheduler 零写入快照依赖
 Windows 锁原语，Linux 会返回 `unsupported_platform`；未初始化状态查询仍可零写入。
 完整测试还要求 cargo。不得把这些环境限制下的全量测试称为全绿。

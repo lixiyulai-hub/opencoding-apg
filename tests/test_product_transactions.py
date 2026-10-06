@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -472,6 +473,268 @@ class TransactionContractTests(unittest.TestCase):
         self.assertEqual(receipt["uncertain_paths"], [])
         self.assertIsInstance(receipt["finished_at"], str)
         self.assertIn("synthetic target write failure", receipt["reason_codes"])
+
+def evidence_json(value):
+    """Independent synthetic-fixture encoding; never repairs API input."""
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8") + b"\n"
+
+
+def evidence_hash(raw):
+    import hashlib
+    return hashlib.sha256(raw).hexdigest()
+
+
+def evidence_events(payloads):
+    rows = []
+    for payload in payloads:
+        row = dict(payload, previous_event_sha256=evidence_hash(b"".join(rows)) if rows else None,
+                   event_sha256=evidence_hash(evidence_json(payload)[:-1]))
+        rows.append(evidence_json(row))
+    return b"".join(rows)
+
+
+def transaction_bytes_fixture(*, before=b"before\r\n", create_only=False):
+    """Caller-supplied bytes are content fixtures, not a capture or execution proof."""
+    transaction_id = "tx-20261006T000000000000Z-000000000001"
+    entries = [
+        {"path": "existing.txt", "before_exists": True, "before_sha256": evidence_hash(before),
+         "after_sha256": evidence_hash(b"after"), "preimage_file": "preimage/0.bin", "before_identity": [17, 23]},
+        {"path": "nested/new.txt", "before_exists": False, "before_sha256": None,
+         "after_sha256": evidence_hash(b"created"), "preimage_file": None, "before_identity": None},
+    ]
+    if create_only:
+        entries = entries[1:]
+    paths = [item["path"] for item in entries]
+    manifest = {"schema_version": "1.0", "transaction_id": transaction_id, "plan_digest": "1" * 64, "entries": entries}
+    receipt = {"schema_version": "1.0", "transaction_id": transaction_id, "plan_digest": "1" * 64,
+               "status": "applied", "planned_paths": paths, "changed_paths": paths, "uncertain_paths": [],
+               "started_at": "", "manifest_sha256": evidence_hash(evidence_json(manifest)[:-1]),
+               "rollback_status": None, "rollback_changed_paths": []}
+    payloads = [{"transaction_id": transaction_id, "status": state, "changed_paths": paths, "at": ""}
+                for state in ("failed", "partial_failure", "applied")]
+    return {"transaction_id": transaction_id, "receipt_bytes": evidence_json(receipt),
+            "manifest_bytes": evidence_json(manifest), "events_bytes": evidence_events(payloads),
+            "preimage_bytes": {} if create_only else {"preimage/0.bin": before}}
+
+
+class TransactionReaderCharacterizationTests(unittest.TestCase):
+    """Fixed legacy outcomes, established before extracting the pure fragments."""
+
+    def fixture(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        values = transaction_bytes_fixture()
+        evidence = root / ".opencoding" / "transactions" / values["transaction_id"]
+        (evidence / "preimage").mkdir(parents=True)
+        (root / "existing.txt").write_bytes(b"after")
+        (root / "guard.bin").write_bytes(b"unchanged\x00")
+        for key, name in (("receipt_bytes", "receipt.json"), ("manifest_bytes", "manifest.json"), ("events_bytes", "events.jsonl")):
+            (evidence / name).write_bytes(values[key])
+        for name, raw in values["preimage_bytes"].items():
+            (evidence / name).write_bytes(raw)
+        return root, evidence, values
+
+    def test_canonical_values_and_encoding_failures(self):
+        from opencoding import transactions as tx
+        for value in ([], "值", 42, True, None):
+            with self.subTest(value=value):
+                self.assertEqual(tx._strict_json_bytes(evidence_json(value), "fixture"), value)
+        failures = [(b'{"a":1,"a":2}\n', "fixture contains duplicate fields"),
+                    (b'{"a": 1}\n', "fixture is not canonical JSON"),
+                    (b'{"b":2,"a":1}\n', "fixture is not canonical JSON"),
+                    (b'"\xff"\n', "fixture is not valid JSON"),
+                    (b'\xef\xbb\xbf{}\n', "fixture is not valid JSON"),
+                    (b'{}', "fixture is not canonical JSON"),
+                    (b'{}\n\n', "fixture is not canonical JSON"),
+                    (b'{}\r\n', "fixture is not canonical JSON")]
+        for raw, message in failures:
+            with self.subTest(raw=raw), self.assertRaises(ValueError) as caught:
+                tx._strict_json_bytes(raw, "fixture")
+            self.assertEqual(str(caught.exception), message)
+
+    def test_compound_fault_priority_and_stopping_point(self):
+        from opencoding import transactions as tx
+        from tests.test_product_cli import inventory
+        messages = {"C01": "manifest is not valid JSON", "C02": "receipt status is invalid",
+                    "C03": "transaction evidence file is missing or unsafe",
+                    "C04": "target path contains a link or reparse point: existing.txt",
+                    "C05": "preimage digest mismatch", "C06": "manifest digest mismatch",
+                    "C07": "transaction preimage inventory disagrees", "C08": "event chain is broken",
+                    "C09": "transaction evidence file is missing or unsafe"}
+        for case, message in messages.items():
+            with self.subTest(case=case):
+                root, evidence, values = self.fixture()
+                receipt, manifest = json.loads(values["receipt_bytes"]), json.loads(values["manifest_bytes"])
+                if case == "C01":
+                    receipt = []
+                elif case == "C02":
+                    receipt.update(status="invalid", manifest_sha256="0" * 64)
+                elif case == "C04":
+                    (root / "existing.txt").unlink()
+                    (root / "existing.txt").symlink_to(root / "guard.bin")
+                    manifest["entries"][0]["after_sha256"] = "bad"
+                elif case == "C05":
+                    (evidence / "preimage/0.bin").write_bytes(b"wrong")
+                    (evidence / "preimage/extra.bin").symlink_to(root / "guard.bin")
+                elif case == "C06":
+                    manifest["unknown"] = True
+                elif case in {"C07", "C09"}:
+                    (evidence / "preimage/extra.bin").write_bytes(b"extra")
+                    receipt["planned_paths"] = ["different.txt"]
+                    if case == "C09":
+                        (evidence / "preimage/0.bin").unlink()
+                elif case == "C08":
+                    rows = values["events_bytes"].splitlines(keepends=True)
+                    last = json.loads(rows[2])
+                    last.update(previous_event_sha256="0" * 64, event_sha256="0" * 64)
+                    (evidence / "events.jsonl").write_bytes(b"".join(rows[:2]) + evidence_json(last))
+                if isinstance(receipt, dict):
+                    receipt["manifest_sha256"] = "0" * 64 if case in {"C02", "C06"} else evidence_hash(evidence_json(manifest)[:-1])
+                (evidence / "receipt.json").write_bytes(evidence_json(receipt))
+                (evidence / "manifest.json").write_bytes(b"{bad-json}\n" if case == "C01" else evidence_json(manifest))
+                if case == "C03":
+                    (evidence / "receipt.json").write_bytes(b"bad receipt")
+                    (evidence / "manifest.json").unlink()
+                    (evidence / "manifest.json").symlink_to(root / "guard.bin")
+                before, reads, scans = inventory(root), [], []
+                original_read, original_iterdir = Path.read_bytes, Path.iterdir
+                def read(path):
+                    reads.append(path)
+                    return original_read(path)
+                def scan(path):
+                    scans.append(path)
+                    return original_iterdir(path)
+                with patch.object(Path, "read_bytes", read), patch.object(Path, "iterdir", scan), self.assertRaises(ValueError) as caught:
+                    if case == "C08":
+                        tx._load_events(evidence, values["transaction_id"])
+                    else:
+                        tx._load_receipt_manifest(root, values["transaction_id"])
+                self.assertEqual(str(caught.exception), message)
+                self.assertEqual(inventory(root), before)
+                if case in {"C02", "C03"}:
+                    self.assertEqual(reads.count(evidence / "manifest.json"), 1 if case == "C02" else 0)
+                if case in {"C05", "C09"}:
+                    self.assertNotIn(evidence / "preimage", scans)
+                if case != "C08":
+                    self.assertNotIn(evidence / "events.jsonl", reads)
+
+    def test_dual_manifest_reads_keep_first_parse_and_second_digest(self):
+        from opencoding import transactions as tx
+        for case in ("D01", "D02", "D03", "D04", "D05"):
+            with self.subTest(case=case):
+                root, evidence, values = self.fixture()
+                first = values["manifest_bytes"]
+                second_doc = json.loads(first)
+                if case != "D01":
+                    second_doc["entries"][0]["after_sha256"] = "2" * 64
+                second = evidence_json(second_doc)
+                receipt = json.loads(values["receipt_bytes"])
+                if case == "D02":
+                    receipt["manifest_sha256"] = evidence_hash(second[:-1])
+                if case == "D05":
+                    receipt["unknown"] = True
+                (evidence / "receipt.json").write_bytes(evidence_json(receipt))
+                original, calls = Path.read_bytes, []
+                def read(path):
+                    if path != evidence / "manifest.json":
+                        return original(path)
+                    calls.append(path)
+                    if len(calls) == 1:
+                        return first
+                    if case == "D04":
+                        raise OSError("synthetic second manifest read failure")
+                    if case == "D05":
+                        raise AssertionError("second manifest read must not occur")
+                    return second
+                with patch.object(Path, "read_bytes", read):
+                    if case in {"D01", "D02"}:
+                        result = tx._load_receipt_manifest(root, values["transaction_id"])
+                        self.assertEqual(result[2], json.loads(first))
+                        self.assertEqual(result[1]["manifest_sha256"], evidence_hash(second[:-1]))
+                    else:
+                        kind = OSError if case == "D04" else ValueError
+                        with self.assertRaises(kind) as caught:
+                            tx._load_receipt_manifest(root, values["transaction_id"])
+                        self.assertEqual(str(caught.exception), {"D03": "manifest digest mismatch", "D04": "synthetic second manifest read failure", "D05": "receipt fields are incompatible"}[case])
+                self.assertEqual(len(calls), 1 if case == "D05" else 2)
+
+    def test_events_require_all_previous_raw_lines(self):
+        from opencoding import transactions as tx
+        root, evidence, values = self.fixture()
+        rows = values["events_bytes"].splitlines(keepends=True)
+        self.assertEqual(len(tx._load_events(evidence, values["transaction_id"])), 3)
+        for wrong in (evidence_hash(rows[1]), json.loads(rows[1])["event_sha256"]):
+            last = json.loads(rows[2])
+            last["previous_event_sha256"] = wrong
+            (evidence / "events.jsonl").write_bytes(b"".join(rows[:2]) + evidence_json(last))
+            with self.assertRaisesRegex(ValueError, "^event chain is broken$"):
+                tx._load_events(evidence, values["transaction_id"])
+
+    def test_legacy_loose_content_rules_remain_accepted(self):
+        from opencoding import transactions as tx
+        root, evidence, values = self.fixture()
+        manifest, receipt = json.loads(values["manifest_bytes"]), json.loads(values["receipt_bytes"])
+        manifest["entries"][0]["before_identity"] = ["legacy", {"anything": True}]
+        receipt.update(finished_at="not-ISO", rollback_status="any-old-string", rollback_changed_paths=["existing.txt", "existing.txt"])
+        receipt["manifest_sha256"] = evidence_hash(evidence_json(manifest)[:-1])
+        (evidence / "manifest.json").write_bytes(evidence_json(manifest))
+        (evidence / "receipt.json").write_bytes(evidence_json(receipt))
+        self.assertEqual(tx._load_receipt_manifest(root, values["transaction_id"])[1], receipt)
+        payload = {"transaction_id": values["transaction_id"], "status": "write_intent", "changed_paths": ["existing.txt"], "at": "",
+                   "before_sha256": None, "after_sha256": "1" * 64, "before_identity": [True, False], "after_identity": [False, True]}
+        (evidence / "events.jsonl").write_bytes(evidence_events([payload]))
+        self.assertEqual(tx._load_events(evidence, values["transaction_id"])[0]["before_identity"], [True, False])
+
+    def test_rollback_reads_before_and_inside_real_lock(self):
+        from contextlib import contextmanager
+        from opencoding import transactions as tx
+        from tests.test_product_cli import inventory
+        for fault in (None, "before", "inside"):
+            with self.subTest(fault=fault):
+                root = Path(tempfile.mkdtemp())
+                self.addCleanup(shutil.rmtree, root)
+                (root / "existing.txt").write_bytes(b"before")
+                plan = preview_changes(root, {"existing.txt": "after", "nested/new.txt": "created"})
+                applied = apply_changes(root, plan, approved_digest=plan["plan_digest"])
+                self.assertEqual(applied["status"], "applied")
+                evidence = Path(applied["rollback_ref"])
+                if fault == "before":
+                    receipt = json.loads((evidence / "receipt.json").read_bytes())
+                    receipt["status"] = "invalid"
+                    (evidence / "receipt.json").write_bytes(evidence_json(receipt))
+                before, order, reads = inventory(root), [], []
+                original_receipt, original_events, original_lock, original_read = tx._load_receipt_manifest, tx._load_events, tx._cooperative_lock, Path.read_bytes
+                def receipt_reader(*args):
+                    order.append("receipt")
+                    return original_receipt(*args)
+                def events_reader(*args):
+                    order.append("events")
+                    return original_events(*args)
+                def read(path):
+                    reads.append(path)
+                    if fault == "inside" and path == evidence / "receipt.json" and reads.count(path) == 2:
+                        raise OSError("synthetic receipt read failure inside lock")
+                    return original_read(path)
+                @contextmanager
+                def lock(path):
+                    order.append("lock-enter")
+                    with original_lock(path):
+                        order.append("lock-held")
+                        try:
+                            yield
+                        finally:
+                            order.append("lock-exit")
+                with patch.object(tx, "_load_receipt_manifest", receipt_reader), patch.object(tx, "_load_events", events_reader), patch.object(tx, "_cooperative_lock", lock), patch.object(Path, "read_bytes", read):
+                    result = rollback_changes(root, applied["transaction_id"])
+                expected = ["receipt"] if fault == "before" else ["receipt", "events", "lock-enter", "lock-held", "receipt"] + ([] if fault else ["events"]) + ["lock-exit"]
+                self.assertEqual(order, expected)
+                self.assertEqual(reads.count(evidence / "manifest.json"), {None: 4, "before": 1, "inside": 2}[fault])
+                self.assertEqual(result["status"], "blocked" if fault else "rolled_back")
+                if fault:
+                    self.assertEqual(inventory(root), before)
+                else:
+                    self.assertEqual((root / "existing.txt").read_bytes(), b"before")
+                    self.assertFalse((root / "nested/new.txt").exists())
 
 
 if __name__ == "__main__":

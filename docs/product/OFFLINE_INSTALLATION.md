@@ -30,7 +30,7 @@ python -m opencoding --root C:\path\to\authorized-project --status --json
 
 `--status --json` 的成功状态为 `not_initialized`、`not_found` 或 `ready`；状态查询错误以 `{"error":{"code":"..."}}` 输出到标准错误。不要把这个稳定的 status JSON 约定扩展为交互式向导或所有 CLI 错误的通用协议。没有 `--create`、`--apply`、`--requeue` 或其他未在 `--help` 中出现的开关。
 
-交互式 CLI 会在开始时创建或恢复会话；创建/回答会写本地会话，只有在操作者确认精确 preview 范围后才会尝试生成本地文档。`--preview` 和 `--status` 是查看入口；`--rollback TRANSACTION_ID` 是本地回滚操作。
+交互式 CLI 会在开始时创建或恢复会话；创建/回答会写本地会话，只有在操作者确认精确 preview 范围后才会尝试生成本地文档。`--preview`、`--task-preview` 和 `--status` 是查看入口；`--rollback TRANSACTION_ID` 是本地回滚操作。各模式互斥，`--task-id` 仍仅可与 `--status` 搭配。
 
 已安装包中可直接调用的会话/文档 API 是：`create_session(root, goal)`、`session_view(root, session_id, *, include_preview=False)`、`list_sessions(root)`、`submit_answer(root, session_id, expected_revision, question_id, answer)`、`preview_session(root, session_id)`、`build_caller_confirmation(preview, *, statement, actor=...)`、`approve_preview(preview, *, confirmation, expires_in_seconds=300)`、`apply_approved(root, approval, authorization_context=...)` 和 `rollback(root, transaction_id)`。创建会话和提交回答会在文档 apply 前写入本地会话；`preview_session` 是查看精确 targets 和 diff 的零写入步骤；调用方必须先让人确认该 exact reviewed root、session revision、targets 和 diff，再生成 caller-issued receipt。`approve_preview` 会把该 receipt 绑定到到期的本地 approval；`apply_approved` 必须收到同一份 `authorization_context`，否则拒绝。不能自行构造或编辑 approval，也不能把其中的 `approved` 字段当成外部授权。对 `busy` 或 `stale` 结果，停止当前流程、重新读取并重新 preview，不得继续 apply。
 
@@ -58,7 +58,30 @@ python -m opencoding --root C:\path\to\local-project --status --json
 
 该包不连接 Host、Provider、网络、凭据或真实外部服务。服务端、数据库、身份/KYC、存储、外部数据、支付、通知、物流、鉴定和风控集成只生成带人工 Gate、未启用状态和回滚说明的离线方案；不会创建账号或写入密钥。生成文档仍需在本地交互流程中确认精确写入范围，生成的本地事务可通过 `--rollback` 回滚。
 
-## 受限任务图调度 API
+## 受限任务图只读预览与调度 API
+
+对已有项目和会话，可用只读 CLI 查看 TaskPlan：
+
+```powershell
+python -m opencoding --root C:\path\to\authorized-project --task-preview SESSION_ID
+opencoding --root C:\path\to\authorized-project --task-preview SESSION_ID --json
+```
+
+中文输出包括 root、会话 ID/revision、方案状态、精确 targets、diff、任务 ID、依赖和
+分类。`ready` 仅表示方案状态，不代表执行成功；`document` 是预计本地文档任务，
+`offline_design` 尚未激活，`host_missing` 表示缺少实现/验证执行器。
+预览不查询实际运行或冻结状态；不能将方案中的能力缺口报告为已运行或已 `frozen`。
+`effects` 是另行确认并执行 API 后可能发生的效果，不是本次已经产生的效果。
+
+`--json` 原样序列化 `preview_task_plan(root, session_id)` 的完整返回值。
+退出 `0` 表示读取成功，即使方案仍有未解决问题；读取失败退出 `2`，JSON 模式下
+标准错误输出 `{"error":{"code":"..."}}`。参数错误使用 CLI 参数解析器的错误输出。
+这不改变 `--status --json` 协议，也不建立适用于所有 CLI 模式的统一错误协议。
+
+本模式不会创建、初始化、迁移、恢复或修复会话/Scheduler，不审批、执行、派发、
+重排、回滚或进入向导；向标准输入发送“确认”也不会执行。root/session 不存在、
+会话 ID 非法、模式冲突、坏数据或读取锁失败时，不创建路径、不自动修复。
+新增 CLI 的 Windows 验证仍待执行，以上 Windows 命令示例不是测试通过记录。
 
 安装包也提供 `opencoding.taskplan_scheduler.preview_task_plan(root, session_id)`、
 `build_task_plan_confirmation(preview, *, statement, actor="human-caller", expires_in_seconds=300)`、
@@ -68,7 +91,8 @@ python -m opencoding --root C:\path\to\local-project --status --json
 `build_task_plan_confirmation(preview, statement=..., actor=..., expires_in_seconds=300)`
 记录该范围及期限的确认。将完整上下文独立保存，传入审批及执行；不要从待验证审批反取
 授权上下文。approve 不重置期限，过期必须重新取得确认。普通 service 收据未绑定调度
-期限，不能替代调度确认。当前仅提供 Python API，没有新增 CLI 子命令。
+期限，不能替代调度确认。确认、审批和执行仍仅提供 Python API；`--task-preview`
+仅提供上述零写入预览，没有 CLI 审批、执行或自动派发入口。
 
 执行仅按依赖生成同源 Markdown 文档，每个节点复用现有可回滚事务，并写入 Scheduler
 任务与证据。integration_design 保持未激活；implement_feature/verify_feature 没有

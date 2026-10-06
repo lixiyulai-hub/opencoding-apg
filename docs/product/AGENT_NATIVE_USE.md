@@ -16,7 +16,7 @@ The CLI entry is:
 python -m opencoding --root C:\path\to\authorized-project --help
 ```
 
-Its supported modes are the interactive session flow, `--resume SESSION_ID`, `--list`, `--preview SESSION_ID`, `--change SESSION_ID QUESTION_ID ANSWER`, `--rollback TRANSACTION_ID`, and `--status [--task-id TASK_ID] [--json]`. It has no `--create`, `--apply`, `--run-next`, `--recover`, or `--requeue` aliases.
+Its supported modes are the interactive session flow, `--resume SESSION_ID`, `--list`, `--preview SESSION_ID`, `--task-preview SESSION_ID [--json]`, `--change SESSION_ID QUESTION_ID ANSWER`, `--rollback TRANSACTION_ID`, and `--status [--task-id TASK_ID] [--json]`. The explicit modes are mutually exclusive; `--task-id` is only valid with `--status`. It has no `--create`, `--apply`, `--run-next`, `--recover`, or `--requeue` aliases.
 
 The Python entry points are `opencoding.service` for the document/session loop and `opencoding.scheduler` for explicit local scheduler tasks. They are ordinary in-process APIs, not a wire protocol. Use return values and exception types, not human-readable CLI text, for control flow.
 
@@ -103,7 +103,7 @@ result = apply_after_exact_user_authorization(prepared)
 
 `create_session` and `submit_answer` write session state even when documents are not applied. A `busy` or `stale` answer result has no session payload for the example to continue with; return it to the caller, re-read and reconcile there, and obtain a fresh preview later. `preview_session` is the point to inspect exact proposed document paths and diff. `build_caller_confirmation` is a caller-side receipt assertion after the person has reviewed that exact scope; it is not a service-generated grant. `approve_preview` rejects calls without that receipt, and `apply_approved` rejects calls without the same `authorization_context`. Callers must not synthesize or edit an approval dictionary. `apply_approved` can return `applied`, `stale`, or `busy` outcomes. A stale or busy result is a stop-and-reconcile condition, not a signal to reuse or broaden the prior approval. `rollback` returns the transaction layer result; inspect its `status` and receipt information before declaring recovery complete.
 
-`ServiceError` exposes a `code`, but codes are specific to the called service operation. The CLI only promises the machine-readable status-error convention for `--status --json`; the interactive wizard and other CLI failures are not a complete, uniform JSON protocol.
+`ServiceError` exposes a `code`, but codes are specific to the called service operation. The existing `--status --json` protocol is unchanged. The separate TaskPlan preview convention is described below; neither it nor the status convention makes the interactive wizard, argument errors, or other CLI failures a complete, uniform JSON protocol.
 
 ## Bounded TaskPlan adapter
 
@@ -115,6 +115,19 @@ as the graph; approving the same context cannot renew it. Read
 mapping, idempotency and per-task transaction rollback. This bridge only writes
 same-source Markdown; implementation and verification remain `host_missing`.
 The raw Scheduler helpers below do not implicitly invoke the bridge.
+
+For an existing session, the CLI also exposes the bridge's zero-write preview:
+
+```powershell
+python -m opencoding --root C:\path\to\authorized-project --task-preview SESSION_ID
+python -m opencoding --root C:\path\to\authorized-project --task-preview SESSION_ID --json
+```
+
+The Chinese display includes the root, session ID and revision, plan status, exact targets and diff, task IDs, dependencies, and classifications. `ready` describes the plan, not execution success. `document` describes planned local document work; `offline_design` remains unactivated; `host_missing` identifies unavailable implementation or verification capability. This preview does not inspect live task/run states or establish that a task is `frozen`. Its `effects` describe possible effects of a later, separately confirmed API execution; they did not occur during preview.
+
+With `--json`, stdout is the unmodified JSON serialization of `preview_task_plan(root, session_id)`, including its nested service preview, tasks, effects, and digest. Exit `0` means the preview was read, even when the plan has unresolved questions; it is not an execution receipt. Read failures exit `2`, with `{"error":{"code":"..."}}` on stderr in JSON mode. Argument errors still use the CLI parser's error output.
+
+This mode does not create, initialize, migrate, recover, or repair a session or Scheduler. It never approves, executes, calls `run_next`, requeues, rolls back, or enters the wizard; even sending `确认` to stdin cannot execute the plan. Missing roots/sessions, invalid session IDs, conflicting modes, malformed data, and read-lock failures do not create paths or trigger automatic repair. TaskPlan confirmation, approval, and execution remain explicit Python API operations. Windows verification of this new CLI mode is still pending.
 
 ## Raw Scheduler control is separate from TaskPlan
 
