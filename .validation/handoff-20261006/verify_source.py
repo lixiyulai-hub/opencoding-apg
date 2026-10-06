@@ -55,6 +55,10 @@ def verify(root, binding_path, expected_binding_hash):
         raise ValueError("candidate commit or tree mismatch")
     if git("status", "--porcelain", "--untracked-files=normal"):
         raise ValueError("checkout is not clean")
+    # Git status omits ignored files. An ignored unittest.py or bytecode cache
+    # can shadow the real test runner despite a clean tracked tree.
+    if git("ls-files", "--others", "-z"):
+        raise ValueError("checkout has untracked or ignored files")
     actual = {}
     for row in git("ls-tree", "-rz", "--full-tree", "HEAD").split(b"\0"):
         if not row:

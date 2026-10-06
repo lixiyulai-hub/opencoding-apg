@@ -23,6 +23,7 @@ if ((Get-FileHash -LiteralPath $verifier -Algorithm SHA256).Hash.ToLower() -ne $
 if ((Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLower() -ne $bound.windows_runner_sha256) { throw 'Runner digest mismatch.' }
 $env:PYTHONDONTWRITEBYTECODE = '1'
 $env:PYTHONUTF8 = '1'
+$env:PYTHONOPTIMIZE = '0'
 $env:CARGO_NET_OFFLINE = 'true'
 $env:CARGO_TARGET_DIR = Join-Path $evidencePath 'cargo-target'
 $records = [System.Collections.Generic.List[object]]::new()
@@ -58,7 +59,7 @@ function Invoke-Recorded {
 Push-Location -LiteralPath $repoPath
 try {
     Invoke-Recorded 'source-before' $PythonExecutable @('-X','utf8',$verifier,'--root',$repoPath,'--binding',$binding,'--binding-sha256',$BindingSha256)
-    Invoke-Recorded 'prerequisites' $PythonExecutable @('-c','import sys,platform,setuptools; print(sys.version); print(platform.platform()); print(setuptools.__version__); assert sys.platform == "win32"; assert sys.version_info[:2] == tuple(map(int,sys.argv[1].split("."))); assert int(setuptools.__version__.split(".")[0]) >= 83',$PythonVersion)
+    Invoke-Recorded 'prerequisites' $PythonExecutable @('-c','import sys,platform,setuptools; print(sys.version); print(platform.platform()); print(setuptools.__version__); print("optimize=" + str(sys.flags.optimize)); sys.exit(0 if sys.platform == "win32" and sys.version_info[:2] == tuple(map(int,sys.argv[1].split("."))) and int(setuptools.__version__.split(".")[0]) >= 83 and sys.flags.optimize == 0 else "prerequisites_failed")',$PythonVersion)
     Invoke-Recorded 'cargo-version' 'cargo' @('--version')
     Invoke-Recorded 'rustc-version' 'rustc' @('--version')
     Invoke-Recorded 'adapter' $PythonExecutable @('-X','utf8','-m','unittest','tests.test_taskplan_scheduler','-v') 19

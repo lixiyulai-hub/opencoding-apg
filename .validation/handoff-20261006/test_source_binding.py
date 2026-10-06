@@ -75,6 +75,22 @@ class BindingChecks(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "checkout byte mismatch"):
             self.verify()
 
+    def test_ignored_test_runner_shadow_is_rejected(self):
+        (self.root / ".git" / "info" / "exclude").write_text("unittest.py\n")
+        (self.root / "unittest.py").write_text("print('synthetic unbound runner')\n")
+        self.assertEqual(self.git("status", "--porcelain"), b"")
+        with self.assertRaisesRegex(ValueError, "untracked or ignored"):
+            self.verify()
+
+    def test_ignored_bytecode_cache_is_rejected(self):
+        (self.root / ".git" / "info" / "exclude").write_text("__pycache__/\n")
+        cache = self.root / "__pycache__"
+        cache.mkdir()
+        (cache / "fixture.pyc").write_bytes(b"synthetic cache")
+        self.assertEqual(self.git("status", "--porcelain"), b"")
+        with self.assertRaisesRegex(ValueError, "untracked or ignored"):
+            self.verify()
+
     def test_missing_manifest_path_is_rejected(self):
         self.rows = []
         self.binding["tracked_file_count"] = 0

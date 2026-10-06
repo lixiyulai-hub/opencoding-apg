@@ -7,8 +7,8 @@
   "original_commit_identity_reconstructed": false,
   "tracked_file_count": 679,
   "source_files_sha256": "4474b9f664076d7fe0bc36179a6083c2f9b970d2a8d917986e514429dee56086",
-  "verifier_sha256": "f028d9697e6bf7dc3e7b5d0448d674f7fe490b47913457197650f7ad965f3c1f",
-  "windows_runner_sha256": "a2b715f2409c1a10f11b652846c7b64c31cdc64c0edc503dfc362ada70735ca2",
+  "verifier_sha256": "5dfe1c825af08c019f68802ffd0a1c2ae93102026e6da296e4e5f65a608e9856",
+  "windows_runner_sha256": "536d1d90c68b7338cb16667eb7ebefb71c5d40d00ca0f2fb4f9342b3d543cf8d",
   "windows_historical_symlink_files": [
     "artifacts/w1-isolated-integration-20260905/test-temp/full/tmp31n7obii/linked",
     "artifacts/w1-isolated-integration-20260905/test-temp/full/tmpniw3c91p/.opencoding",

@@ -17,7 +17,7 @@ The workflow checks out tools at the pushed validation commit and product source
 at the fixed candidate separately. It records both the GitHub event commit and
 actual product commit/tree. The binding SHA256 is:
 
-`7044d9659497cb93c2891bcbacf4ad2362907cf41207019a698af3a85e24288c`
+`50cb55d5ab6eaea85a941184fceb86c8666c65a2ce790a11526ce188af218567`
 
 On Windows, use Python 3.11 and 3.12 separately with setuptools>=83 and Rust
 stable already prepared. From PowerShell, supply the chosen Python executable:
@@ -25,7 +25,7 @@ stable already prepared. From PowerShell, supply the chosen Python executable:
 ```powershell
 ./run_windows_validation.ps1 -Repository <candidate-checkout> `
   -PythonVersion 3.11 -PythonExecutable <python-executable> `
-  -BindingSha256 7044d9659497cb93c2891bcbacf4ad2362907cf41207019a698af3a85e24288c `
+  -BindingSha256 50cb55d5ab6eaea85a941184fceb86c8666c65a2ce790a11526ce188af218567 `
   -EvidenceDirectory <new-directory-outside-checkout>
 ```
 
@@ -50,7 +50,7 @@ identity authentication. Review the delivered binding/script hashes before use.
 Raw local logs can contain machine paths; redact copies before sharing and retain
 original and delivered hashes separately. Hosted CI keeps results in job logs.
 
-Current evidence: source binding and nine negative/positive verifier checks pass
+Current evidence: source binding and eleven negative/positive verifier checks pass
 on Linux; 19 restored adapter tests pass. PowerShell and actual Windows execution
 remain pending. No unchanged Linux full-suite rerun was performed.
 

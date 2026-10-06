@@ -50,7 +50,7 @@ jobs:
             -Repository (Join-Path $env:GITHUB_WORKSPACE 'candidate') `
             -PythonVersion '${{ matrix.python-version }}' `
             -PythonExecutable (Get-Command python).Source `
-            -BindingSha256 '7044d9659497cb93c2891bcbacf4ad2362907cf41207019a698af3a85e24288c' `
+            -BindingSha256 '50cb55d5ab6eaea85a941184fceb86c8666c65a2ce790a11526ce188af218567' `
             -EvidenceDirectory (Join-Path $env:RUNNER_TEMP 'handoff-evidence')
           exit $LASTEXITCODE
       - name: Retain evidence in job logs
