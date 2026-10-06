@@ -1,0 +1,70 @@
+name: Handoff candidate Windows validation
+
+on:
+  push:
+    branches: [validation/windows-handoff-20261006]
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    name: Pinned candidate / Python ${{ matrix.python-version }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+    env:
+      # Scope Git checkout settings to this job; do not modify global config.
+      GIT_CONFIG_COUNT: '2'
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+      GIT_CONFIG_KEY_1: core.symlinks
+      GIT_CONFIG_VALUE_1: 'false'
+    steps:
+      - name: Check out validation tools at the pushed commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: validation-tools
+          persist-credentials: false
+      - name: Check out the exact restored product candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 537c1506a05beb8daabdaca4e667afb9fbbe8196
+          path: candidate
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install the declared build backend
+        run: python -m pip install --upgrade "setuptools>=83"
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Verify candidate identity and execute Windows checks
+        shell: pwsh
+        run: |
+          & ./validation-tools/.validation/handoff-20261006/run_windows_validation.ps1 `
+            -Repository (Join-Path $env:GITHUB_WORKSPACE 'candidate') `
+            -PythonVersion '${{ matrix.python-version }}' `
+            -PythonExecutable (Get-Command python).Source `
+            -BindingSha256 '7044d9659497cb93c2891bcbacf4ad2362907cf41207019a698af3a85e24288c' `
+            -EvidenceDirectory (Join-Path $env:RUNNER_TEMP 'handoff-evidence')
+          exit $LASTEXITCODE
+      - name: Retain evidence in job logs
+        if: always()
+        shell: pwsh
+        run: |
+          $folder = Join-Path $env:RUNNER_TEMP 'handoff-evidence'
+          if (Test-Path -LiteralPath $folder) {
+            Get-ChildItem -LiteralPath $folder -File | Where-Object { $_.Extension -in @('.log', '.json') } | Sort-Object Name | ForEach-Object {
+              Write-Output ('::group::' + $_.Name)
+              Get-Content -LiteralPath $_.FullName
+              Write-Output '::endgroup::'
+              Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256 | Select-Object Hash
+            }
+          } else {
+            Write-Output 'No validation evidence: prerequisites or checkout did not complete.'
+          }

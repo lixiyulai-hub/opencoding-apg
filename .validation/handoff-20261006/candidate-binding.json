@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "537c1506a05beb8daabdaca4e667afb9fbbe8196",
+  "candidate_tree": "f617ff1eba53c32ec18011b913e480761f4896f1",
+  "base": "5d68c2075620df0be005c76f904b256b980d303e",
+  "historical_source_commit": "13398c3ab25f98d0a7d08cb782d4554e1e5f14de",
+  "original_commit_identity_reconstructed": false,
+  "tracked_file_count": 679,
+  "source_files_sha256": "4474b9f664076d7fe0bc36179a6083c2f9b970d2a8d917986e514429dee56086",
+  "verifier_sha256": "f028d9697e6bf7dc3e7b5d0448d674f7fe490b47913457197650f7ad965f3c1f",
+  "windows_runner_sha256": "a2b715f2409c1a10f11b652846c7b64c31cdc64c0edc503dfc362ada70735ca2",
+  "windows_historical_symlink_files": [
+    "artifacts/w1-isolated-integration-20260905/test-temp/full/tmp31n7obii/linked",
+    "artifacts/w1-isolated-integration-20260905/test-temp/full/tmpniw3c91p/.opencoding",
+    "artifacts/w1-isolated-integration-20260905/test-temp/full/tmpu93b7__1/link.txt",
+    "artifacts/w1-isolated-integration-20260905/test-temp/tmp_ut0oki2/link.txt",
+    "artifacts/w1-isolated-integration-20260905/test-temp/tmpo3n1oapj/.opencoding",
+    "artifacts/w1-isolated-integration-20260905/test-temp/tmptpyufsjo/linked"
+  ],
+  "windows_required_python_versions": [
+    "3.11",
+    "3.12"
+  ],
+  "test_counts": {
+    "adapter": 19,
+    "full": 247,
+    "packaging": 6,
+    "rust": 4
+  }
+}
