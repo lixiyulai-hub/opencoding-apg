@@ -57,3 +57,24 @@ python -m opencoding --root C:\path\to\local-project --status --json
 ```
 
 该包不连接 Host、Provider、网络、凭据或真实外部服务。服务端、数据库、身份/KYC、存储、外部数据、支付、通知、物流、鉴定和风控集成只生成带人工 Gate、未启用状态和回滚说明的离线方案；不会创建账号或写入密钥。生成文档仍需在本地交互流程中确认精确写入范围，生成的本地事务可通过 `--rollback` 回滚。
+
+## 受限任务图调度 API
+
+安装包也提供 `opencoding.taskplan_scheduler.preview_task_plan(root, session_id)`、
+`build_task_plan_confirmation(preview, *, statement, actor="human-caller", expires_in_seconds=300)`、
+`approve_task_plan(preview, *, confirmation)` 和
+`execute_task_plan(root, approval, *, authorization_context)`。预览、确认构造和审批均零写入；调用方展示
+完整调度预览的 targets、diff、tasks、effects 后，使用
+`build_task_plan_confirmation(preview, statement=..., actor=..., expires_in_seconds=300)`
+记录该范围及期限的确认。将完整上下文独立保存，传入审批及执行；不要从待验证审批反取
+授权上下文。approve 不重置期限，过期必须重新取得确认。普通 service 收据未绑定调度
+期限，不能替代调度确认。当前仅提供 Python API，没有新增 CLI 子命令。
+
+执行仅按依赖生成同源 Markdown 文档，每个节点复用现有可回滚事务，并写入 Scheduler
+任务与证据。integration_design 保持未激活；implement_feature/verify_feature 没有
+真实执行器，明确 host_missing，失败传递后继 frozen。整个图被阻断时不返回成功。
+相同审批重放不新增已完成文档事务；成功输出被修改或回滚后会阻止重放，会话变化返回
+stale。会话锁元数据可能刷新，执行 API 不是只读查询。每个节点最多一次尝试，部分
+失败保留现场和回滚引用；从 run 的 artifacts 或 stdout_summary 文档事务 JSON 取得
+transaction_id，通过既有 rollback 按逆序撤销并检查返回状态。源码完整说明为
+`docs/product/TASKPLAN_SCHEDULER.md`（不随 wheel 打包）。

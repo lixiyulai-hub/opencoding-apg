@@ -89,6 +89,21 @@ def _validate_action(action: Mapping[str, Any]) -> dict[str, Any]:
             raise ValueError("python_module args are too large")
         if inspect_sensitive(" ".join(args))["sensitive"]:
             raise ValueError("python_module args contain sensitive material")
+    elif kind == "document":
+        if set(action) != {"type", "plan"} or not isinstance(action["plan"], dict):
+            raise ValueError("document action requires a transaction preview")
+        plan = action["plan"]
+        if set(plan) != {"schema_version", "root", "entries", "plan_digest", "status"}:
+            raise ValueError("document plan fields are invalid")
+        if not isinstance(plan["entries"], list) or not plan["entries"]:
+            raise ValueError("document entries are required")
+        for entry in plan["entries"]:
+            if not isinstance(entry, dict) or not isinstance(entry.get("path"), str) or not entry["path"].endswith(".md"):
+                raise ValueError("document targets must be Markdown files")
+            _validate_action({"type": "write_text", "path": entry["path"], "content": entry.get("content")})
+    elif kind == "host_missing":
+        if set(action) != {"type"}:
+            raise ValueError("host_missing does not accept executable input")
     else:
         raise ValueError("unknown action type")
     return action
@@ -120,9 +135,15 @@ def _validate_context(context: Mapping[str, Any], root: Path, action: Mapping[st
         raise ValueError("action context data_scope is not allowed")
     for target in targets:
         safe_target(root, target)
-    expected = [action["path"]] if action["type"] == "write_text" else []
+    expected = action_targets(action)
     if targets != expected:
         raise ValueError("action context targets do not precisely match action")
+
+
+def action_targets(action: Mapping[str, Any]) -> list[str]:
+    if action["type"] == "document":
+        return [entry["path"] for entry in action["plan"]["entries"]]
+    return [action["path"]] if action["type"] == "write_text" else []
 
 
 def _atomic_write(root: Path, relative: str, content: bytes) -> tuple[Path, str]:
@@ -341,6 +362,22 @@ class Executor:
             cancel_event = threading.Event()
         if cancel_event.is_set():
             return self._result(run_id, "cancelled", None, False, True, started, "", "", [], "cancel_requested", action, input_payload)
+        if action["type"] == "host_missing":
+            return self._result(run_id, "failed", None, False, False, started, "", "", [], "host_missing", action, input_payload)
+        if action["type"] == "document":
+            from .transactions import apply_changes
+
+            transaction = apply_changes(self.root, action["plan"], approved_digest=action["plan"]["plan_digest"])
+            succeeded = transaction["status"] == "applied"
+            artifacts = [
+                {"path": entry["path"], "sha256": entry["after_sha256"], "sha256_kind": "file_bytes",
+                 "transaction_id": transaction["transaction_id"]}
+                for entry in action["plan"]["entries"]
+            ] if succeeded else []
+            # Keep failed/partial transaction recovery evidence in the scheduler receipt too.
+            return self._result(run_id, "succeeded" if succeeded else "failed", 0 if succeeded else None,
+                                False, False, started, canonical_json(transaction).decode("utf-8"), "", artifacts,
+                                None if succeeded else "document_transaction_failed", action, input_payload)
         if action["type"] == "write_text":
             payload = action["content"].encode("utf-8")
             _target, artifact_hash = _atomic_write(self.root, action["path"], payload)

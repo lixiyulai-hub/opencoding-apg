@@ -1,0 +1,97 @@
+{
+  "baseline": "5d68c2075620df0be005c76f904b256b980d303e",
+  "initial_environment_head": "91a20392a856ff4717d230467d32fc154bcb82b1",
+  "branch": "local/taskplan-scheduler-offline",
+  "checkpoint": "9c05a5a3ef3552271b07197f6392fa7c33cb6b36",
+  "merge_base": "91a20392a856ff4717d230467d32fc154bcb82b1",
+  "work_ahead": 8,
+  "work_behind": 26,
+  "remote_pr": {
+    "number": 1,
+    "draft": true,
+    "head": "5d68c2075620df0be005c76f904b256b980d303e",
+    "ci_run": 37286657441,
+    "ci_jobs_successful": 5,
+    "scope": "baseline only; no new Windows run"
+  },
+  "environment": {
+    "os": "Linux",
+    "python": "3.12.14",
+    "setuptools": "84.0.0",
+    "cargo": "unavailable"
+  },
+  "tests": [
+    {
+      "command": "python -X utf8 -m unittest",
+      "scope": "unmodified baseline",
+      "tests": 228,
+      "failures": 14,
+      "errors": 5,
+      "exit_code": 1,
+      "log": "baseline.log"
+    },
+    {
+      "command": "python -X utf8 -m unittest tests.test_taskplan_scheduler -v",
+      "tests": 15,
+      "exit_code": 0,
+      "log": "adapter.log"
+    },
+    {
+      "command": "python -X utf8 -m unittest tests.test_taskplan_scheduler tests.test_product_executor tests.test_product_transactions tests.test_product_service tests.test_product_planning tests.test_product_integration tests.test_marketplace_flow",
+      "tests": 93,
+      "exit_code": 0,
+      "log": "targeted.log"
+    },
+    {
+      "command": "python -X utf8 -m unittest",
+      "scope": "modified worktree",
+      "tests": 243,
+      "failures": 14,
+      "errors": 5,
+      "exit_code": 1,
+      "log": "full.log"
+    },
+    {
+      "command": "python -X utf8 -m unittest tests.test_product_packaging",
+      "tests": 6,
+      "exit_code": 0,
+      "log": "packaging.log"
+    },
+    {
+      "command": "python -X utf8 -m compileall -q opencoding scripts tests",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "same_failure_and_error_cases": true,
+  "new_failure_and_error_cases": [],
+  "initial_targeted_command_error": "An initial command mistakenly named checkpoint-only tests.test_product_transactions_w2; import failed. Corrected to existing work modules; final targeted run passed 93 tests. See initial-targeted-command-error.log.",
+  "source_sha256": {
+    "opencoding/taskplan_scheduler.py": "23fb4955b4f4fe09df94eb9fcc5c5d139f4f6c946034cd77e548cb311bac262b",
+    "opencoding/executor.py": "d26f03595957572bc7a209a3942f5eb36ef432ee1a591a9455abd12af79a0683",
+    "opencoding/scheduler.py": "5ef06782665ed63ab14084d3ff38ef0d1d69f3cdd0d4615498895ab44756715a",
+    "tests/test_taskplan_scheduler.py": "a958a4b3d1916cf1249490690e7e82b1c6a43674aed24166e079003e35216242",
+    "docs/product/TASKPLAN_SCHEDULER.md": "cd16789eec08bbce1d06c662243b9c14d543c7dab896b36137066f112ed91686",
+    "docs/product/AGENT_NATIVE_USE.md": "1452f1de4387569a7ad9a2faeee90de7cc755211bfc62e684d54966bd7b84262",
+    "docs/product/OFFLINE_INSTALLATION.md": "78fbc32bde1098a5ffd57558b5464247e81480ba4859a37dc55d6c71db8f4fba"
+  },
+  "log_sha256": {
+    "baseline.log": "070e47af95e3adb05119a6b0e90933082a964a5cc0ce2d5d12c4faeb2078470e",
+    "adapter.log": "0d63e1f00b5b4ba16afb62b385cc9bac3ca33a0f3636cc1eca2221924fe4908a",
+    "targeted.log": "f94cf4992d26c13f9f0c63cb6cd89003f31a80340d23bcbb08bdc6d980d30965",
+    "full.log": "9e420573540d50347ef5d6efe0fe23b850ac0e8f8602eaeeed18bd4695c9a661",
+    "packaging.log": "4c89989f2eaa83f26e2012fc92ecc2eea280cb9b133a5f66104c0341374536a8",
+    "initial-targeted-command-error.log": "dce94c0134be68463d8c38eced435e7b7e0876fc2397899cf33d1ea6086500ee"
+  },
+  "independent_review": "not performed; author self-review only",
+  "boundaries": [
+    "no push/merge/release",
+    "no checkpoint whole-branch merge",
+    "no previously blocked public-path cleanup",
+    "no host/provider/network/payment/credentials/deployment runtime integration",
+    "Windows execution of new code unverified"
+  ]
+}

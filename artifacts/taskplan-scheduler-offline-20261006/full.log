@@ -1,0 +1,248 @@
+.........................................E............FFFF...F.FFFF......................................................retained packaging workspace: /tmp/opencoding-packaging-source-48cykn3g
+.retained packaging workspace: /tmp/opencoding-packaging-hardlink-ou65hsu6
+.retained packaging workspace: /tmp/opencoding-packaging-links-hd82n2qo
+.retained packaging workspace: /tmp/opencoding-packaging-archive-boundaries-7kxe_bz1
+.retained packaging workspace: /tmp/opencoding-packaging-canonical-target-1y26pzim
+....................................EEE..FFFFFE..........................................................................
+======================================================================
+ERROR: test_cargo_tests_pass (tests.test_domain_contract.DomainContractTests.test_cargo_tests_pass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_domain_contract.py", line 14, in test_cargo_tests_pass
+    result = subprocess.run(["cargo", "test", "--manifest-path", str(ROOT / "services/domain/Cargo.toml")], capture_output=True, text=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'cargo'
+
+======================================================================
+ERROR: test_read_snapshot_blocks_a_competing_wal_switch_without_sidecar_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_blocks_a_competing_wal_switch_without_sidecar_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_scheduler.py", line 458, in test_read_snapshot_blocks_a_competing_wal_switch_without_sidecar_writes
+    snapshot = read_snapshot(self.root)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/opencoding-apg/opencoding/scheduler.py", line 386, in read_snapshot
+    with _readonly_snapshot_connection(project_root) as connection:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/workspace/opencoding-apg/opencoding/scheduler.py", line 218, in _readonly_snapshot_connection
+    raise SchedulerSnapshotError("unsupported_platform", "zero-write scheduler snapshots are unsupported on this platform")
+opencoding.scheduler.SchedulerSnapshotError: zero-write scheduler snapshots are unsupported on this platform
+
+======================================================================
+ERROR: test_read_snapshot_filter_not_found_and_connections_close (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_filter_not_found_and_connections_close)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_scheduler.py", line 251, in test_read_snapshot_filter_not_found_and_connections_close
+    missing = read_snapshot(self.root, "missing")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/opencoding-apg/opencoding/scheduler.py", line 386, in read_snapshot
+    with _readonly_snapshot_connection(project_root) as connection:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/workspace/opencoding-apg/opencoding/scheduler.py", line 218, in _readonly_snapshot_connection
+    raise SchedulerSnapshotError("unsupported_platform", "zero-write scheduler snapshots are unsupported on this platform")
+opencoding.scheduler.SchedulerSnapshotError: zero-write scheduler snapshots are unsupported on this platform
+
+======================================================================
+ERROR: test_read_snapshot_is_coherent_ordered_and_does_not_recover_running_task (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_is_coherent_ordered_and_does_not_recover_running_task)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_scheduler.py", line 238, in test_read_snapshot_is_coherent_ordered_and_does_not_recover_running_task
+    snapshot = read_snapshot(self.root)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/opencoding-apg/opencoding/scheduler.py", line 386, in read_snapshot
+    with _readonly_snapshot_connection(project_root) as connection:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/workspace/opencoding-apg/opencoding/scheduler.py", line 218, in _readonly_snapshot_connection
+    raise SchedulerSnapshotError("unsupported_platform", "zero-write scheduler snapshots are unsupported on this platform")
+opencoding.scheduler.SchedulerSnapshotError: zero-write scheduler snapshots are unsupported on this platform
+
+======================================================================
+ERROR: test_read_snapshot_uses_escaped_uri_for_platform_valid_special_root (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_uses_escaped_uri_for_platform_valid_special_root)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_scheduler.py", line 475, in test_read_snapshot_uses_escaped_uri_for_platform_valid_special_root
+    self.assertEqual(read_snapshot(root)["root"], str(root))
+                     ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/opencoding-apg/opencoding/scheduler.py", line 386, in read_snapshot
+    with _readonly_snapshot_connection(project_root) as connection:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/workspace/opencoding-apg/opencoding/scheduler.py", line 218, in _readonly_snapshot_connection
+    raise SchedulerSnapshotError("unsupported_platform", "zero-write scheduler snapshots are unsupported on this platform")
+opencoding.scheduler.SchedulerSnapshotError: zero-write scheduler snapshots are unsupported on this platform
+
+======================================================================
+FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=27)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_cli.py", line 358, in test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 2 != 0 : 当前平台不支持只读执行状态查询。
+
+
+======================================================================
+FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_cli.py", line 358, in test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 2 != 0 : 当前平台不支持只读执行状态查询。
+
+
+======================================================================
+FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=127)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_cli.py", line 358, in test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 2 != 0 : 当前平台不支持只读执行状态查询。
+
+
+======================================================================
+FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=133)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_cli.py", line 358, in test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 2 != 0 : 当前平台不支持只读执行状态查询。
+
+
+======================================================================
+FAIL: test_status_absent_and_empty_initialized_are_successful_zero_write_reads (tests.test_product_cli.ProductCliSubprocessTests.test_status_absent_and_empty_initialized_are_successful_zero_write_reads)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_cli.py", line 171, in test_status_absent_and_empty_initialized_are_successful_zero_write_reads
+    self.assertEqual(empty.returncode, 0, empty.stderr)
+AssertionError: 2 != 0 : {
+  "error": {
+    "code": "execution_status_unsupported_platform"
+  }
+}
+
+
+======================================================================
+FAIL: test_status_filters_missing_tasks_and_rejects_orphan_or_conflicting_modes_before_reads (tests.test_product_cli.ProductCliSubprocessTests.test_status_filters_missing_tasks_and_rejects_orphan_or_conflicting_modes_before_reads)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_cli.py", line 207, in test_status_filters_missing_tasks_and_rejects_orphan_or_conflicting_modes_before_reads
+    self.assertEqual(filtered.returncode, 0, filtered.stderr)
+AssertionError: 2 != 0 : {
+  "error": {
+    "code": "execution_status_unsupported_platform"
+  }
+}
+
+
+======================================================================
+FAIL: test_status_json_errors_are_sanitized_and_leave_stores_unchanged (tests.test_product_cli.ProductCliSubprocessTests.test_status_json_errors_are_sanitized_and_leave_stores_unchanged)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_cli.py", line 241, in test_status_json_errors_are_sanitized_and_leave_stores_unchanged
+    self.assertEqual(json.loads(corrupt.stderr), {"error": {"code": "execution_status_database_unavailable"}})
+AssertionError: {'error': {'code': 'execution_status_unsupported_platform'}} != {'error': {'code': 'execution_status_database_unavailable'}}
+- {'error': {'code': 'execution_status_unsupported_platform'}}
++ {'error': {'code': 'execution_status_database_unavailable'}}
+
+======================================================================
+FAIL: test_status_lists_ordered_tasks_without_action_or_input_bodies (tests.test_product_cli.ProductCliSubprocessTests.test_status_lists_ordered_tasks_without_action_or_input_bodies)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_cli.py", line 185, in test_status_lists_ordered_tasks_without_action_or_input_bodies
+    self.assertEqual(structured.returncode, 0, structured.stderr)
+AssertionError: 2 != 0 : {
+  "error": {
+    "code": "execution_status_unsupported_platform"
+  }
+}
+
+
+======================================================================
+FAIL: test_status_rejects_busy_and_unsafe_stores_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_status_rejects_busy_and_unsafe_stores_without_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_cli.py", line 256, in test_status_rejects_busy_and_unsafe_stores_without_writes
+    self.assertEqual(json.loads(busy.stderr), {"error": {"code": "execution_status_database_busy"}})
+AssertionError: {'error': {'code': 'execution_status_unsupported_platform'}} != {'error': {'code': 'execution_status_database_busy'}}
+- {'error': {'code': 'execution_status_unsupported_platform'}}
+?                                      ---------- ---  ^^^^
+
++ {'error': {'code': 'execution_status_database_busy'}}
+?                                         ^^^^^^^^^^
+
+
+======================================================================
+FAIL: test_read_snapshot_rejects_closed_wal_mode_database_without_sidecars (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_closed_wal_mode_database_without_sidecars)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_scheduler.py", line 437, in test_read_snapshot_rejects_closed_wal_mode_database_without_sidecars
+    self.assertEqual(wal_error.exception.code, "unsafe_journal_state")
+AssertionError: 'unsupported_platform' != 'unsafe_journal_state'
+- unsupported_platform
++ unsafe_journal_state
+
+
+======================================================================
+FAIL: test_read_snapshot_rejects_invalid_and_unsafe_storage_without_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_invalid_and_unsafe_storage_without_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_scheduler.py", line 287, in test_read_snapshot_rejects_invalid_and_unsafe_storage_without_writes
+    self.assertEqual(unsupported.exception.code, "unsupported_schema")
+AssertionError: 'unsupported_platform' != 'unsupported_schema'
+- unsupported_platform
++ unsupported_schema
+
+
+======================================================================
+FAIL: test_read_snapshot_rejects_journal_and_active_wal_without_side_effects (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_journal_and_active_wal_without_side_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_scheduler.py", line 407, in test_read_snapshot_rejects_journal_and_active_wal_without_side_effects
+    self.assertEqual(journal_error.exception.code, "unsafe_journal_state")
+AssertionError: 'unsupported_platform' != 'unsafe_journal_state'
+- unsupported_platform
++ unsafe_journal_state
+
+
+======================================================================
+FAIL: test_read_snapshot_rejects_locked_and_linked_metadata_without_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_locked_and_linked_metadata_without_writes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_scheduler.py", line 367, in test_read_snapshot_rejects_locked_and_linked_metadata_without_writes
+    self.assertEqual(busy.exception.code, "database_busy")
+AssertionError: 'unsupported_platform' != 'database_busy'
+- unsupported_platform
++ database_busy
+
+
+======================================================================
+FAIL: test_read_snapshot_rejects_schema_defects_and_nonfinite_json_on_all_views (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_schema_defects_and_nonfinite_json_on_all_views)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/opencoding-apg/tests/test_product_scheduler.py", line 326, in test_read_snapshot_rejects_schema_defects_and_nonfinite_json_on_all_views
+    self.assertEqual(missing_column.exception.code, "unsupported_schema")
+AssertionError: 'unsupported_platform' != 'unsupported_schema'
+- unsupported_platform
++ unsupported_schema
+
+
+----------------------------------------------------------------------
+Ran 243 tests in 12.227s
+
+FAILED (failures=14, errors=5)

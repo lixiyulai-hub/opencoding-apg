@@ -105,7 +105,18 @@ result = apply_after_exact_user_authorization(prepared)
 
 `ServiceError` exposes a `code`, but codes are specific to the called service operation. The CLI only promises the machine-readable status-error convention for `--status --json`; the interactive wizard and other CLI failures are not a complete, uniform JSON protocol.
 
-## Scheduler control is separate from TaskPlan
+## Bounded TaskPlan adapter
+
+`opencoding.taskplan_scheduler` now provides a separate, explicit offline bridge:
+`preview_task_plan`, `build_task_plan_confirmation`, `approve_task_plan`, and
+`execute_task_plan`. The dedicated caller context binds the exact expiry as well
+as the graph; approving the same context cannot renew it. Read
+[`TASKPLAN_SCHEDULER.md`](TASKPLAN_SCHEDULER.md) for exact confirmation, task
+mapping, idempotency and per-task transaction rollback. This bridge only writes
+same-source Markdown; implementation and verification remain `host_missing`.
+The raw Scheduler helpers below do not implicitly invoke the bridge.
+
+## Raw Scheduler control is separate from TaskPlan
 
 The public scheduler module exports these functions:
 

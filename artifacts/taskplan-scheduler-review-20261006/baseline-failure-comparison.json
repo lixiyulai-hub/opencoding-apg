@@ -1,0 +1,246 @@
+[
+  {
+    "scope": "original_without_cargo",
+    "baseline_log": "artifacts/taskplan-scheduler-offline-20261006/baseline.log",
+    "candidate_log": "artifacts/taskplan-scheduler-offline-20261006/full.log",
+    "identical_ordered_cases": true,
+    "case_count": 19,
+    "rows": [
+      {
+        "index": 1,
+        "baseline": "ERROR: test_cargo_tests_pass (tests.test_domain_contract.DomainContractTests.test_cargo_tests_pass)",
+        "candidate": "ERROR: test_cargo_tests_pass (tests.test_domain_contract.DomainContractTests.test_cargo_tests_pass)",
+        "equal": true
+      },
+      {
+        "index": 2,
+        "baseline": "ERROR: test_read_snapshot_blocks_a_competing_wal_switch_without_sidecar_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_blocks_a_competing_wal_switch_without_sidecar_writes)",
+        "candidate": "ERROR: test_read_snapshot_blocks_a_competing_wal_switch_without_sidecar_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_blocks_a_competing_wal_switch_without_sidecar_writes)",
+        "equal": true
+      },
+      {
+        "index": 3,
+        "baseline": "ERROR: test_read_snapshot_filter_not_found_and_connections_close (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_filter_not_found_and_connections_close)",
+        "candidate": "ERROR: test_read_snapshot_filter_not_found_and_connections_close (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_filter_not_found_and_connections_close)",
+        "equal": true
+      },
+      {
+        "index": 4,
+        "baseline": "ERROR: test_read_snapshot_is_coherent_ordered_and_does_not_recover_running_task (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_is_coherent_ordered_and_does_not_recover_running_task)",
+        "candidate": "ERROR: test_read_snapshot_is_coherent_ordered_and_does_not_recover_running_task (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_is_coherent_ordered_and_does_not_recover_running_task)",
+        "equal": true
+      },
+      {
+        "index": 5,
+        "baseline": "ERROR: test_read_snapshot_uses_escaped_uri_for_platform_valid_special_root (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_uses_escaped_uri_for_platform_valid_special_root)",
+        "candidate": "ERROR: test_read_snapshot_uses_escaped_uri_for_platform_valid_special_root (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_uses_escaped_uri_for_platform_valid_special_root)",
+        "equal": true
+      },
+      {
+        "index": 6,
+        "baseline": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=27)",
+        "candidate": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=27)",
+        "equal": true
+      },
+      {
+        "index": 7,
+        "baseline": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=0)",
+        "candidate": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=0)",
+        "equal": true
+      },
+      {
+        "index": 8,
+        "baseline": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=127)",
+        "candidate": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=127)",
+        "equal": true
+      },
+      {
+        "index": 9,
+        "baseline": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=133)",
+        "candidate": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=133)",
+        "equal": true
+      },
+      {
+        "index": 10,
+        "baseline": "FAIL: test_status_absent_and_empty_initialized_are_successful_zero_write_reads (tests.test_product_cli.ProductCliSubprocessTests.test_status_absent_and_empty_initialized_are_successful_zero_write_reads)",
+        "candidate": "FAIL: test_status_absent_and_empty_initialized_are_successful_zero_write_reads (tests.test_product_cli.ProductCliSubprocessTests.test_status_absent_and_empty_initialized_are_successful_zero_write_reads)",
+        "equal": true
+      },
+      {
+        "index": 11,
+        "baseline": "FAIL: test_status_filters_missing_tasks_and_rejects_orphan_or_conflicting_modes_before_reads (tests.test_product_cli.ProductCliSubprocessTests.test_status_filters_missing_tasks_and_rejects_orphan_or_conflicting_modes_before_reads)",
+        "candidate": "FAIL: test_status_filters_missing_tasks_and_rejects_orphan_or_conflicting_modes_before_reads (tests.test_product_cli.ProductCliSubprocessTests.test_status_filters_missing_tasks_and_rejects_orphan_or_conflicting_modes_before_reads)",
+        "equal": true
+      },
+      {
+        "index": 12,
+        "baseline": "FAIL: test_status_json_errors_are_sanitized_and_leave_stores_unchanged (tests.test_product_cli.ProductCliSubprocessTests.test_status_json_errors_are_sanitized_and_leave_stores_unchanged)",
+        "candidate": "FAIL: test_status_json_errors_are_sanitized_and_leave_stores_unchanged (tests.test_product_cli.ProductCliSubprocessTests.test_status_json_errors_are_sanitized_and_leave_stores_unchanged)",
+        "equal": true
+      },
+      {
+        "index": 13,
+        "baseline": "FAIL: test_status_lists_ordered_tasks_without_action_or_input_bodies (tests.test_product_cli.ProductCliSubprocessTests.test_status_lists_ordered_tasks_without_action_or_input_bodies)",
+        "candidate": "FAIL: test_status_lists_ordered_tasks_without_action_or_input_bodies (tests.test_product_cli.ProductCliSubprocessTests.test_status_lists_ordered_tasks_without_action_or_input_bodies)",
+        "equal": true
+      },
+      {
+        "index": 14,
+        "baseline": "FAIL: test_status_rejects_busy_and_unsafe_stores_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_status_rejects_busy_and_unsafe_stores_without_writes)",
+        "candidate": "FAIL: test_status_rejects_busy_and_unsafe_stores_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_status_rejects_busy_and_unsafe_stores_without_writes)",
+        "equal": true
+      },
+      {
+        "index": 15,
+        "baseline": "FAIL: test_read_snapshot_rejects_closed_wal_mode_database_without_sidecars (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_closed_wal_mode_database_without_sidecars)",
+        "candidate": "FAIL: test_read_snapshot_rejects_closed_wal_mode_database_without_sidecars (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_closed_wal_mode_database_without_sidecars)",
+        "equal": true
+      },
+      {
+        "index": 16,
+        "baseline": "FAIL: test_read_snapshot_rejects_invalid_and_unsafe_storage_without_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_invalid_and_unsafe_storage_without_writes)",
+        "candidate": "FAIL: test_read_snapshot_rejects_invalid_and_unsafe_storage_without_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_invalid_and_unsafe_storage_without_writes)",
+        "equal": true
+      },
+      {
+        "index": 17,
+        "baseline": "FAIL: test_read_snapshot_rejects_journal_and_active_wal_without_side_effects (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_journal_and_active_wal_without_side_effects)",
+        "candidate": "FAIL: test_read_snapshot_rejects_journal_and_active_wal_without_side_effects (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_journal_and_active_wal_without_side_effects)",
+        "equal": true
+      },
+      {
+        "index": 18,
+        "baseline": "FAIL: test_read_snapshot_rejects_locked_and_linked_metadata_without_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_locked_and_linked_metadata_without_writes)",
+        "candidate": "FAIL: test_read_snapshot_rejects_locked_and_linked_metadata_without_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_locked_and_linked_metadata_without_writes)",
+        "equal": true
+      },
+      {
+        "index": 19,
+        "baseline": "FAIL: test_read_snapshot_rejects_schema_defects_and_nonfinite_json_on_all_views (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_schema_defects_and_nonfinite_json_on_all_views)",
+        "candidate": "FAIL: test_read_snapshot_rejects_schema_defects_and_nonfinite_json_on_all_views (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_schema_defects_and_nonfinite_json_on_all_views)",
+        "equal": true
+      }
+    ],
+    "new_cases": [],
+    "removed_cases": []
+  },
+  {
+    "scope": "review_with_official_cargo",
+    "baseline_log": "artifacts/taskplan-scheduler-review-20261006/baseline-cargo.log",
+    "candidate_log": "artifacts/taskplan-scheduler-review-20261006/full-cargo.log",
+    "identical_ordered_cases": true,
+    "case_count": 18,
+    "rows": [
+      {
+        "index": 1,
+        "baseline": "ERROR: test_read_snapshot_blocks_a_competing_wal_switch_without_sidecar_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_blocks_a_competing_wal_switch_without_sidecar_writes)",
+        "candidate": "ERROR: test_read_snapshot_blocks_a_competing_wal_switch_without_sidecar_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_blocks_a_competing_wal_switch_without_sidecar_writes)",
+        "equal": true
+      },
+      {
+        "index": 2,
+        "baseline": "ERROR: test_read_snapshot_filter_not_found_and_connections_close (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_filter_not_found_and_connections_close)",
+        "candidate": "ERROR: test_read_snapshot_filter_not_found_and_connections_close (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_filter_not_found_and_connections_close)",
+        "equal": true
+      },
+      {
+        "index": 3,
+        "baseline": "ERROR: test_read_snapshot_is_coherent_ordered_and_does_not_recover_running_task (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_is_coherent_ordered_and_does_not_recover_running_task)",
+        "candidate": "ERROR: test_read_snapshot_is_coherent_ordered_and_does_not_recover_running_task (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_is_coherent_ordered_and_does_not_recover_running_task)",
+        "equal": true
+      },
+      {
+        "index": 4,
+        "baseline": "ERROR: test_read_snapshot_uses_escaped_uri_for_platform_valid_special_root (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_uses_escaped_uri_for_platform_valid_special_root)",
+        "candidate": "ERROR: test_read_snapshot_uses_escaped_uri_for_platform_valid_special_root (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_uses_escaped_uri_for_platform_valid_special_root)",
+        "equal": true
+      },
+      {
+        "index": 5,
+        "baseline": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=27)",
+        "candidate": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=27)",
+        "equal": true
+      },
+      {
+        "index": 6,
+        "baseline": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=0)",
+        "candidate": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=0)",
+        "equal": true
+      },
+      {
+        "index": 7,
+        "baseline": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=127)",
+        "candidate": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=127)",
+        "equal": true
+      },
+      {
+        "index": 8,
+        "baseline": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=133)",
+        "candidate": "FAIL: test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_human_status_redacts_control_spliced_persisted_last_run_ids_without_writes) (control=133)",
+        "equal": true
+      },
+      {
+        "index": 9,
+        "baseline": "FAIL: test_status_absent_and_empty_initialized_are_successful_zero_write_reads (tests.test_product_cli.ProductCliSubprocessTests.test_status_absent_and_empty_initialized_are_successful_zero_write_reads)",
+        "candidate": "FAIL: test_status_absent_and_empty_initialized_are_successful_zero_write_reads (tests.test_product_cli.ProductCliSubprocessTests.test_status_absent_and_empty_initialized_are_successful_zero_write_reads)",
+        "equal": true
+      },
+      {
+        "index": 10,
+        "baseline": "FAIL: test_status_filters_missing_tasks_and_rejects_orphan_or_conflicting_modes_before_reads (tests.test_product_cli.ProductCliSubprocessTests.test_status_filters_missing_tasks_and_rejects_orphan_or_conflicting_modes_before_reads)",
+        "candidate": "FAIL: test_status_filters_missing_tasks_and_rejects_orphan_or_conflicting_modes_before_reads (tests.test_product_cli.ProductCliSubprocessTests.test_status_filters_missing_tasks_and_rejects_orphan_or_conflicting_modes_before_reads)",
+        "equal": true
+      },
+      {
+        "index": 11,
+        "baseline": "FAIL: test_status_json_errors_are_sanitized_and_leave_stores_unchanged (tests.test_product_cli.ProductCliSubprocessTests.test_status_json_errors_are_sanitized_and_leave_stores_unchanged)",
+        "candidate": "FAIL: test_status_json_errors_are_sanitized_and_leave_stores_unchanged (tests.test_product_cli.ProductCliSubprocessTests.test_status_json_errors_are_sanitized_and_leave_stores_unchanged)",
+        "equal": true
+      },
+      {
+        "index": 12,
+        "baseline": "FAIL: test_status_lists_ordered_tasks_without_action_or_input_bodies (tests.test_product_cli.ProductCliSubprocessTests.test_status_lists_ordered_tasks_without_action_or_input_bodies)",
+        "candidate": "FAIL: test_status_lists_ordered_tasks_without_action_or_input_bodies (tests.test_product_cli.ProductCliSubprocessTests.test_status_lists_ordered_tasks_without_action_or_input_bodies)",
+        "equal": true
+      },
+      {
+        "index": 13,
+        "baseline": "FAIL: test_status_rejects_busy_and_unsafe_stores_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_status_rejects_busy_and_unsafe_stores_without_writes)",
+        "candidate": "FAIL: test_status_rejects_busy_and_unsafe_stores_without_writes (tests.test_product_cli.ProductCliSubprocessTests.test_status_rejects_busy_and_unsafe_stores_without_writes)",
+        "equal": true
+      },
+      {
+        "index": 14,
+        "baseline": "FAIL: test_read_snapshot_rejects_closed_wal_mode_database_without_sidecars (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_closed_wal_mode_database_without_sidecars)",
+        "candidate": "FAIL: test_read_snapshot_rejects_closed_wal_mode_database_without_sidecars (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_closed_wal_mode_database_without_sidecars)",
+        "equal": true
+      },
+      {
+        "index": 15,
+        "baseline": "FAIL: test_read_snapshot_rejects_invalid_and_unsafe_storage_without_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_invalid_and_unsafe_storage_without_writes)",
+        "candidate": "FAIL: test_read_snapshot_rejects_invalid_and_unsafe_storage_without_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_invalid_and_unsafe_storage_without_writes)",
+        "equal": true
+      },
+      {
+        "index": 16,
+        "baseline": "FAIL: test_read_snapshot_rejects_journal_and_active_wal_without_side_effects (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_journal_and_active_wal_without_side_effects)",
+        "candidate": "FAIL: test_read_snapshot_rejects_journal_and_active_wal_without_side_effects (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_journal_and_active_wal_without_side_effects)",
+        "equal": true
+      },
+      {
+        "index": 17,
+        "baseline": "FAIL: test_read_snapshot_rejects_locked_and_linked_metadata_without_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_locked_and_linked_metadata_without_writes)",
+        "candidate": "FAIL: test_read_snapshot_rejects_locked_and_linked_metadata_without_writes (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_locked_and_linked_metadata_without_writes)",
+        "equal": true
+      },
+      {
+        "index": 18,
+        "baseline": "FAIL: test_read_snapshot_rejects_schema_defects_and_nonfinite_json_on_all_views (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_schema_defects_and_nonfinite_json_on_all_views)",
+        "candidate": "FAIL: test_read_snapshot_rejects_schema_defects_and_nonfinite_json_on_all_views (tests.test_product_scheduler.SchedulerTests.test_read_snapshot_rejects_schema_defects_and_nonfinite_json_on_all_views)",
+        "equal": true
+      }
+    ],
+    "new_cases": [],
+    "removed_cases": []
+  }
+]

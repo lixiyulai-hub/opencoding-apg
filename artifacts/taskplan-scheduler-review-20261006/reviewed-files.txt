@@ -1,0 +1,15 @@
+A	artifacts/taskplan-scheduler-offline-20261006/REPORT.md
+A	artifacts/taskplan-scheduler-offline-20261006/adapter.log
+A	artifacts/taskplan-scheduler-offline-20261006/baseline.log
+A	artifacts/taskplan-scheduler-offline-20261006/full.log
+A	artifacts/taskplan-scheduler-offline-20261006/initial-targeted-command-error.log
+A	artifacts/taskplan-scheduler-offline-20261006/packaging.log
+A	artifacts/taskplan-scheduler-offline-20261006/targeted.log
+A	artifacts/taskplan-scheduler-offline-20261006/verification.json
+M	docs/product/AGENT_NATIVE_USE.md
+M	docs/product/OFFLINE_INSTALLATION.md
+A	docs/product/TASKPLAN_SCHEDULER.md
+M	opencoding/executor.py
+M	opencoding/scheduler.py
+A	opencoding/taskplan_scheduler.py
+A	tests/test_taskplan_scheduler.py

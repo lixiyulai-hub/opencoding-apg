@@ -1,0 +1,19 @@
+{
+  "reviewed_commit": "afc1614e3106b8d72adda35d92f8b70dc570c2a4",
+  "adapter_sha256": "23fb4955b4f4fe09df94eb9fcc5c5d139f4f6c946034cd77e548cb311bac262b",
+  "probes": [
+    {
+      "probe": "P1_expiry_mutation_preserving_original_context",
+      "modified_expiry_accepted": true,
+      "successful_document_runs": 9,
+      "result_status": "blocked"
+    },
+    {
+      "probe": "symlink_replacement_after_approval",
+      "result_status": "blocked",
+      "requirement_task_state": "failed",
+      "requirement_task_error": "target path contains a link or reparse point: PRG.md",
+      "outside_sentinel_unchanged": true
+    }
+  ]
+}

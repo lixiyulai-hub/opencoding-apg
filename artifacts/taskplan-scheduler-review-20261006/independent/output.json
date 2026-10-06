@@ -1,0 +1,48 @@
+{
+  "probes": [
+    {
+      "probe": "preview_build_approve_zero_write",
+      "zero_file_changes": true
+    },
+    {
+      "probe": "legacy_unbound_expiry",
+      "code": "approval_fields_invalid",
+      "zero_file_changes": true
+    },
+    {
+      "probe": "deadline_extension_with_original_context",
+      "code": "human_confirmation_scope_mismatch",
+      "zero_file_changes": true
+    },
+    {
+      "probe": "oversized_deadline_even_with_matching_context",
+      "code": "approval_expiry_invalid",
+      "zero_file_changes": true
+    },
+    {
+      "probe": "real_expiry_old_confirmation_reapproval",
+      "code": "approval_expired",
+      "zero_file_changes": true
+    },
+    {
+      "probe": "real_expiry_execution",
+      "code": "approval_expired",
+      "zero_file_changes": true
+    },
+    {
+      "probe": "valid_independent_context",
+      "result": "blocked",
+      "successful_documents": 9,
+      "source_directory_absent": true
+    }
+  ],
+  "reviewed_file_sha256": {
+    "opencoding/taskplan_scheduler.py": "f16cacce59b811f193d7c90a5ce9147df8ba5531132394d2d094705689209278",
+    "opencoding/executor.py": "d26f03595957572bc7a209a3942f5eb36ef432ee1a591a9455abd12af79a0683",
+    "opencoding/scheduler.py": "5ef06782665ed63ab14084d3ff38ef0d1d69f3cdd0d4615498895ab44756715a",
+    "tests/test_taskplan_scheduler.py": "f846ff0a73a17c9111575098fc96e1103fb5716649383b5607c580382d296b8f",
+    "docs/product/TASKPLAN_SCHEDULER.md": "a5e90daa99bc1e8dd572d851e7bb37d43917581c5f93dee91592b57b9536165d",
+    "docs/product/OFFLINE_INSTALLATION.md": "cc314653b6e2ea7a5b9bb8b9b28d67eb9d99197d6285e38bcfea55a7aa25fb4e",
+    "docs/product/AGENT_NATIVE_USE.md": "d1fe02798a97141f9dc1252cc35d7b2effcca3bc291f2718c2c040a600057089"
+  }
+}

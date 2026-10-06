@@ -1,0 +1,16 @@
+...................................................E..........................................
+======================================================================
+ERROR: test_product_transactions_w2 (unittest.loader._FailedTest.test_product_transactions_w2)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_product_transactions_w2
+Traceback (most recent call last):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'tests.test_product_transactions_w2'
+
+
+----------------------------------------------------------------------
+Ran 94 tests in 5.400s
+
+FAILED (errors=1)

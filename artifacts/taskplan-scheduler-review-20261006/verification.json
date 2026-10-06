@@ -1,0 +1,98 @@
+{
+  "reviewed_base": "5d68c2075620df0be005c76f904b256b980d303e",
+  "reviewed_candidate": "afc1614e3106b8d72adda35d92f8b70dc570c2a4",
+  "official_toolchain": {
+    "rustc": "1.99.0 (b940084d7 2026-09-28)",
+    "cargo": "1.99.0 (5f94df478 2026-08-27)",
+    "installer_url": "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init",
+    "checksum_url": "https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init.sha256",
+    "sha256_verified": true,
+    "global_install": false,
+    "shell_profile_changed": false,
+    "scope": "temporary local toolchain; cargo tests offline"
+  },
+  "source_sha256": {
+    "opencoding/taskplan_scheduler.py": "f16cacce59b811f193d7c90a5ce9147df8ba5531132394d2d094705689209278",
+    "tests/test_taskplan_scheduler.py": "f846ff0a73a17c9111575098fc96e1103fb5716649383b5607c580382d296b8f",
+    "docs/product/TASKPLAN_SCHEDULER.md": "a5e90daa99bc1e8dd572d851e7bb37d43917581c5f93dee91592b57b9536165d",
+    "docs/product/AGENT_NATIVE_USE.md": "d1fe02798a97141f9dc1252cc35d7b2effcca3bc291f2718c2c040a600057089",
+    "docs/product/OFFLINE_INSTALLATION.md": "cc314653b6e2ea7a5b9bb8b9b28d67eb9d99197d6285e38bcfea55a7aa25fb4e"
+  },
+  "test_commands": [
+    {
+      "command": "python -X utf8 -m unittest tests.test_taskplan_scheduler -v",
+      "tests": 19,
+      "exit_code": 0,
+      "log": "adapter.log"
+    },
+    {
+      "command": "python -X utf8 -m unittest tests.test_taskplan_scheduler tests.test_product_executor tests.test_product_transactions tests.test_product_service tests.test_product_planning tests.test_product_integration tests.test_marketplace_flow",
+      "tests": 97,
+      "exit_code": 0,
+      "log": "targeted.log"
+    },
+    {
+      "command": "python -X utf8 -m unittest tests.test_product_packaging",
+      "tests": 6,
+      "exit_code": 0,
+      "log": "packaging.log"
+    },
+    {
+      "command": "cargo test --offline --manifest-path services/domain/Cargo.toml",
+      "tests": 4,
+      "exit_code": 0,
+      "log": "cargo.log"
+    },
+    {
+      "command": "python -X utf8 -m unittest",
+      "scope": "original baseline archived checkout with official cargo",
+      "tests": 228,
+      "failures": 14,
+      "errors": 4,
+      "exit_code": 1,
+      "log": "baseline-cargo.log"
+    },
+    {
+      "command": "python -X utf8 -m unittest",
+      "scope": "repaired worktree with same official cargo",
+      "tests": 247,
+      "failures": 14,
+      "errors": 4,
+      "exit_code": 1,
+      "log": "full-cargo.log"
+    }
+  ],
+  "windows_validation": "pending; not overall green",
+  "log_sha256": {
+    "packaging.log": "2d0c2169600c2f0a203c0ec6f0c4ead49860f1729777079a05c67e5872de1c83",
+    "full-cargo.log": "5a4400bd5d4b4cf220c1e396253dc524411ee14e745345139df66a3be3f6174f",
+    "cargo.log": "dceaeaae4fdfa826801cabf8a136d6191ab83c6c8df6e66900225fc711ba786e",
+    "baseline-cargo.log": "1ef6a9ccb226f3602e16b5e0a0bd1443ebb2e96621791ff4b5413248403308c6",
+    "targeted.log": "2964e5326df4d095fa8dcf954a0ba964cb99651c78b589490d818a45efb487f9",
+    "adapter.log": "b3c48c75bc5ed13cb476cabbe34dd98b598308a9f5012a9d1946d26cc00fdf53",
+    "rustup-install.log": "72d9a5f969ffa210df2ce47e35fd7dfd21c61a40a6205bba263d3daae471998a"
+  },
+  "independent_review": {
+    "agent": "/root/independent_review",
+    "original_finding": "P1 expiry not bound to confirmation",
+    "status": "closed_after_independent_retest",
+    "original_probe_exit_code": 0,
+    "repair_probe_exit_code": 0,
+    "files_sha256": {
+      "independent/original_probe.py": "2ed8259802f6653fa675065b9aefb63797193b88498b051740f96fc6de737c49",
+      "independent/REVIEW.md": "a1169b2526bcdabc586f17d3b770839d173fe3c71c4dd7fd4ea2e97515359acd",
+      "independent/probe.py": "3975e0fd0647db80eced839d017b52feb7b0b78838c39667534fd4b1cc2db92b",
+      "independent/output.json": "84308a1f640ff2e36e4fce7f7b71882b5521c2c3b65743d8251b003351228a2b",
+      "independent/original_output.json": "88bacea7ce129dcb5873f655f1a7871d9f56ead0fefbb4ba3dd18ba89a916106"
+    }
+  },
+  "static_checks": {
+    "compileall_exit_code": 0,
+    "source_tests_docs_whitespace_exit_code": 0,
+    "all_staged_whitespace_warnings": [
+      "cargo.log: raw cargo output ends with a blank line",
+      "rustup-install.log: raw official installer output line 13 has trailing whitespace"
+    ],
+    "raw_logs_preserved_verbatim": true
+  }
+}

@@ -1,0 +1,18 @@
+   Compiling zhi_xing_domain v0.1.0 (/workspace/opencoding-apg/services/domain)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+     Running unittests src/lib.rs (/tmp/opencoding-rust-review/target/debug/deps/zhi_xing_domain-7574e4a9db8f647d)
+
+running 4 tests
+test tests::invalid_roles_and_transitions_are_rejected ... ok
+test tests::happy_path_is_append_only_and_balanced ... ok
+test tests::role_boundaries_and_duplicate_why_are_enforced ... ok
+test tests::return_then_repair_is_reversible ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests zhi_xing_domain
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

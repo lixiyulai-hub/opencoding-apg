@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-from .executor import Executor, action_digest
+from .executor import Executor, action_digest, action_targets
 from .safety import SCHEMA_VERSION, _root_path, canonical_json, inspect_sensitive, sanitize_text, sha256_bytes
 from .scheduler_migrations import MIGRATION_VERSION, database_path, migrate
 
@@ -558,7 +558,7 @@ class Scheduler:
         watcher = threading.Thread(target=monitor, daemon=True)
         watcher.start()
         try:
-            context = {"schema_version": SCHEMA_VERSION, "root": str(self.root), "action_digest": action_digest(task["action"]), "targets": [task["action"]["path"]] if task["action"]["type"] == "write_text" else [], "external": False, "cost_limit": 0, "data_scope": "synthetic-local", "irreversible": False}
+            context = {"schema_version": SCHEMA_VERSION, "root": str(self.root), "action_digest": action_digest(task["action"]), "targets": action_targets(task["action"]), "external": False, "cost_limit": 0, "data_scope": "synthetic-local", "irreversible": False}
             result = Executor(self.root).execute(task["action"], context, run_id=run_id, timeout_seconds=task["timeout_seconds"], cancel_event=cancel_event, input_payload=task["input"])
         except Exception as error:
             result = {"schema_version": SCHEMA_VERSION, "run_id": run_id, "status": "failed", "exit_code": None, "timed_out": False, "cancelled": False, "duration_ms": 0, "action_digest": action_digest(task["action"]), "stdout_summary": "", "stderr_summary": sanitize_text(str(error)), "artifacts": [], "reason": "executor_error", "live_verified": False}
