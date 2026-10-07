@@ -2,6 +2,7 @@ import copy
 import unittest
 
 from opencoding.documents import render_documents
+from opencoding.facts import build_decision_record
 from opencoding.planning import build_task_plan, task_waves, validate_task_plan
 
 try:
@@ -34,6 +35,40 @@ class ProductPlanningTests(unittest.TestCase):
             self.assertIn(task["id"], docs["plan.md"])
         for wave in plan["waves"]:
             self.assertIn(", ".join(wave), docs["plan.md"])
+
+    def test_constraint_evaluation_is_adopted_as_distinct_validated_task_graphs(self):
+        profiles = {
+            "offline_single_device": recommendation(
+                server="not_needed", database="required", api="not_needed", auth="not_needed",
+            ),
+            "existing_website_increment": recommendation(
+                server="required", database="required", api="required", auth="optional",
+            ),
+            "cross_device_collaboration": recommendation(
+                server="required", database="required", api="required", auth="required",
+            ),
+        }
+        adopted = {}
+        for name, evaluated in profiles.items():
+            decision = build_decision_record(evaluated, [])
+            plan = build_task_plan(evaluated)
+            self.assertTrue(validate_task_plan(plan)["valid"], name)
+            self.assertEqual(decision["chosen"]["stack"]["client"], evaluated["stack"]["client"]["technology"])
+            self.assertTrue(decision["reasoning"])
+            self.assertTrue(decision["alternatives"])
+            adopted[name] = {
+                "decision": decision,
+                "plan": plan,
+                "tasks": {task["id"] for task in plan["tasks"]},
+            }
+
+        self.assertNotIn("api-contract", adopted["offline_single_device"]["tasks"])
+        self.assertIn("api-contract", adopted["existing_website_increment"]["tasks"])
+        self.assertIn("permissions", adopted["cross_device_collaboration"]["tasks"])
+        self.assertNotEqual(
+            adopted["offline_single_device"]["plan"]["waves"],
+            adopted["cross_device_collaboration"]["plan"]["waves"],
+        )
 
     def test_empty_draft_has_clarification_plan_without_fabricated_feature(self):
         plan = build_task_plan(recommendation(revision=0, draft=True))

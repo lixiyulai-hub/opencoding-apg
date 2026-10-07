@@ -5,26 +5,38 @@ from __future__ import annotations
 from contextlib import contextmanager
 from copy import deepcopy
 import hashlib
+import json
 import multiprocessing
+import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
 
+from opencoding import autorun, grants
+from opencoding.aiadapter import MockAdapter
+from opencoding.facts import add_fact
 from opencoding.intake import QUESTION_DEFINITIONS
 from opencoding.scheduler import SchedulerSnapshotError
 import opencoding.service as service_module
 from opencoding.service import (
+    adopt_evaluation_plan,
     ServiceError,
     apply_approved,
     approve_preview,
     create_session,
+    evaluate_session,
     execution_status,
     preview_session,
+    query_autonomous_run,
     rollback,
     session_view,
     submit_answer,
 )
+from tests import REVIEWED_FIXTURE
+from tests.test_product_autorun import MockResponder
 
 
 def _inventory(root: Path) -> dict[str, str]:
@@ -76,6 +88,322 @@ def _save_child(root_text: str, session_id: str, revision: int, queue) -> None:
 
 
 class ProductServiceTests(unittest.TestCase):
+    def test_evaluation_requires_explicit_persisted_adoption_before_execution_binding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            view = create_session(root, "社区借还登记")
+            for question in QUESTION_DEFINITIONS:
+                answer = {
+                    "audience": "社区居民",
+                    "outcome": "登记借用并确认归还",
+                    "platform": "命令行",
+                    "data_persistence": "需要",
+                }.get(question["id"], "不需要")
+                view = submit_answer(root, view["session"]["id"], view["session"]["revision"], question["id"], answer)
+            session_id = view["session"]["id"]
+            evaluated = evaluate_session(root, session_id)
+            self.assertFalse((root / ".opencoding" / "adoptions" / (session_id + ".json")).exists())
+            adopted = adopt_evaluation_plan(root, session_id)
+            self.assertEqual(adopted["status"], "adopted")
+            record = json.loads((root / ".opencoding" / "adoptions" / (session_id + ".json")).read_text(encoding="utf-8"))
+            self.assertEqual(record["plan_digest"], evaluated["adopted_plan_digest"])
+            self.assertTrue(record["validated"])
+            self.assertEqual(record["session_id"], session_id)
+
+    def test_formal_adoption_produces_lendreg_mapping_and_drives_offline_run(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            view = create_session(root, "社区借还登记")
+            answers = {
+                "audience": "社区居民和管理员",
+                "platform": "命令行",
+                "outcome": "登记借用并确认归还",
+                "data_persistence": "需要",
+                "cross_device": "不需要",
+                "multi_user": "不需要",
+            }
+            for question in QUESTION_DEFINITIONS:
+                view = submit_answer(
+                    root, view["session"]["id"], view["session"]["revision"],
+                    question["id"], answers.get(question["id"], "不需要"),
+                )
+            session_id = view["session"]["id"]
+            adopted = adopt_evaluation_plan(root, session_id)
+            adoption = adopted["adoption"]
+            self.assertTrue(adoption["executor_mapping"]["supported"])
+            self.assertEqual(adoption["executor_mapping"]["executor_id"], "lendreg")
+            self.assertEqual(
+                set(adoption["executor_mapping"]["task_bindings"]),
+                {task["task_id"] for task in autorun.LENDREG_SCENARIO["tasks"]},
+            )
+            grant = grants.issue_batch_grant(
+                root,
+                goal="正式采用驱动离线闭环",
+                allowed_paths=["lendreg", "tests", "scripts", "data", "RECOVERY.md"],
+                action_kinds=["local_write", "local_run", "ai_request"],
+                issued_by="合成测试",
+                budget={"max_ai_requests": 40, "max_repair_rounds": 12},
+            )
+            summary = autorun.run_batch(
+                root, autorun.LENDREG_SCENARIO,
+                grant_id=grant["grant_id"],
+                adapter=MockAdapter(responder=MockResponder()),
+                run_id="run-adopted-offline",
+                trusted_fixture=REVIEWED_FIXTURE,
+                adopted_plan_digest=adoption["plan_digest"],
+            )
+            self.assertEqual(summary["succeeded"], 10)
+            self.assertTrue(summary["deliverable"])
+
+    def test_evaluation_adopts_answers_and_source_layered_facts_without_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            cases = {
+                "offline": {"platform": "命令行", "cross_device": "不需要", "multi_user": "不需要"},
+                "website": {"platform": "网页", "cross_device": "不需要", "multi_user": "不需要"},
+                "collaboration": {
+                    "platform": "网页", "cross_device": "需要",
+                    "multi_user": "需要", "account_access": "需要",
+                },
+            }
+            graphs = {}
+            for label, overrides in cases.items():
+                view = create_session(root, "社区借还登记")
+                for question in QUESTION_DEFINITIONS:
+                    answer = {
+                        "audience": "社区居民",
+                        "outcome": "登记借用并确认归还",
+                        "platform": "网页",
+                        "data_persistence": "需要",
+                        **overrides,
+                    }.get(question["id"], "不需要")
+                    view = submit_answer(
+                        root, view["session"]["id"], view["session"]["revision"], question["id"], answer,
+                    )
+                session_id = view["session"]["id"]
+                add_fact(
+                    root, session_id, content="现有网站页面需要增量修改" if label == "website" else "只用合成数据",
+                    source_type="repository" if label == "website" else "user",
+                    source_ref="authorized-test-fixture",
+                )
+                add_fact(
+                    root, session_id, content="技术方案仍需独立验证",
+                    source_type="ai", source_ref="synthetic-inference",
+                )
+                before = _inventory(root)
+                evaluated = evaluate_session(root, session_id)
+                self.assertEqual(_inventory(root), before)
+                self.assertTrue(evaluated["plan_validation"]["valid"])
+                self.assertEqual(evaluated["decision_record"]["ai_inferences_unconfirmed"], ["技术方案仍需独立验证"])
+                self.assertEqual(evaluated["decision_record"]["user_decisions_required"], [])
+                graphs[label] = evaluated
+                cli = subprocess.run(
+                    [sys.executable, "-m", "opencoding", "--root", str(root), "--evaluate", session_id, "--json"],
+                    capture_output=True, text=True, encoding="utf-8",
+                    env={**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONDONTWRITEBYTECODE": "1"},
+                    check=False,
+                )
+                self.assertEqual(cli.returncode, 0, cli.stderr)
+                self.assertEqual(json.loads(cli.stdout), evaluated)
+                self.assertEqual(_inventory(root), before)
+
+            offline = graphs["offline"]["task_plan"]
+            website = graphs["website"]["task_plan"]
+            collaboration = graphs["collaboration"]["task_plan"]
+            self.assertNotEqual(offline["tasks"], website["tasks"])
+            self.assertNotEqual(website["tasks"], collaboration["tasks"])
+            self.assertEqual(graphs["offline"]["recommendation"]["platforms"]["primary"], "cli")
+            self.assertEqual(graphs["collaboration"]["recommendation"]["capabilities"][0]["need"], "required")
+            self.assertIn("permissions", {task["id"] for task in collaboration["tasks"]})
+
+    def test_execution_status_reads_autonomous_run_without_writes_or_session_aliasing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            grant = grants.issue_batch_grant(
+                root,
+                goal="状态快照合成任务",
+                allowed_paths=["lendreg"],
+                action_kinds=["local_write", "local_run", "ai_request"],
+                issued_by="service contract test",
+                budget={"max_ai_requests": 2, "max_repair_rounds": 1},
+            )
+            task = autorun.LENDREG_SCENARIO["tasks"][0]
+            scenario = {
+                "name": "状态快照合成任务",
+                "goal": "验证自主状态只读入口",
+                "tasks": [task],
+                "verifiers": {"d01-models": autorun.LENDREG_SCENARIO["verifiers"]["d01-models"]},
+            }
+            model_source = (
+                "def new_item(item_id, name):\n"
+                "    if not item_id or len(item_id) > 64 or not name:\n"
+                "        raise ValueError('invalid item')\n"
+                "    return {'id': item_id, 'name': name, 'status': 'available'}\n"
+                "def new_loan(loan_id, item_id, borrower):\n"
+                "    return {'id': loan_id, 'item_id': item_id, 'borrower': borrower, "
+                "'borrowed_at': 'synthetic-time', 'closed': False}\n"
+            )
+
+            # r8/Y01 材料身份绑定后，D01 候选必须逐字节等于已审查参考材料；
+            # 本测试意图是状态只读语义，改用参考夹具替身（model_source 保留注释说明原用途）。
+            def responder(_messages, *, request_kind, nonce):
+                self.assertEqual(request_kind, "implement")
+                return json.dumps({
+                    "nonce": nonce,
+                    "summary": "fixed synthetic output",
+                    "files": [
+                        {"path": "lendreg/__init__.py", "content": ""},
+                        {"path": "lendreg/models.py", "content": model_source},
+                    ],
+                })
+
+            autorun.run_batch(
+                root, scenario, grant_id=grant["grant_id"],
+                adapter=MockAdapter(responder=MockResponder()), run_id="run-status-shared",
+                trusted_fixture=REVIEWED_FIXTURE,
+            )
+            before = _inventory(root)
+            status = execution_status(root)
+            filtered = execution_status(root, "d01-models")
+            query = query_autonomous_run(root, "run-status-shared")
+            after = _inventory(root)
+            self.assertEqual(status["status"], "ready")
+            self.assertEqual(status["runs"][0]["kind"], "autonomous")
+            self.assertEqual(status["runs"][0]["run_id"], "run-status-shared")
+            self.assertEqual(status["tasks"][0]["state"], "succeeded")
+            self.assertTrue(status["events"])
+            self.assertEqual([item["task_id"] for item in filtered["tasks"]], ["d01-models"])
+            self.assertEqual(query["status"], "verified")
+            self.assertEqual(query["new_dispatches"], 0)
+            self.assertFalse(query["budget_changed"])
+            self.assertEqual(before, after)
+            self.assertNotIn("def new_item", json.dumps(status, ensure_ascii=False))
+            cli = subprocess.run(
+                [sys.executable, "-m", "opencoding", "--root", str(root), "--status", "--json"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                check=False,
+            )
+            self.assertEqual(cli.returncode, 0, cli.stderr)
+            cli_status = json.loads(cli.stdout)
+            self.assertEqual(cli_status["runs"], status["runs"])
+            self.assertEqual(cli_status["tasks"], status["tasks"])
+
+    def test_cancelled_autonomous_run_is_visible_in_cli_and_cannot_dispatch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            grant = grants.issue_batch_grant(
+                root,
+                goal="取消状态合成验证",
+                allowed_paths=["lendreg"],
+                action_kinds=["local_write", "local_run", "ai_request"],
+                issued_by="service contract test",
+                budget={"max_ai_requests": 2, "max_repair_rounds": 1},
+            )
+            autorun.cancel_run(root, "run-cancel-visible", reason="用户取消合成运行")
+            dispatched = []
+
+            def responder(*_args, **_kwargs):
+                dispatched.append(True)
+                return "{}"
+
+            summary = autorun.run_batch(
+                root,
+                autorun.LENDREG_SCENARIO,
+                grant_id=grant["grant_id"],
+                adapter=MockAdapter(responder=responder),
+                run_id="run-cancel-visible",
+                trusted_fixture=REVIEWED_FIXTURE,
+            )
+            self.assertEqual(summary["cancelled"], 10)
+            self.assertEqual(dispatched, [])
+            cli = subprocess.run(
+                [sys.executable, "-m", "opencoding", "--root", str(root), "--status", "--json"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                check=False,
+            )
+            self.assertEqual(cli.returncode, 0, cli.stderr)
+            status = json.loads(cli.stdout)
+            self.assertEqual(status["autonomous_runs"][0]["run_id"], "run-cancel-visible")
+            self.assertEqual(status["autonomous_runs"][0]["status"], "cancelled")
+
+    def test_cli_autonomous_rollback_preserves_user_post_edit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            grant = grants.issue_batch_grant(
+                root,
+                goal="回滚入口合成验证",
+                allowed_paths=["lendreg"],
+                action_kinds=["local_write", "local_run", "ai_request"],
+                issued_by="service contract test",
+                budget={"max_ai_requests": 2, "max_repair_rounds": 1},
+            )
+            task = autorun.LENDREG_SCENARIO["tasks"][0]
+            scenario = {
+                "name": "回滚入口合成验证",
+                "goal": "验证中文自主回滚命令",
+                "tasks": [task],
+                "verifiers": {"d01-models": autorun.LENDREG_SCENARIO["verifiers"]["d01-models"]},
+            }
+            model_source = (
+                "def new_item(item_id, name):\n"
+                "    if not item_id or len(item_id) > 64 or not name:\n"
+                "        raise ValueError('invalid item')\n"
+                "    return {'id': item_id, 'name': name, 'status': 'available'}\n"
+                "def new_loan(loan_id, item_id, borrower):\n"
+                "    return {'id': loan_id, 'item_id': item_id, 'borrower': borrower, "
+                "'borrowed_at': 'synthetic-time', 'closed': False}\n"
+            )
+
+            # r8/Y01 材料身份绑定后，D01 候选必须逐字节等于已审查参考材料；
+            # 本测试意图是中文回滚入口与用户后改保留，改用参考夹具替身。
+            def responder(_messages, *, request_kind, nonce):
+                return json.dumps({
+                    "nonce": nonce,
+                    "summary": "fixed synthetic output",
+                    "files": [
+                        {"path": "lendreg/__init__.py", "content": ""},
+                        {"path": "lendreg/models.py", "content": model_source},
+                    ],
+                })
+
+            result = autorun.run_batch(
+                root,
+                scenario,
+                grant_id=grant["grant_id"],
+                adapter=MockAdapter(responder=MockResponder()),
+                run_id="run-rollback-cli",
+                trusted_fixture=REVIEWED_FIXTURE,
+            )
+            self.assertEqual(result["succeeded"], 1)
+            target = root / "lendreg" / "models.py"
+            target.write_text(target.read_text(encoding="utf-8") + "\n# 用户后来补充\n", encoding="utf-8")
+            env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8"
+            env["PYTHONDONTWRITEBYTECODE"] = "1"
+            rolled = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "opencoding",
+                    "--root",
+                    str(root),
+                    "--rollback-run",
+                    "run-rollback-cli",
+                ],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                env=env,
+                check=False,
+            )
+            self.assertEqual(rolled.returncode, 2, rolled.stderr)
+            self.assertIn("partial_failure", rolled.stdout)
+            self.assertIn("# 用户后来补充", target.read_text(encoding="utf-8"))
+
     def test_execution_status_is_json_safe_zero_write_and_maps_snapshot_errors(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()

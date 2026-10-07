@@ -2,12 +2,113 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Mapping
 
 from .intake import QUESTION_DEFINITIONS, SCHEMA_VERSION, SUPPORTED_PLATFORMS, _validate_session_shape, sanitize_text
 
 
 CAPABILITY_IDS = ("server", "database", "api", "auth", "payment", "notifications", "admin", "storage")
+
+# F02：已确认的用户/仓库硬约束必须在判断与任务图生成之前参与，而不是只附在决策展示里。
+# 每条规则给出「主题词 + 情态词」：同时命中才判定为会改变平台/执行形态的硬约束。
+_CONSTRAINT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
+    ("no_standalone_cli", ("命令行", "终端", "CLI", "cli"), ("不得", "不能", "禁止", "不允许", "不要", "不可")),
+    ("web_only_incremental", ("网站", "网页", "Web", "web"), ("增量", "已有", "现有", "只能在", "必须")),
+)
+_CONSTRAINT_EFFECTS = {
+    "no_standalone_cli": "独立命令行应用被禁止，平台首要选择改为网页。",
+    "web_only_incremental": "要求在已有网站内增量修改，平台首要选择改为网页。",
+}
+
+
+def derive_fact_constraints(facts: list[Mapping[str, Any]] | None) -> list[dict[str, Any]]:
+    """从事实簿派生硬约束候选（纯函数，不做 I/O）。
+
+    每条已确认的用户/仓库事实都会产生一条待处置记录：命中规则的事实带
+    `kind`，未命中的事实 `kind` 为 None 并保留在痕迹里，便于说明"已评估但
+    不改变本轮平台与执行形态"。AI 推断与临时假设不参与平台判断。
+    """
+
+    constraints: list[dict[str, Any]] = []
+    for fact in facts or []:
+        if not isinstance(fact, Mapping):
+            continue
+        source_type = fact.get("source_type")
+        content = fact.get("content")
+        if source_type not in {"user", "repository"} or fact.get("confirmed") is not True:
+            continue
+        if not isinstance(content, str) or not content.strip():
+            continue
+        kind = None
+        for candidate, topics, modals in _CONSTRAINT_RULES:
+            if any(token in content for token in topics) and any(token in content for token in modals):
+                kind = candidate
+                break
+        constraints.append({
+            "kind": kind,
+            "fact_id": fact.get("fact_id"),
+            "source_type": source_type,
+            "content": content,
+        })
+    return constraints
+
+
+def apply_fact_constraints(
+    platform_info: dict[str, Any], constraints: list[Mapping[str, Any]] | None
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """把硬约束落到平台选择，并为每条事实给出可核验的处置说明。"""
+
+    trace: list[dict[str, Any]] = []
+    binding: list[Mapping[str, Any]] = []
+    for item in constraints or []:
+        if item.get("kind") in _CONSTRAINT_EFFECTS:
+            binding.append(item)
+            continue
+        trace.append({
+            "fact_id": item.get("fact_id"),
+            "kind": item.get("kind"),
+            "source_type": item.get("source_type"),
+            "applied": False,
+            "effect": "",
+            "explanation": "该事实不改变本轮平台与执行形态判断；跨设备、服务与外部能力仍按会话既有答案派生。",
+        })
+    previous_primary = str(platform_info.get("primary"))
+    for item in binding:
+        kind = str(item.get("kind"))
+        changed = previous_primary != "web"
+        trace.append({
+            "fact_id": item.get("fact_id"),
+            "kind": kind,
+            "source_type": item.get("source_type"),
+            "applied": True,
+            "effect": _CONSTRAINT_EFFECTS[kind] + ("平台已由 " + previous_primary + " 改为 web。" if changed else "平台已是 web，与当前判断一致，无需改变。"),
+            "explanation": "事实 " + str(item.get("fact_id")) + "（" + str(item.get("source_type")) + "）：" + str(item.get("content")),
+        })
+    # 只有当硬约束真的覆盖了原平台选择时才要求重新确认；与当前判断一致时不制造新的未决项。
+    if binding and previous_primary != "web":
+        platform_info = dict(platform_info)
+        previous_requested = list(platform_info.get("requested") or [])
+        platform_info["requested"] = ["web"]
+        platform_info["primary"] = "web"
+        # 平台由硬约束覆盖，未经用户重新确认，不能保留高置信度。
+        platform_info["confidence"] = "medium"
+        platform_info["reason"] = "硬约束参与判断：" + "；".join(_CONSTRAINT_EFFECTS[str(item.get("kind"))] for item in binding)
+        # 平台被硬约束覆盖后必须让用户重新确认，不能把覆盖结果伪装成用户选择。
+        platform_info["unresolved"] = list(dict.fromkeys(
+            list(platform_info.get("unresolved") or []) + ["platform:overridden_by_hard_constraint"]
+        ))
+        if previous_requested:
+            platform_info["reason"] += "（原平台选择：" + "、".join(str(item) for item in previous_requested) + "，需重新确认。）"
+    return platform_info, trace
+
+
+def evaluate_fact_constraints(
+    session: dict[str, Any], constraints: list[Mapping[str, Any]] | None
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """按会话既有答案先算平台草案，再叠加硬约束；返回平台信息与处置痕迹。"""
+
+    platform_info = _platform_recommendation(_requirements(session))
+    return apply_fact_constraints(platform_info, constraints)
 
 
 def _requirements(session: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -133,14 +234,18 @@ def _business_project(session: dict[str, Any]) -> tuple[dict[str, Any], list[str
     return {"goal": goal, "audience": audience, "outcome": outcome, "scenarios": scenarios}, unresolved
 
 
-def build_recommendation(session: dict[str, Any]) -> dict[str, Any]:
-    """Build a strictly shaped JSON-safe Recommendation without network use."""
+def build_recommendation(session: dict[str, Any], constraints: list[Mapping[str, Any]] | None = None) -> dict[str, Any]:
+    """Build a strictly shaped JSON-safe Recommendation without network use.
+
+    F02：`constraints` 来自已确认的用户/仓库事实，在图生成之前参与平台判断；
+    不传约束时行为与历史版本完全一致。
+    """
 
     if not isinstance(session, dict):
         raise TypeError("session must be a dictionary")
     _validate_session_shape(session)
     requirements = _requirements(session)
-    platform_info = _platform_recommendation(requirements)
+    platform_info, constraint_trace = evaluate_fact_constraints(session, constraints)
     project, project_unresolved = _business_project(session)
     data_need, data_reason = _need(requirements.get("data_persistence"), "data_persistence")
     cross_need, cross_reason = _need(requirements.get("cross_device"), "cross_device")
@@ -188,6 +293,12 @@ def build_recommendation(session: dict[str, Any]) -> dict[str, Any]:
     ]
     if not platform_info["requested"]:
         assumptions.append("平台暂未确认，网页只是低置信度占位建议。")
+    for item in constraint_trace:
+        assumptions.append(
+            "硬约束已参与判断（" + str(item["kind"]) + "）：" + (item["effect"] or item["explanation"])
+            if item["applied"]
+            else "硬约束已评估但不改变当前方案（" + str(item["kind"]) + "）：" + item["explanation"]
+        )
     status = "ready" if session["state"] == "recommendation_ready" and not unresolved else "draft"
     acceptance = [
         f"业务目标：{project['goal']}",
@@ -209,4 +320,11 @@ def build_recommendation(session: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-__all__ = ["CAPABILITY_IDS", "SUPPORTED_PLATFORMS", "build_recommendation"]
+__all__ = [
+    "CAPABILITY_IDS",
+    "SUPPORTED_PLATFORMS",
+    "apply_fact_constraints",
+    "build_recommendation",
+    "derive_fact_constraints",
+    "evaluate_fact_constraints",
+]
