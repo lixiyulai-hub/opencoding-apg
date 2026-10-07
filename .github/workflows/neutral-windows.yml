@@ -48,15 +48,29 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $false
+          $failureStep = 'prepare_context'
+          $failureStage = 'pinned_candidate_Q'
+          $failureLog = Join-Path $env:RUNNER_TEMP 'neutral-candidate-context.log'
+          function Write-PublicFailure([string]$Category, [int]$ExitCode, [string]$LogPath) {
+            $digest = $null
+            if (Test-Path -LiteralPath $LogPath -PathType Leaf) { $digest = (Get-FileHash -LiteralPath $LogPath -Algorithm SHA256).Hash.ToLower() }
+            [ordered]@{schema_version=1; kind='public_summary_failure'; workflow_scope='pinned_candidate_Q'; status='incomplete'; stage=$failureStage; step=$failureStep; error_category=$Category; exit_code=$ExitCode; log_sha256=$digest} | ConvertTo-Json -Compress
+          }
           try {
             $python = (Get-Command python -CommandType Application).Source
             $tools = Join-Path $env:GITHUB_WORKSPACE 'validation-tools/.validation/neutral-20261006'
             $context = Join-Path $env:RUNNER_TEMP 'neutral-candidate-context.json'
             $digest = @(& $python -B -X utf8 (Join-Path $tools 'prepare_context.py') --checkout (Join-Path $env:GITHUB_WORKSPACE 'validation-tools') --binding (Join-Path $tools 'candidate-binding.json') --binding-sha256 'db7f6a52d9aee51882cec533ec46c79c479472e85d627a6f7ee07533930a2480' --python-version '${{ matrix.python-version }}' --output $context 2>&1)
-            if ($LASTEXITCODE -ne 0 -or $digest.Count -ne 1 -or "$($digest[0])" -notmatch '^[0-9a-f]{64}$') { throw 'validation_unavailable' }
+            $prepareExit = $LASTEXITCODE
+            $digest | Out-File -LiteralPath $failureLog -Encoding utf8
+            if ($prepareExit -ne 0 -or $digest.Count -ne 1 -or "$($digest[0])" -notmatch '^[0-9a-f]{64}$') {
+              $category = if ($prepareExit -ne 0) { 'tool_exit_nonzero' } else { 'output_rejected' }
+              Write-Output (Write-PublicFailure $category $(if ($prepareExit -ne 0) { $prepareExit } else { 1 }) $failureLog)
+              exit $(if ($prepareExit -ne 0) { $prepareExit } else { 1 })
+            }
             "context_sha256=$($digest[0])" >> $env:GITHUB_OUTPUT
           } catch {
-            Write-Output '{"kind":"public_summary_unavailable","status":"incomplete"}'
+            Write-Output (Write-PublicFailure 'powershell_exception' 1 $failureLog)
             exit 1
           }
       - name: Verify candidate identity and execute Windows checks
@@ -65,6 +79,14 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $false
           $runnerExit = $null
+          $failureStep = 'run_windows_validation'
+          $failureStage = 'pinned_candidate_Q'
+          $failureLog = Join-Path $env:RUNNER_TEMP 'neutral-candidate-runner-errors.log'
+          function Write-PublicFailure([string]$Category, [int]$ExitCode, [string]$LogPath) {
+            $digest = $null
+            if (Test-Path -LiteralPath $LogPath -PathType Leaf) { $digest = (Get-FileHash -LiteralPath $LogPath -Algorithm SHA256).Hash.ToLower() }
+            [ordered]@{schema_version=1; kind='public_summary_failure'; workflow_scope='pinned_candidate_Q'; status='incomplete'; stage=$failureStage; step=$failureStep; error_category=$Category; exit_code=$ExitCode; log_sha256=$digest} | ConvertTo-Json -Compress
+          }
           try {
             & ./validation-tools/.validation/neutral-20261006/run_windows_validation.ps1 `
               -Repository (Join-Path $env:GITHUB_WORKSPACE 'candidate') `
@@ -75,7 +97,8 @@ jobs:
             $runnerExit = $LASTEXITCODE
             exit $runnerExit
           } catch {
-            Write-Output '{"kind":"public_summary_unavailable","status":"incomplete"}'
+            $code = if ($null -ne $runnerExit -and $runnerExit -ne 0) { $runnerExit } else { 1 }
+            Write-Output (Write-PublicFailure 'powershell_exception' $code $failureLog)
             if ($null -ne $runnerExit -and $runnerExit -ne 0) { exit $runnerExit }
             exit 1
           }
@@ -85,6 +108,14 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $false
+          $failureStep = 'summarize_pinned'
+          $failureStage = 'pinned_candidate_Q'
+          $failureLog = Join-Path $env:RUNNER_TEMP 'neutral-candidate-summary-errors.log'
+          function Write-PublicFailure([string]$Category, [int]$ExitCode, [string]$LogPath) {
+            $digest = $null
+            if (Test-Path -LiteralPath $LogPath -PathType Leaf) { $digest = (Get-FileHash -LiteralPath $LogPath -Algorithm SHA256).Hash.ToLower() }
+            [ordered]@{schema_version=1; kind='public_summary_failure'; workflow_scope='pinned_candidate_Q'; status='incomplete'; stage=$failureStage; step=$failureStep; error_category=$Category; exit_code=$ExitCode; log_sha256=$digest} | ConvertTo-Json -Compress
+          }
           try {
             $digest = '${{ steps.context.outputs.context_sha256 }}'
             if ($digest -notmatch '^[0-9a-f]{64}$') { throw 'validation_unavailable' }
@@ -95,6 +126,6 @@ jobs:
             & $python -B -X utf8 (Join-Path $tools 'summarize_pinned.py') --context (Join-Path $env:RUNNER_TEMP 'neutral-candidate-context.json') --context-sha256 $digest --result (Join-Path $evidence 'result.json') --source-before (Join-Path $evidence 'source-before.log') --source-after (Join-Path $evidence 'source-after.log') 2> (Join-Path $env:RUNNER_TEMP 'neutral-candidate-summary-errors.log')
             exit $LASTEXITCODE
           } catch {
-            Write-Output '{"kind":"public_summary_unavailable","status":"incomplete"}'
+            Write-Output (Write-PublicFailure 'powershell_exception' 1 $failureLog)
             exit 1
           }

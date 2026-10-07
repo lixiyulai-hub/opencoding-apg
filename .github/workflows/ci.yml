@@ -38,6 +38,27 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $false
           $wrapperExit = $null
+          $failureStep = 'bootstrap_tools'
+          $failureStage = 'windows_validation'
+          $failureLog = Join-Path $env:RUNNER_TEMP 'neutral-full-wrapper-errors.log'
+          $failureOutput = Join-Path $env:RUNNER_TEMP 'neutral-full-wrapper-output.log'
+          function Write-PublicFailure([string]$Category, [int]$ExitCode, [string]$LogPath) {
+            $digest = $null
+            if (Test-Path -LiteralPath $LogPath -PathType Leaf) {
+              $digest = (Get-FileHash -LiteralPath $LogPath -Algorithm SHA256).Hash.ToLower()
+            }
+            [ordered]@{
+              schema_version = 1
+              kind = 'public_summary_failure'
+              workflow_scope = 'existing_ci_full_W'
+              status = 'incomplete'
+              stage = $failureStage
+              step = $failureStep
+              error_category = $Category
+              exit_code = $ExitCode
+              log_sha256 = $digest
+            } | ConvertTo-Json -Compress
+          }
           try {
             $python = (Get-Command python -CommandType Application).Source
             # Extract exact reviewed Git bytes without changing this source checkout.
@@ -53,19 +74,41 @@ jobs:
           for name in names:
               data = subprocess.check_output(['git','-C',str(root),'show',head+':.validation/neutral-20261006/'+name], stderr=subprocess.PIPE)
               (folder/name).write_bytes(data)
-          '@
+            '@
             $bootstrapOutput = @(& $python -B -X utf8 -c $bootstrap 2>&1)
-            if ($LASTEXITCODE -ne 0) { throw 'validation_unavailable' }
+            $bootstrapExit = $LASTEXITCODE
+            $bootstrapOutput | Out-File -LiteralPath $failureLog -Encoding utf8
+            if ($bootstrapExit -ne 0) {
+              Write-Output (Write-PublicFailure 'tool_exit_nonzero' $bootstrapExit $failureLog)
+              exit $bootstrapExit
+            }
             $tools = Join-Path $env:RUNNER_TEMP 'neutral-full-tools'
             $context = Join-Path $env:RUNNER_TEMP 'neutral-full-context.json'
+            $contextLog = Join-Path $env:RUNNER_TEMP 'neutral-full-context.log'
+            $failureStep = 'prepare_context'
             $contextDigest = @(& $python -B -X utf8 (Join-Path $tools 'prepare_context.py') --checkout $env:GITHUB_WORKSPACE --binding (Join-Path $tools 'candidate-binding.json') --binding-sha256 'db7f6a52d9aee51882cec533ec46c79c479472e85d627a6f7ee07533930a2480' --python-version '${{ matrix.python-version }}' --output $context 2>&1)
-            if ($LASTEXITCODE -ne 0 -or $contextDigest.Count -ne 1 -or "$($contextDigest[0])" -notmatch '^[0-9a-f]{64}$') { throw 'validation_unavailable' }
+            $contextExit = $LASTEXITCODE
+            $contextDigest | Out-File -LiteralPath $contextLog -Encoding utf8
+            if ($contextExit -ne 0 -or $contextDigest.Count -ne 1 -or "$($contextDigest[0])" -notmatch '^[0-9a-f]{64}$') {
+              $category = if ($contextExit -ne 0) { 'tool_exit_nonzero' } else { 'output_rejected' }
+              Write-Output (Write-PublicFailure $category $(if ($contextExit -ne 0) { $contextExit } else { 1 }) $contextLog)
+              exit $(if ($contextExit -ne 0) { $contextExit } else { 1 })
+            }
             $ErrorActionPreference = 'Continue'
-            & $python -B -X utf8 (Join-Path $tools 'capture_unittest.py') --context $context --context-sha256 "$($contextDigest[0])" --log-directory (Join-Path $env:RUNNER_TEMP 'neutral-full-evidence') 2> (Join-Path $env:RUNNER_TEMP 'neutral-full-wrapper-errors.log')
+            $failureStep = 'capture_unittest'
+            & $python -B -X utf8 (Join-Path $tools 'capture_unittest.py') --context $context --context-sha256 "$($contextDigest[0])" --log-directory (Join-Path $env:RUNNER_TEMP 'neutral-full-evidence') 1> $failureOutput 2> $failureLog
             $wrapperExit = $LASTEXITCODE
-            exit $wrapperExit
+            $summary = if (Test-Path -LiteralPath $failureOutput -PathType Leaf) { Get-Content -LiteralPath $failureOutput -Raw } else { '' }
+            try { $parsed = $summary | ConvertFrom-Json -ErrorAction Stop } catch { $parsed = $null }
+            if ($null -ne $parsed -and $parsed.kind -eq 'public_windows_validation_summary') {
+              Write-Output $summary.TrimEnd()
+              exit $wrapperExit
+            }
+            Write-Output (Write-PublicFailure $(if ($wrapperExit -ne 0) { 'wrapper_or_child_failure' } else { 'summary_rejected' }) $(if ($wrapperExit -ne 0) { $wrapperExit } else { 1 }) $failureLog)
+            exit $(if ($wrapperExit -ne 0) { $wrapperExit } else { 1 })
           } catch {
-            Write-Output '{"kind":"public_summary_unavailable","status":"incomplete"}'
+            $code = if ($null -ne $wrapperExit -and $wrapperExit -ne 0) { $wrapperExit } else { 1 }
+            Write-Output (Write-PublicFailure 'powershell_exception' $code $failureLog)
             if ($null -ne $wrapperExit -and $wrapperExit -ne 0) { exit $wrapperExit }
             exit 1
           }
