@@ -43,7 +43,7 @@ OpenCoding 是一个面向不会写代码、刚开始使用 AI coding 的人的 
 | **Bounded apply** | 只在授权路径内写入本地文件，并保留 preimage | 否 |
 | **Human Gate** | 由人确认密钥、金钱、网络、部署、远程 Git、发布或不可逆动作 | 可能 |
 
-普通 APG 流程不反复要求人工批准；只有外部影响才需要 Gate。本仓库当前保持 **APG-only、离线、无真实 Git 写入**。
+普通 APG 流程在已授权范围内推进。当前 0.2.7 包含本地 CLI/Python API、可选的本机浏览器工作台和 AI 提供方接口；离线文档流程不需要 AI，真实 AI 调用需单独配置与授权。下游产品是否可交付，以实际运行、验证和验收结果为准。
 
 ### 反馈、失败与 Requeue
 
@@ -66,25 +66,25 @@ OpenCoding 是一个面向不会写代码、刚开始使用 AI coding 的人的 
 
 ### 供 Codex 与其他 agent 使用
 
-OpenCoding 不要求嵌入浏览器工作台、Codex App、MCP 或插件才能被 agent 使用。已有的本地 CLI 和 Python API 是当前受控入口；它们只处理显式本地 root，不会接通 Host、Provider、网络、凭据或外部服务。
+OpenCoding 不要求嵌入浏览器工作台、Codex App、MCP 或插件才能被 agent 使用。本地会话、文档事务和 scheduler API 处理显式本地 root；可选的 AI 评估和生成接口需要另外核验提供方、费用与执行授权。
 
 从源码仓库使用时，请先阅读 [`docs/product/AGENT_NATIVE_USE.md`](docs/product/AGENT_NATIVE_USE.md)。该指南区分零写入查看、会话写入、经人工确认的本地文档 apply，以及会初始化或恢复本地调度状态的 scheduler 调用；它不把 TaskPlan 当成已执行任务，也不承诺任何特定 agent Host 已兼容。
 
 ### 快速开始
 
 ```powershell
-# 1. 进入项目根目录
+# 从源码启动可选本地工作台（仅绑定 127.0.0.1）
 Set-Location <your-project-root>
+python -m opencoding.workbench --workspace C:\path\to\OpenCoding-projects --port 0
 
-# 2. 阅读入口文档
-Get-Content .\README.md
-Get-ChildItem .\docs\apg
+# 或查询已有本地项目的状态（零写入）
+python -m opencoding --root C:\path\to\existing-project --status --json
 
-# 3. 运行离线测试
-python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+# 开发验证
+python -X utf8 -m unittest
 ```
 
-然后从 `docs/apg/` 选择对应主题：自动 PRG、Executor Adapter、Adaptive Git checkpoint、Controller Bridge、Ledger persistence、Gate 与发布边界。
+安装 wheel、停止工作台及 AI 使用边界见 [`安装与本地使用`](docs/product/OFFLINE_INSTALLATION.md)。历史治理契约位于 `docs/apg/`；历史证据只说明对应版本的验证结果。
 
 ### 项目目录与入口
 
@@ -102,7 +102,7 @@ python -X utf8 -m unittest discover -s tests -p 'test_*.py'
 
 **适用**：需求澄清、AI coding 任务拆解、离线执行准备、证据链、回滚和人工 Gate 编排。
 
-**不适用**：本仓库不实现任何特定下游产品；不连接 Provider、Host、凭据、网络或部署环境；不把离线验证结果写成产品已经发布。
+**边界**：本仓库不代表任何特定下游产品已经完成。可选 AI 能力可能使用凭据和网络；本地测试不证明真实提供方、Host 集成、生产部署或公开发布已经通过验收。
 
 ### 与大型热门 GitHub 项目的 README 对照
 
@@ -150,7 +150,7 @@ OpenCoding is a **beginner-oriented AI coding governance and execution-preparati
 | **Bounded apply** | Write only inside authorized local paths and retain preimages | No |
 | **Human Gate** | Confirm secrets, money, network, deployment, remote Git, release, or irreversible work | Maybe |
 
-Routine APG work proceeds without repeated manual approval. This repository currently remains **APG-only, offline, and free of real Git writes**.
+Routine APG work proceeds within the authorized scope. Version 0.2.7 includes local CLI/Python APIs, an optional loopback browser workbench, and optional AI provider interfaces. Local document workflows need no AI; provider calls require configuration and authorization. Delivery claims must follow actual execution and verification results.
 
 ### Feedback, failure, and Requeue
 
@@ -162,7 +162,7 @@ A change is accepted when its paths match the plan, preview and apply remain sep
 
 ### For Codex and other agents
 
-OpenCoding does not require a browser workbench, Codex App embedding, MCP, or a plugin before an agent can use its existing local CLI and Python APIs. Those entry points operate only on an explicit local root and do not connect to a Host, provider, network, credentials, or external services.
+OpenCoding does not require a browser workbench, Codex App embedding, MCP, or a plugin before an agent can use its local CLI and Python APIs. Local session/document and scheduler APIs use an explicit local root; optional AI interfaces require separate provider, cost, and execution authorization.
 
 When working from the source repository, read [`docs/product/AGENT_NATIVE_USE.md`](docs/product/AGENT_NATIVE_USE.md) first. It distinguishes zero-write views, session writes, user-authorized local document apply, and scheduler calls that may initialize or recover local state. It also does not treat a TaskPlan as an executed task or claim compatibility with every agent Host.
 
@@ -170,10 +170,12 @@ When working from the source repository, read [`docs/product/AGENT_NATIVE_USE.md
 
 ```powershell
 Set-Location <your-project-root>
-Get-Content .\README.md
-Get-ChildItem .\docs\apg
-python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+python -m opencoding.workbench --workspace C:\path\to\OpenCoding-projects --port 0
+# Alternatively, query an existing project without writing state:
+python -m opencoding --root C:\path\to\existing-project --status --json
 ```
+
+See [`Installation and local use`](docs/product/OFFLINE_INSTALLATION.md) for wheel installation and AI boundaries. Developers can run `python -X utf8 -m unittest` from the repository root.
 
 ### Repository map
 
@@ -188,7 +190,7 @@ python -X utf8 -m unittest discover -s tests -p 'test_*.py'
 
 ### Scope and boundaries
 
-OpenCoding is for requirement clarification, AI-coding task decomposition, offline execution preparation, evidence, rollback, and human-Gate orchestration. This repository does not implement the downstream child product and does not connect to providers, hosts, credentials, networks, or deployment environments.
+OpenCoding is for requirement clarification, AI-coding task decomposition, controlled local execution, evidence, rollback, and human-Gate orchestration. Optional AI features can use credentials and networks. Local tests do not establish provider connectivity, universal Host compatibility, production readiness, or completion of any downstream product.
 
 ### README completeness note
 

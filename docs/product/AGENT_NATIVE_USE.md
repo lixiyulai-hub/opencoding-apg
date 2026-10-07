@@ -1,12 +1,12 @@
 # Agent-Native Local Use
 
-This guide is for Codex and other agents that work in a local repository. It describes the existing OpenCoding Python and CLI entry points; it does not add a browser workbench, HTTP service, MCP server, plugin, or embedded Codex App integration.
+This guide is for Codex and other agents that work in a local repository. It describes the OpenCoding 0.2.7 Python and CLI entry points. The package also includes an optional loopback browser workbench (`python -m opencoding.workbench`); agents do not need it to use the local APIs. See `OFFLINE_INSTALLATION.md` for installed-package startup and AI configuration boundaries. No MCP server, plugin, or embedded Codex App compatibility is claimed here.
 
 ## Scope and authority
 
 Every call uses an explicit existing local project root. The caller must establish that the root, user goal, reviewed preview, and any local write are within the user's authorization. An `approved` field inside an approval object is part of the local integrity check; it is not evidence that a user authorized an arbitrary scope, and it is never authorization for external work.
 
-The current package does not connect to a Host, provider, network, credentials, real production data, deployment target, or publication channel. Path checks and application locks are not an operating-system sandbox. A TaskPlan is a planning result, not a scheduler success record or permission to run arbitrary code.
+The local session/document and scheduler flows below do not require a provider or network. Optional AI evaluation and generation interfaces can call configured providers, so this is not a package-wide offline guarantee. Establish separate authorization for provider calls, credentials, costs, real data, deployment, and publication. Path checks and application locks are not an operating-system sandbox. A TaskPlan is a planning result, not a scheduler success record or permission to run arbitrary code.
 
 ## Discover the local entry points
 
@@ -16,7 +16,7 @@ The CLI entry is:
 python -m opencoding --root C:\path\to\authorized-project --help
 ```
 
-Its supported modes are the interactive session flow, `--resume SESSION_ID`, `--list`, `--preview SESSION_ID`, `--change SESSION_ID QUESTION_ID ANSWER`, `--rollback TRANSACTION_ID`, and `--status [--task-id TASK_ID] [--json]`. It has no `--create`, `--apply`, `--run-next`, `--recover`, or `--requeue` aliases.
+Its local session modes are the interactive flow, `--resume SESSION_ID`, `--list`, `--preview SESSION_ID`, `--evaluate SESSION_ID`, `--adopt-plan SESSION_ID`, `--change SESSION_ID QUESTION_ID ANSWER`, `--rollback TRANSACTION_ID`, and `--status [--task-id TASK_ID] [--json]`. Additional autonomous modes include `--autorun lendreg`, `--cancel-run RUN_ID`, `--query-run RUN_ID`, and `--rollback-run RUN_ID`; consult `--help` and `AUTORUN_QUICKSTART.md` for their distinct authorization and delivery checks. `--mock-ai` is a simulation, not proof of provider connectivity or a successful delivery. There are no `--create`, `--apply`, `--run-next`, `--recover`, or `--requeue` aliases.
 
 The Python entry points are `opencoding.service` for the document/session loop and `opencoding.scheduler` for explicit local scheduler tasks. They are ordinary in-process APIs, not a wire protocol. Use return values and exception types, not human-readable CLI text, for control flow.
 

@@ -26,7 +26,7 @@ OpenCoding 面向不会写代码、刚开始使用 AI coding 的人：你只要�
 
 **想法 → Grill Me 澄清 → 平台与方案建议 → 能力判断 → 项目文档 → 任务与波次 → bounded preview → 离线执行 → 测试/doctor/audit → 验收或 Requeue**。
 
-普通离线任务自动推进；外部影响动作保留 Human Gate。本仓库目前是 APG-only 离线治理夹具，不连接真实 Git、网络、Provider、Host 或部署环境。这里展示的是“从想法到方案与执行准备”的能力，不代表下游产品已经完成。
+普通离线任务在已授权范围内推进；外部影响动作保留 Human Gate。当前 0.2.7 包含本地 CLI/Python API、可选的本机浏览器工作台和 AI 提供方接口。离线文档流程不需要 AI，真实 AI 调用需单独配置与授权；功能存在不代表下游产品已经完成或验收。
 
 ## 反馈与验收
 
@@ -40,10 +40,12 @@ OpenCoding 面向不会写代码、刚开始使用 AI coding 的人：你只要�
 
 ```powershell
 Set-Location <your-project-root>
-Get-Content .\README.md
-Get-ChildItem .\docs\apg
-python -X utf8 -m unittest discover -s tests -p 'test_*.py'
+python -m opencoding.workbench --workspace C:\path\to\OpenCoding-projects --port 0
+# 或只读查询已有项目
+python -m opencoding --root C:\path\to\existing-project --status --json
 ```
+
+安装包使用方法见 [`安装与本地使用`](docs/product/OFFLINE_INSTALLATION.md)。工作台只绑定本机，使用启动窗口给出的完整地址进入；Ctrl+C 停止，项目数据保留。开发验证运行 `python -X utf8 -m unittest`。
 
 重点入口：`docs/apg/`（契约、Gate、验收、回滚）、`docs/diagrams/`（双语流程图）、`scripts/`（离线脚本）、`tests/`（测试）、`.governance/receipts/`（证据）。
 
@@ -53,7 +55,7 @@ OpenCoding helps non-coders and AI-coding beginners turn a rough idea into a cle
 
 ## 项目边界 / Project boundary
 
-本仓库只验证 OpenCoding/APG 治理流程，不代表任何特定下游产品已经实现或发布。技术兼容标识继续保留：`adaptive-project-governance`、`Adaptive Project Governance`、`APG`、`$adaptive-project-governance`。
+本仓库提供 OpenCoding/APG 的本地规划、文档事务、受控执行和可选 AI 接入；不代表任何特定下游产品已经实现或发布，也不承诺所有平台或 Host 已通过验收。技术兼容标识继续保留：`adaptive-project-governance`、`Adaptive Project Governance`、`APG`、`$adaptive-project-governance`。
 
 ## 上游致谢与来源
 

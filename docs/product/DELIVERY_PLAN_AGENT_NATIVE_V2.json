@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "program_id": "opencoding-agent-native-delivery-v2-20260909",
-  "status": "scope_corrected",
+  "status": "local_installation_verified_pending_independent_review",
   "supersedes": {
     "path": "docs/product/DELIVERY_PLAN_V1.json",
     "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
@@ -31,14 +31,21 @@
     "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the agent-native delivery plan."
   },
   "immediate_transaction": {
-    "id": "agent-native-docs-r2",
-    "purpose": "Correct the documented conflict branch, make installed-package API guidance self-contained, and retain the complete accepted W2-C evidence split.",
-    "status": "in_progress_pending_independent_verification",
+    "id": "installed-delivery-20261008",
+    "purpose": "Align the 0.2.7 installation and agent guides with shipped capabilities; verify installed CLI, document rollback, and optional loopback workbench; synchronize only the canonical governance block.",
+    "status": "verified_pending_independent_review_and_user_acceptance",
     "paths": [
+      "README.md",
+      "README_CN.md",
       "docs/product/OFFLINE_INSTALLATION.md",
       "docs/product/AGENT_NATIVE_USE.md",
-      "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json"
-    ]
+      "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json",
+      "tests/test_product_packaging.py",
+      "AGENTS.md"
+    ],
+    "partial_file_scope": {
+      "AGENTS.md": "Only the project-governance managed block; existing user edits outside it remain unstaged."
+    }
   },
   "following_stage": "Independent bounded agent-native workflow verification and documentation integration.",
   "ordered_successors": [
@@ -89,5 +96,58 @@
     "immediate_human_gate": null,
     "automatic_gate_coverage": "inconclusive",
     "later": "Real Host or connector activation, credentials, cost-bearing work, real data, deployment, and publication require separate authorization with exact target and scope."
+  },
+  "updated_at": "2026-10-08",
+  "prior_immediate_transaction": {
+    "id": "agent-native-docs-r2",
+    "purpose": "Correct the documented conflict branch, make installed-package API guidance self-contained, and retain the complete accepted W2-C evidence split.",
+    "status": "in_progress_pending_independent_verification",
+    "paths": [
+      "docs/product/OFFLINE_INSTALLATION.md",
+      "docs/product/AGENT_NATIVE_USE.md",
+      "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json"
+    ]
+  },
+  "current_implementation": {
+    "package_version": "0.2.7",
+    "product_source_baseline": "9e6a218f10edc096c5e4ea2d31276dcda3438f29",
+    "observed_capabilities": [
+      "Local CLI and Python APIs",
+      "Optional loopback browser workbench",
+      "Optional AI provider evaluation and generation interfaces"
+    ],
+    "qualification": "Capability presence and local tests do not establish real provider delivery, universal Host compatibility, production readiness, or user acceptance. The historical cancelled W3 requirement remains historical; the optional workbench does not change the agent-native required scope."
+  },
+  "current_verification": {
+    "command": "python -X utf8 -m unittest",
+    "run": 583,
+    "passed": 580,
+    "skipped": 3,
+    "failed": 0,
+    "log": ".opencoding-dev-runs/delivery-20261008/unittest.log",
+    "installed_workflow": [
+      "sdist rebuild",
+      "offline wheel install in clean virtual environment",
+      "module and console zero-write status",
+      "document apply and rollback",
+      "loopback module startup and unauthenticated rejection",
+      "authenticated project creation and persistence across restart"
+    ],
+    "wheel_sha256": "cbfa4b9e06b92f2b21399519fea5897617f7b7335168433be8194f89c2706cff",
+    "artifact_directory": ".opencoding-dev-runs/delivery-20261008/dist",
+    "independent_review": "pending_not_performed",
+    "user_acceptance": "pending_not_claimed",
+    "evidence_availability": "Builds, local runtime and logs are retained locally and are not included in the source commit.",
+    "governance": {
+      "runtime": "0.6.5-dev.20260819, local source via process-scoped sys.path",
+      "log": ".opencoding-dev-runs/delivery-20261008/doctor-stable.json",
+      "exit_code": 0,
+      "all_diagnostic_checks_passed": true,
+      "read_only_proof": {
+        "passed": true,
+        "changed_paths": []
+      },
+      "limit": "Diagnostic success does not establish complete automatic gate coverage; the policy still declares no command gates."
+    }
   }
 }

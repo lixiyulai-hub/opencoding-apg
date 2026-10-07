@@ -1,4 +1,4 @@
-# 离线安装
+# 安装与本地使用（0.2.7）
 
 OpenCoding 的运行时没有第三方依赖。离线使用时，先在一台具备构建条件的机器上生成本地 wheel，再把该 wheel 复制到目标机器安装。
 
@@ -7,7 +7,9 @@ OpenCoding 的运行时没有第三方依赖。离线使用时，先在一台具
 在目标机器上创建或选择 Python 3.11 及以上版本的虚拟环境，然后仅从本地 wheel 安装：
 
 ```powershell
-python -m pip install --no-index --no-deps .\opencoding_local_entry-0.1.0-py3-none-any.whl
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --no-index --no-deps .\opencoding_local_entry-0.2.7-py3-none-any.whl
 ```
 
 安装后可使用模块入口或命令入口。`--status` 是只读查询；尚未初始化时会返回 `not_initialized`，不会创建项目状态。
@@ -17,9 +19,25 @@ python -m opencoding --root C:\path\to\local-project --status --json
 opencoding --root C:\path\to\local-project --status --json
 ```
 
+`--root` 必须是已经存在的项目目录。上面的虚拟环境激活命令适用于 Windows PowerShell；其他系统使用对应的虚拟环境 Python。不要把仓库测试通过等同于所有平台已验收。
+
+## 可选的本地工作台
+
+安装包也包含浏览器工作台，可从命令行启动：
+
+```powershell
+python -m opencoding.workbench --workspace C:\path\to\OpenCoding-projects --port 0
+```
+
+工作台会创建指定工作区，绑定 `127.0.0.1` 的可用端口，并打开浏览器。若只想手动打开，追加 `--no-browser`，再访问终端输出的完整地址。地址包含本次运行的访问令牌，不要分享。使用 Ctrl+C 停止服务；项目数据保留。它是本机入口，不应作为公网服务部署。
+
+未配置 AI 时，可以创建/打开项目、填写需求、查看本地规划及按精确预览生成文档。AI 评估和代码生成需要另外配置并授权提供方调用；保存配置不等于连通性测试成功，生成结果也不等于验收通过。工作台配置保存在用户级目录（Windows 下为 `%LOCALAPPDATA%/OpenCoding/ai_provider.json`），可能含密钥，不应提交到仓库或包含在分发包里。
+
+本地 CLI/API 不依赖工作台运行。CLI 的 `--autorun lendreg --mock-ai` 是明确标记的合成示例，不证明真实 AI 接通或生成了可交付产品。真实自主模式读取 `OPENCODING_AI_BASE_URL`、`OPENCODING_AI_API_KEY` 和 `OPENCODING_AI_MODEL`；只能在提供方、费用及执行范围已有授权时启用。
+
 ## 已安装包中的 agent 使用
 
-已安装的 wheel 提供 `python -m opencoding`、`opencoding` 和 Python 模块 API；它不是 HTTP 服务、MCP server、浏览器工作台或特定 Host 适配器。所有调用都必须给出已有本地项目的绝对 `--root` 或 `root`，并且不会连接 Provider、网络、凭据或外部服务。
+已安装的 wheel 提供 `python -m opencoding`、`opencoding` 和 Python 模块 API，以及上述可选工作台。以下会话、预览、文档事务和 scheduler 用法使用已有本地项目的绝对 `--root` 或 `root`，不需要 Provider 或外部服务；包内另外提供的 AI 接口可能访问网络，不能把整个包称为“无网络能力”。这里不承诺 MCP server 或特定 Host 集成。
 
 先用帮助和只读状态确认入口及本地状态：
 
@@ -56,4 +74,4 @@ python -c "import pathlib, setuptools.build_meta as backend; out=pathlib.Path('d
 python -m opencoding --root C:\path\to\local-project --status --json
 ```
 
-该包不连接 Host、Provider、网络、凭据或真实外部服务。生成文档仍需在本地交互流程中确认精确写入范围，生成的本地事务可通过 `--rollback` 回滚。
+生成文档仍需在本地交互流程中确认精确写入范围，生成的本地事务可通过 `--rollback` 回滚。安装与上述本地文档流程不需要调用 AI；启用可选提供方能力时，应分别核验授权、调用结果和交付结果。分发包验证不代表真实 Host、生产部署或下游产品已经验收。

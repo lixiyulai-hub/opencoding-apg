@@ -1,9 +1,12 @@
 <!-- project-governance:begin -->
-<!-- project-governance:metadata policy-version=0.1.0 policy-digest=93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7 generator-version=1 scope=. body-digest=f9021b39f96c15959ebf5c29dc80651855189ca02ec874a0cc889870f258ea8f -->
+<!-- project-governance:metadata policy-version=0.1.0 policy-digest=93e44a674b20aa6cb3fd6b75e70a9b1a663d16e104dfa8c9f98cab92f9e697f7 generator-version=1 scope=. body-digest=6b1a1c702170f463b9b35bc88e382f425266f53d1f7ad34afccb10ce1f910199 -->
 Run governance checks from the project root.
 Required phases: inspect, validate, verify, report.
 Validation command: - `python -X utf8 -m unittest`
 Do not install tools globally or claim external protections.
+Read only the project rules and references relevant to the requested change.
+The controller may format its own results; this adapter does not impose a fixed
+response schema on ordinary agent prose.
 <!-- project-governance:end -->
 
 ## Final Status Snapshot

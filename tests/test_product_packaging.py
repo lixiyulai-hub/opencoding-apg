@@ -3,18 +3,22 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import io
 import json
 import os
 from pathlib import Path, PurePosixPath
+import queue
 import re
 import subprocess
 import sys
 import tarfile
 import tempfile
+import threading
 import tomllib
 import unicodedata
 import unittest
+import urllib.parse
 import zipfile
 
 from opencoding.intake import QUESTION_DEFINITIONS
@@ -53,6 +57,7 @@ def _environment(workspace: Path) -> dict[str, str]:
         PYTHONDONTWRITEBYTECODE="1",
         PYTHONIOENCODING="utf-8",
         PYTHONNOUSERSITE="1",
+        LOCALAPPDATA=str(workspace / "user-config"),
         TEMP=str(temporary),
         TMP=str(temporary),
     )
@@ -237,6 +242,83 @@ def _write_fixture_archive(archive_path: Path, entries: list[tuple[str, str, byt
 
 
 class ProductPackagingTests(unittest.TestCase):
+    def _check_installed_workbench(self, python: Path, outside: Path) -> None:
+        """Exercise the installed module over loopback without user AI settings."""
+        projects = self.workspace / "workbench-projects"
+        for restarting in (False, True):
+            process = subprocess.Popen(
+                [str(python), "-I", "-B", "-u", "-X", "utf8", "-m",
+                 "opencoding.workbench", "--workspace", str(projects),
+                 "--port", "0", "--no-browser"],
+                cwd=outside,
+                env=_environment(self.workspace),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                creationflags=CREATE_NO_WINDOW,
+            )
+            lines = queue.Queue()
+            reader = threading.Thread(
+                target=lambda: lines.put(process.stdout.readline()), daemon=True,
+            )
+            reader.start()
+            connection = None
+            try:
+                try:
+                    startup = lines.get(timeout=15)
+                except queue.Empty:
+                    self.fail("installed workbench did not announce its loopback address")
+                match = re.search(r"http://127\.0\.0\.1:\d+/\?t=[A-Za-z0-9_-]+", startup)
+                # Never include the startup token in assertion output or retained logs.
+                self.assertIsNotNone(match, "installed workbench failed to start")
+                url = urllib.parse.urlsplit(match.group(0))
+                connection = http.client.HTTPConnection(url.hostname, url.port, timeout=5)
+
+                def request(method, path, *, cookie=None, body=None):
+                    headers = {"Content-Type": "application/json"}
+                    if cookie:
+                        headers["Cookie"] = cookie
+                    connection.request(method, path, body=body, headers=headers)
+                    response = connection.getresponse()
+                    payload = response.read()
+                    return response, payload
+
+                response, _ = request("GET", "/api/bootstrap")
+                self.assertEqual(response.status, 401)
+                before = _inventory(projects)
+                response, page = request("GET", url.path + "?" + url.query)
+                self.assertEqual(response.status, 200)
+                self.assertIn(b"OpenCoding", page)
+                cookie_header = response.getheader("Set-Cookie") or ""
+                self.assertTrue("HttpOnly" in cookie_header and "SameSite=Strict" in cookie_header)
+                cookie = cookie_header.split(";", 1)[0]
+                response, payload = request("GET", "/api/bootstrap", cookie=cookie)
+                self.assertEqual(response.status, 200)
+                self.assertEqual(_inventory(projects), before)
+                names = [item["name"] for item in json.loads(payload)["projects"]]
+                self.assertEqual(names, ["安装验证"] if restarting else [])
+                if not restarting:
+                    response, payload = request(
+                        "POST", "/api/project", cookie=cookie,
+                        body=json.dumps({"name": "安装验证"}).encode("utf-8"),
+                    )
+                    self.assertEqual(response.status, 200)
+                    self.assertTrue(json.loads(payload)["created"])
+                    self.assertTrue((projects / "安装验证/.opencoding/project.json").is_file())
+            finally:
+                if connection is not None:
+                    connection.close()
+                process.terminate()
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=5)
+                reader.join(timeout=5)
+                process.stdout.close()
+        self.assertFalse((self.workspace / "user-config/OpenCoding/ai_provider.json").exists())
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.workspace = _retained_workspace("source")
@@ -488,6 +570,7 @@ class ProductPackagingTests(unittest.TestCase):
         )
         self.assertIn("rolled_back", rolled_back.stdout)
         self.assertFalse((project / "AGENTS.md").exists())
+        self._check_installed_workbench(python, outside)
 
 
 if __name__ == "__main__":
