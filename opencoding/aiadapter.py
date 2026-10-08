@@ -281,8 +281,12 @@ class AIAdapter:
         wire_messages = [
             {
                 "role": "system",
-                "content": "OpenCoding 请求绑定（必须原样回传 nonce）："
-                + json.dumps(binding, ensure_ascii=False, sort_keys=True),
+                "content": (
+                    "OpenCoding 请求绑定：只输出一个 JSON 对象，并必须原样回传下面对象中的全部字段和值；"
+                    "不能只回传 nonce，不能省略 schema_version、request_id、run_id、task_id、attempt、"
+                    "request_kind、input_digest 或 allowed_outputs："
+                    + json.dumps(binding, ensure_ascii=False, sort_keys=True)
+                ),
             },
             *[{"role": item["role"], "content": item["content"]} for item in messages],
         ]

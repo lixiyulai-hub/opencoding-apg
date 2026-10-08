@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "program_id": "opencoding-agent-native-delivery-v2-20260909",
-  "status": "project-api-basic-generation-verified_structured-evaluation-blocked",
+  "status": "project-api-binding-verified_execution-contract-blocked",
   "supersedes": {
     "path": "docs/product/DELIVERY_PLAN_V1.json",
     "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
@@ -31,23 +31,23 @@
     "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the agent-native delivery plan."
   },
   "immediate_transaction": {
-    "id": "project-api-route-and-usage-check",
-    "purpose": "项目专用凭据已完成简单生成；核查中转站上游拒绝、协议路由与已用额度，再恢复有界结构化评估。",
-    "status": "blocked_pending_relay_diagnostics_and_usage",
+    "id": "project-api-execution-contract-repair",
+    "purpose": "对齐模型评估提示与执行器的文件、记录标识和路径契约，完成可执行契约校验；当前没有可要求用户接受的有效交付。",
+    "status": "technical_work_pending_no_immediate_human_gate",
     "paths": [
       "opencoding/aiadapter.py",
+      "opencoding/advisor.py",
       "tests/test_product_aiadapter.py",
-      "docs/product/OFFLINE_INSTALLATION.md",
+      "tests/test_product_advisor_prompt.py",
       "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json"
     ]
   },
   "following_stage": "Bounded real structured evaluation, followed by reviewed plan adoption and controlled generation.",
   "ordered_successors": [
-    "核查中转站本轮请求日志、上游路由/协议和已用额度",
-    "在剩余额度内完成一次有界真实结构化评估；成功后确认方案并采用计划",
-    "在明确代码写入范围内生成、验证并独立复核交付",
-    "W4 controlled Host and connector work, separately scoped and accepted",
-    "W5 independent beginner/platform acceptance and publication boundaries, separately scoped and accepted"
+    "先在本地核对并修复评估协议与执行契约的不一致",
+    "在已授权 50 元项目测试额度内有界重评并严格验证契约",
+    "有效契约经审阅后采用计划，按精确写入范围进行受控生成与验收",
+    "W4 Host/Connector 集成与 W5 平台验收、公开发布另行明确范围"
   ],
   "retained_delivery_evidence": [
     {
@@ -89,7 +89,7 @@
     }
   ],
   "gates": {
-    "immediate_human_gate": "仅需中转站管理侧核查上游拒绝、支持协议/路由和实际消耗；项目 API 测试已获授权，无需再次提供 key。",
+    "immediate_human_gate": null,
     "automatic_gate_coverage": "inconclusive",
     "later": "Project API testing is authorized against the user-provided 50 RMB quota. Real data, production deployment, public package release and separately scoped Host/connector work remain outside this test."
   },
@@ -177,14 +177,15 @@
   "project_api_verification": {
     "date": "2026-10-08",
     "provider": "openai_compatible",
-    "model": "gpt-5.5",
+    "model": "gpt-6.1-sol",
     "base_path": "/v1",
     "credential_scope": "project test only; read in memory; no Codex configuration changes",
     "budget": {
       "user_quota_rmb": 50,
       "actual_spend_rmb": "unknown",
       "remaining_rmb": "unknown",
-      "further_paid_requests": "paused_pending_usage_and_route_check"
+      "further_paid_requests": "authorized_within_project_quota; paused_this_checkpoint_for_local_protocol_repair",
+      "output_limit_observation": "请求实际发送 max_tokens=2048，但多次响应 usage.completion_tokens 超过 2048；服务端执行该上限未获证实，不能将本地字段当成费用硬限制。"
     },
     "simple_generation": {
       "status": "verified",
@@ -197,28 +198,36 @@
         "completion_tokens": 5,
         "total_tokens": 4396,
         "cached_tokens": 3840
-      }
+      },
+      "model": "gpt-5.5"
     },
     "structured_evaluation": {
-      "status": "not_verified",
-      "advisor_attempts": 3,
-      "error_code": "network_unavailable",
-      "timeout_seconds": [
-        120,
-        90,
-        60
-      ],
-      "sent_max_tokens": [
-        null,
-        null,
-        2048
-      ]
+      "status": "binding_and_business_schema_verified_execution_contract_rejected",
+      "model": "gpt-6.1-sol",
+      "successful_evaluation_id": "eval-f223d238a4a54bc0",
+      "successful_request_id": "req-816dbe900f73485280e239394ebadfc9",
+      "choice": "cli",
+      "max_tokens": 2048,
+      "http_status": 200,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2953,
+        "completion_tokens": 3034,
+        "total_tokens": 5987
+      },
+      "status_after_reprompt": "failed_response_schema_invalid",
+      "latest_failed_request_id": "req-83ef6a9da2924eeb83e803ae41f0cf84",
+      "latest_failed_reason": "模型返回绑定字段但缺少 choice/reasons/summary；finish_reason=stop，不能归因为输出截断。",
+      "contract_revalidation": "blocked_restart_assert_unlinked",
+      "evidence_dir": ".opencoding-dev-runs/real-ai-openai-20261008",
+      "qualification": "verified 仅表示适配器绑定和评估业务字段通过；两个已存评估均未通过执行契约复核、未确认采用、未生成代码。"
     },
     "last_combined_protocol_probe": {
       "http_status": 502,
       "max_tokens": 256,
       "error_type": "upstream_error",
-      "message": "Upstream access forbidden, please contact administrator"
+      "message": "Upstream access forbidden, please contact administrator",
+      "qualification": "gpt-5.5 历史结果；gpt-6.1-sol 后续 HTTP 200 已证明当前测试无需等待路由人工 Gate。"
     },
     "limitations": [
       "Simple generation and isolated field probes do not prove complete binding validation or end-to-end delivery.",
@@ -226,16 +235,54 @@
       "Timeout means unknown completion/billing outcome, not confirmed server rejection. Root cause remains unconfirmed without relay logs.",
       "Three local evaluation-attempt receipts contain harness-generated request IDs that were not transmitted; they cannot correlate upstream requests.",
       "First two receipts recorded intended caps 8192/2048, but old adapter omitted max_tokens. A later tiny adapter probe used default 32768 despite commentary saying 256.",
-      "Prior WorkBuddy verification remains historical and does not override the new project API authorization."
+      "Prior WorkBuddy verification remains historical and does not override the new project API authorization.",
+      "本轮收据 source_commit 是父提交基线；有些调用包含当时未提交的提示修复。各阶段响应不得统一归为父提交原始行为。"
     ],
     "code_generation": false,
     "independent_review": "pending_not_performed",
     "user_acceptance": "pending_not_claimed",
     "evidence_dir": ".opencoding-dev-runs/real-ai-openai-20261008",
-    "evidence_source": "Local evaluation receipts plus observed HTTP results retained in task tool history; correction supplement is a reconstruction, not a server billing ledger."
+    "evidence_source": "Local evaluation receipts plus observed HTTP results retained in task tool history; correction supplement is a reconstruction, not a server billing ledger.",
+    "current_protocol_attempts": [
+      {
+        "request_id": "req-071b39d929ae4bbcaaf6ba73fd6dd7f3",
+        "model": "gpt-6.1-sol",
+        "status": "response_schema_invalid",
+        "detail": "最初未保存具体错误消息，不足以证明是 choice 字段错误。"
+      },
+      {
+        "request_id": "req-025c2425aaa7487283407c4b0bd75603",
+        "model": "gpt-6-astra",
+        "status": "network_unavailable",
+        "detail": "读取超时，计费结果未知。"
+      },
+      {
+        "request_id": "req-94db095236514624b39b350c7df5af44",
+        "model": "gpt-6.1-sol",
+        "status": "response_schema_invalid",
+        "detail": "choice=cli，但缺少除 nonce 外的八项绑定字段。"
+      },
+      {
+        "request_id": "req-2e823b2852a44a7494e6d0f7a373667b",
+        "evaluation_id": "eval-a60c8bc171a0c32b",
+        "status": "binding_verified_contract_rejected",
+        "detail": "candidate_path_invalid: tests/test_notes.py 位于 app/ 外。"
+      },
+      {
+        "request_id": "req-816dbe900f73485280e239394ebadfc9",
+        "evaluation_id": "eval-f223d238a4a54bc0",
+        "status": "binding_verified_contract_rejected",
+        "detail": "restart_assert_unlinked: 写入参数含首尾空白，重启断言使用去空白文本，当前标识匹配不接受二者相同；尚未放宽验证。"
+      },
+      {
+        "request_id": "req-83ef6a9da2924eeb83e803ae41f0cf84",
+        "status": "response_schema_invalid",
+        "detail": "只返回绑定字段，缺少业务字段；尚不能归因于模型上限。"
+      }
+    ]
   },
   "source_verification_20261008": {
-    "scope": "OpenAI-compatible output token cap, regression test and associated documentation",
+    "scope": "OpenAI-compatible output token cap, binding/contract prompt safeguards, regression tests and real structured evaluation",
     "command": "python -X utf8 -m unittest",
     "first_run": {
       "run": 586,
@@ -250,23 +297,29 @@
       "log": ".opencoding-dev-runs/real-ai-openai-20261008/confirm-lock-recheck.log"
     },
     "full_recheck": {
-      "run": 586,
-      "passed": 583,
+      "run": 587,
+      "passed": 584,
       "skipped": 3,
       "failed": 0,
-      "seconds": 404.447,
-      "log": ".opencoding-dev-runs/real-ai-openai-20261008/full-suite-token-cap-recheck.log"
+      "seconds": 461.113,
+      "log": ".opencoding-dev-runs/real-ai-openai-20261008/full-suite-prompt-contract.log"
     },
     "lock_implementation_modified": false,
     "governance": {
       "command": "project-governance --json doctor .",
-      "exit_code": 0,
       "classification": "pass",
       "read_only_proof": true,
-      "log": ".opencoding-dev-runs/real-ai-openai-20261008/doctor.log",
-      "limit": "Diagnostics do not establish complete command gate coverage."
+      "log": ".opencoding-dev-runs/real-ai-openai-20261008/doctor-after-prompt-fix.log",
+      "limit": "首个日志证明通过；重复并发检查曾因该日志写入而报告 scope fail。重复检查结果不作独立验证，也不能证明完整 Gate 覆盖。"
     },
     "independent_review": "pending_not_performed",
-    "installed_runtime_updated": false
+    "installed_runtime_updated": false,
+    "real_evaluation": {
+      "successful": "eval-f223d238a4a54bc0",
+      "strict_contract_revalidation": "restart_assert_unlinked",
+      "latest_attempt": "response_schema_invalid",
+      "code_generation": false,
+      "user_acceptance": "not_requested_for_invalid_contract"
+    }
   }
 }

@@ -255,6 +255,11 @@ class RealAdapterConfigTests(unittest.TestCase):
         self.assertEqual(binding["request_id"], "req-wire")
         self.assertEqual(binding["input_digest"], INPUT_DIGEST)
         self.assertEqual(binding["attempt"], 4)
+        binding_instruction = captured["data"]["messages"][0]["content"]
+        self.assertIn("必须原样回传下面对象中的全部字段和值", binding_instruction)
+        for field in ("schema_version", "request_id", "run_id", "task_id", "attempt",
+                      "request_kind", "input_digest", "allowed_outputs"):
+            self.assertIn(field, binding_instruction)
         self.assertEqual(result["structured"]["request_id"], "req-wire")
         self.assertEqual(result["structured"]["run_id"], "run-wire")
 

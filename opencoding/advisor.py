@@ -148,7 +148,11 @@ def build_evaluation_messages(
         "contract_spec": "implementation_contract 必须给出:本项目(不是模板)应交付的文件、"
                          "公开函数契约(签名+行为)、数据落盘目录(app/ 之下),以及 steps 数据驱动"
                          "验收步骤(算子仅限 call/assert/reload/assert_file_exists/assert_absent;"
-                         "必须覆盖核心业务正反路径与重启保存)。",
+                         "必须覆盖核心业务正反路径与重启保存)。所有 files.path 都必须位于 app/ 目录下；"
+                         "测试步骤写在 implementation_contract.steps 中，不要把 tests/、README.md 或其他项目根文件"
+                         "放入 files；生成阶段只接受 app/ 下的候选文件。main 阶段的写入调用必须返回可识别的"
+                         "业务记录标识（例如字符串 name/text/id 组合中的业务文本），restart 阶段的 assert"
+                         "必须明确包含同一业务记录标识；不能只断言数量、版本号或布尔值。",
         "answers": _answers_summary(session),
         "facts": _facts_summary(facts),
         "rule_recommendation": {
