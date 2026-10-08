@@ -33,7 +33,7 @@
   "immediate_transaction": {
     "id": "record-docker-boundary-fix-and-synthetic-delivery",
     "purpose": "修复 Docker 网络拒绝判定漏项，完成真实隔离边界实测，并零新 AI 请求接续保存候选。",
-    "status": "completed_pending_independent_review_and_user_acceptance",
+    "status": "completed_pending_independent_review_and_host_config_audit",
     "paths": [
       "opencoding/docker_provider.py",
       "tests/test_docker_provider.py",
@@ -90,7 +90,7 @@
   ],
   "gates": {
     "immediate_human_gate": null,
-    "automatic_gate_coverage": "source regression, Docker boundary probe, frozen main/restart checks passed; independent review pending",
+    "automatic_gate_coverage": "source regression, Docker boundary probe, frozen main/restart checks passed; independent review and host config audit pending",
     "later": "合成事务已交付；真实产品源码、生产部署、公开发布、W4/W5 仍在范围外。"
   },
   "updated_at": "2026-10-08",
@@ -576,10 +576,10 @@
       },
       "qualification": "本检查点只更新交付记录；复用同一源码版本的检查，不把旧 doctor 作为新文档的复查。"
     },
-    "codex_config_and_auth_hashes_unchanged": true,
+    "codex_config_and_auth_hashes_unchanged": false,
     "independent_review": "pending_not_performed",
     "user_acceptance": "pending_not_claimed",
-    "continuation": "当前合成事务已交付。后续如需继续，先独立复核本次源码和证据；真实产品源码接入必须另开明确任务与文件范围。",
+    "continuation": "合成事务已交付；继续真实产品接入前，先独立复核 Codex config.toml 哈希变化来源，并确认不影响 Codex 配置边界。",
     "boundary": "本轮只交付合成便签应用和 Docker 后端判定修复；不宣称真实业务代码已生成或已部署。",
     "source_fix": {
       "files": [
@@ -590,6 +590,17 @@
       "targeted_tests": "60 tests, 57 passed, 3 skipped",
       "full_suite": "591 tests, 588 passed, 3 skipped",
       "full_suite_seconds": 501.665
+    },
+    "codex_configuration_audit": {
+      "config_path": "C:/Users/Administrator/.codex/config.toml",
+      "baseline_sha256": "38324CF8FB44D9EFA802BB800EF5939D9DB907B955FCF6DDC48173361417DDBC",
+      "observed_sha256": "452D98053988EFE5346D7E1F271C55EA9C259E539B1E050806676CE3071A3B50",
+      "auth_path": "C:/Users/Administrator/.codex/auth.json",
+      "auth_baseline_sha256": "52D6C1C00C89FA750A0B18451DF811E8E4A1E649C8F30B634B458B6443B44905",
+      "auth_observed_sha256": "52D6C1C00C89FA750A0B18451DF811E8E4A1E649C8F30B634B458B6443B44905",
+      "agent_write_observed": false,
+      "status": "needs_independent_host_runtime_review",
+      "action": "未修改 Codex 配置；项目交付证据不把配置未变作为已证实事实。"
     }
   }
 }
