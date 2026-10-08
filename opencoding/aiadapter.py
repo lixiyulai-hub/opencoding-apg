@@ -792,14 +792,15 @@ class WorkBuddyGatewayAdapter:
 
 
 def probe_connection(config: Mapping[str, Any], *, timeout_seconds: float = 15.0) -> dict[str, Any]:
-    """W1:真实连通性探测——只验证"地址可达 + 凭据被接受"。
+    """只探测服务或模型目录，不把 HTTP 响应等同于鉴权或生成成功。
 
     明确边界:
     - 这是一次真实外部请求,只在用户显式点击"测试连接"后调用;
     - OpenAI 兼容端点走 ``GET <base_url>/models``(不产生生成消费);
     - 云网关走 ``GET <endpoint>`` 并带应用访问密钥头(不发起补全);
-    - 结果只有 ``verified`` / ``blocked`` / ``unreachable`` 三种,**不宣称生成
-      能力已验证**;生成能力由一次真实评估调用来证明;
+    - ``verified`` 只表示 OpenAI 兼容接口返回了可解析的模型目录；云网关首页
+      和 HTTP 错误都只能记为 ``blocked``，**不宣称凭据或生成能力已验证**;
+    - 生成能力由一次真实评估调用来证明；
     - 返回体不回显任何密钥,只给状态码类别与中文原因。
     """
     provider = config.get("provider")
@@ -819,15 +820,34 @@ def probe_connection(config: Mapping[str, Any], *, timeout_seconds: float = 15.0
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             code = int(getattr(response, "status", 0) or response.getcode())
+            if 200 <= code < 300:
+                if provider == "workbuddy_gateway":
+                    return {"state": "blocked", "provider": str(provider), "http_status": code,
+                            "reason": "服务页面可达，但页面响应不能核验模型凭据或生成能力；需单独验证真实评估"}
+                raw = response.read(MAX_RESPONSE_BYTES + 1)
+                try:
+                    catalog = json.loads(raw) if len(raw) <= MAX_RESPONSE_BYTES else None
+                except (ValueError, UnicodeError):
+                    catalog = None
+                if not (isinstance(catalog, dict) and isinstance(catalog.get("data"), list)
+                        and all(isinstance(item, dict) and isinstance(item.get("id"), str)
+                                and item["id"].strip() for item in catalog["data"])):
+                    return {"state": "blocked", "provider": str(provider), "http_status": code,
+                            "reason": "服务有响应，但未返回有效模型目录，AI 接入未核实"}
+                return {"state": "verified", "provider": str(provider), "http_status": code,
+                        "evidence_kind": "models_json_v1",
+                        "reason": "模型目录可读取；不证明鉴权已启用或模型生成可用"}
     except urllib.error.HTTPError as exc:
         code = int(exc.code)
+        exc.close()
         if code in (401, 403):
             return {"state": "blocked", "provider": str(provider), "http_status": code,
                     "reason": "服务可达但凭据未被接受(密钥/访问密钥无效或已过期)"}
         if code in (404, 405, 422):
-            # 地址存在、凭据未被拒绝:连通性成立,只是该路径不提供探测接口
-            return {"state": "verified", "provider": str(provider), "http_status": code,
-                    "reason": "服务可达且凭据未被拒绝(该地址不提供目录接口)"}
+            # 地址有响应，但目录接口不存在/不接受该方法；HTTP 错误页本身
+            # 不能证明凭据有效。
+            return {"state": "blocked", "provider": str(provider), "http_status": code,
+                    "reason": "服务有响应但探测接口不可用，凭据是否有效未核实"}
         return {"state": "blocked", "provider": str(provider), "http_status": code,
                 "reason": "服务返回 " + str(code) + ",连通性未核实"}
     except (urllib.error.URLError, socket.timeout, TimeoutError, OSError) as exc:
@@ -836,9 +856,6 @@ def probe_connection(config: Mapping[str, Any], *, timeout_seconds: float = 15.0
     except Exception as exc:  # noqa: BLE001 - 探测失败也必须如实报告,不抛出
         return {"state": "unreachable", "provider": str(provider),
                 "reason": "探测失败:" + sanitize_text(type(exc).__name__)[:80]}
-    if 200 <= code < 300:
-        return {"state": "verified", "provider": str(provider), "http_status": code,
-                "reason": "服务可达且凭据被接受"}
     return {"state": "blocked", "provider": str(provider), "http_status": code,
             "reason": "服务返回 " + str(code) + ",连通性未核实"}
 

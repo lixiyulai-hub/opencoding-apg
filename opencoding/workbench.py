@@ -281,7 +281,7 @@ class Workbench:
             return {"ai": aiconfig.describe_status(), "test": aiconfig.load_last_test()}
         if path == "/api/ai/test" and method == "POST":
             # W1:真实连通性测试——只有用户显式点击才发起一次外部请求。
-            # 只验证"地址可达 + 凭据被接受",不消耗生成额度,不等于生成能力已验证。
+            # 只探测服务/模型目录，不把 HTTP 响应当成鉴权或生成成功。
             if not bool(body.get("confirm")):
                 raise WorkbenchError(400, "ai_test_unconfirmed",
                                      "测试连接会向外部服务发起一次真实请求;需要显式确认")
@@ -292,7 +292,7 @@ class Workbench:
 
             result = aiadapter.probe_connection(config)
             result["at"] = _utc_now()
-            result["scope"] = "仅验证地址可达与凭据被接受;不消耗生成额度,不代表生成能力已验证"
+            result["scope"] = "仅探测服务或模型目录；不发起生成，也不证明凭据或生成能力有效"
             aiconfig.save_last_test(result)
             return {"ok": result.get("state") == "verified", "test": result}
 
@@ -746,9 +746,9 @@ function aiBadge(ai,test){const badge=$('#aiBadge');badge.onclick=()=>showWizard
  const st=(test&&test.state)||'not_tested';
  if(!ai.configured){badge.textContent='AI 未接入(点击设置)';badge.className='badge err';return}
  const kind=ai.provider==='workbuddy_gateway'?'云网关':'自定义接口';
- if(st==='verified'){badge.textContent='AI 已接入('+kind+') · 连通性已验证';badge.className='badge ok';return}
- if(st==='blocked'||st==='unreachable'){badge.textContent='AI 已接入('+kind+') · 连接受阻,点击查看';badge.className='badge warn';return}
- badge.textContent='AI 已接入('+kind+') · 已保存未测试';badge.className='badge'}
+ if(st==='verified'){badge.textContent='AI 已配置('+kind+') · 模型目录可读，生成未验证';badge.className='badge ok';return}
+ if(st==='blocked'||st==='unreachable'){badge.textContent='AI 已配置('+kind+') · 接入未核实,点击查看';badge.className='badge warn';return}
+ badge.textContent='AI 已配置('+kind+') · 已保存未测试';badge.className='badge'}
 async function loadBoot(){const b=await api('/api/bootstrap');ST.ai=b.ai||{};ST.aiTest=b.test||{};
  aiBadge(ST.ai,ST.aiTest);
  const list=$('#proj-list');list.innerHTML='';
@@ -933,8 +933,8 @@ async function testConnection(){
  $('#wz-state').textContent='正在测试连接…';
  try{const r=await api('/api/ai/test',{method:'POST',body:{confirm:true}});
   const t=r.test||{};ST.aiTest=t;aiBadge(ST.ai,t);
-  $('#wz-state').textContent=(t.state==='verified'?'✅ 连接已验证':'⚠️ '+(t.reason||'连接未核实'))
-   +' · '+(t.scope||'');toast(t.state==='verified'?'连接已验证':'连接受阻')}
+  $('#wz-state').textContent=(t.state==='verified'?'✅ 模型目录可读，生成未验证':'⚠️ '+(t.reason||'接入未核实'))
+   +' · '+(t.scope||'');toast(t.state==='verified'?'模型目录可读':'接入未核实')}
  catch(e){$('#wz-state').textContent='测试失败:'+e.message;toast('测试失败')}}
 loadBoot();
 </script></body></html>"""

@@ -31,7 +31,7 @@ python -m opencoding.workbench --workspace C:\path\to\OpenCoding-projects --port
 
 工作台会创建指定工作区，绑定 `127.0.0.1` 的可用端口，并打开浏览器。若只想手动打开，追加 `--no-browser`，再访问终端输出的完整地址。地址包含本次运行的访问令牌，不要分享。使用 Ctrl+C 停止服务；项目数据保留。它是本机入口，不应作为公网服务部署。
 
-未配置 AI 时，可以创建/打开项目、填写需求、查看本地规划及按精确预览生成文档。AI 评估和代码生成需要另外配置并授权提供方调用；保存配置不等于连通性测试成功，生成结果也不等于验收通过。工作台配置保存在用户级目录（Windows 下为 `%LOCALAPPDATA%/OpenCoding/ai_provider.json`），可能含密钥，不应提交到仓库或包含在分发包里。
+未配置 AI 时，可以创建/打开项目、填写需求、查看本地规划及按精确预览生成文档。AI 评估和代码生成需要另外配置并授权提供方调用；保存配置不等于接入核实，工作台的连接测试也不会把网关首页或 HTTP 404 当成凭据有效。只有真实评估返回绑定完整的结构化结果，才可进入评估确认；生成结果也不等于验收通过。工作台配置保存在用户级目录（Windows 下为 `%LOCALAPPDATA%/OpenCoding/ai_provider.json`），可能含密钥，不应提交到仓库或包含在分发包里。
 
 本地 CLI/API 不依赖工作台运行。CLI 的 `--autorun lendreg --mock-ai` 是明确标记的合成示例，不证明真实 AI 接通或生成了可交付产品。真实自主模式读取 `OPENCODING_AI_BASE_URL`、`OPENCODING_AI_API_KEY` 和 `OPENCODING_AI_MODEL`；只能在提供方、费用及执行范围已有授权时启用。
 

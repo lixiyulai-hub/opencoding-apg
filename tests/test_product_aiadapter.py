@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import unittest
 import unittest.mock
+import urllib.error
+import io
 
 from opencoding.aiadapter import (
     ADAPTER_SCHEMA_VERSION,
@@ -14,6 +16,7 @@ from opencoding.aiadapter import (
     MockAdapter,
     WorkBuddyGatewayAdapter,
     validate_structured_response,
+    probe_connection,
 )
 
 INPUT_DIGEST = "a" * 64
@@ -281,6 +284,54 @@ class RealAdapterConfigTests(unittest.TestCase):
                     allowed_outputs=[],
                 )
         self.assertEqual(caught.exception.code, "response_binding_mismatch")
+
+
+class ProbeConnectionTests(unittest.TestCase):
+    class Response:
+        def __init__(self, status, payload=b""):
+            self.status = status
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def getcode(self):
+            return self.status
+
+        def read(self, _limit=-1):
+            return self.payload
+
+    def test_gateway_http_error_does_not_prove_credentials(self):
+        def transport(_request, timeout=None):
+            raise urllib.error.HTTPError(
+                "https://gateway.example", 404, "missing", {}, io.BytesIO(b"not found"))
+
+        with unittest.mock.patch("opencoding.aiadapter.urllib.request.urlopen", side_effect=transport):
+            result = probe_connection({
+                "provider": "workbuddy_gateway",
+                "endpoint": "https://gateway.example",
+                "publishable_key": "synthetic-key",
+                "model": "synthetic-model",
+            })
+        self.assertEqual(result["state"], "blocked")
+        self.assertEqual(result["http_status"], 404)
+
+    def test_openai_models_catalog_is_explicit_evidence(self):
+        def transport(_request, timeout=None):
+            return self.Response(200, b'{"data":[{"id":"model-a"}]}')
+
+        with unittest.mock.patch("opencoding.aiadapter.urllib.request.urlopen", side_effect=transport):
+            result = probe_connection({
+                "provider": "openai_compatible",
+                "base_url": "https://api.example/v1",
+                "api_key": "synthetic-key",
+                "model": "model-a",
+            })
+        self.assertEqual(result["state"], "verified")
+        self.assertEqual(result["evidence_kind"], "models_json_v1")
 
 
 class EmptyContentTests(unittest.TestCase):

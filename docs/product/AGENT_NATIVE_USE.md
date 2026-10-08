@@ -128,4 +128,8 @@ Use scheduler controls only for an already authorized, schema-valid local task. 
 
 Before reporting a local operation as complete, inspect the returned structured result, relevant receipt or rollback result, and the applicable local verification evidence. Do not infer that planning, a preview, an approval object, a nonzero CLI exit code, or an unavailable scheduler store proves execution success.
 
+### Real AI calls
+
+`aiconfig.load_config()` and `aiadapter.adapter_from_config()` expose configured providers without printing secrets. `probe_connection()` is only a low-cost service or model-directory probe: a gateway home page, HTTP 404/405/422, or any other error response does not prove credentials or generation. A real evaluation through `advisor.run_ai_evaluation()` must return `real: true`, a bound structured response, and an evaluation record before the result can be confirmed. Do not treat `response_empty`, `response_length_truncated`, `deadline_exceeded`, or `network_unavailable` as a successful AI connection; stop or reconfigure the provider instead of silently retrying.
+
 This guide does not claim universal Codex, agent, operating-system, or platform compatibility. W4 controlled Host/connectors and W5 independent beginner/platform/release acceptance remain later work. Activating a real Host or connector, using credentials or cost-bearing resources, and publication each require a separately authorized Gate.

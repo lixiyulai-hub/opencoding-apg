@@ -127,7 +127,13 @@ def load_last_test() -> dict:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {"state": "not_tested", "note": "上次测试记录不可读"}
-    return value if isinstance(value, dict) else {"state": "not_tested"}
+    if not isinstance(value, dict):
+        return {"state": "not_tested"}
+    if value.get("state") == "verified" and value.get("evidence_kind") != "models_json_v1":
+        # 旧版把 HTTP 错误页/网关首页也记为 verified；只降级展示，不改写历史文件。
+        return {**value, "state": "not_tested",
+                "reason": "旧探测缺少有效模型目录证据，需重新测试；生成能力仍需真实评估"}
+    return value
 
 
 def describe_status() -> dict[str, Any]:

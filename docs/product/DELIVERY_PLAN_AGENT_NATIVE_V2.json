@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "program_id": "opencoding-agent-native-delivery-v2-20260909",
-  "status": "local_installation_verified_pending_independent_review",
+  "status": "real-ai-gateway-blocked_pending_human_service_gate",
   "supersedes": {
     "path": "docs/product/DELIVERY_PLAN_V1.json",
     "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
@@ -31,21 +31,18 @@
     "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the agent-native delivery plan."
   },
   "immediate_transaction": {
-    "id": "installed-delivery-20261008",
-    "purpose": "Align the 0.2.7 installation and agent guides with shipped capabilities; verify installed CLI, document rollback, and optional loopback workbench; synchronize only the canonical governance block.",
-    "status": "verified_pending_independent_review_and_user_acceptance",
+    "id": "real-ai-gateway-service-check",
+    "purpose": "修正探测状态语义并等待网关/模型配置核查；真实生成成功后再进入评估确认和受控代码生成。",
+    "status": "blocked_by_human_service_gate",
     "paths": [
-      "README.md",
-      "README_CN.md",
-      "docs/product/OFFLINE_INSTALLATION.md",
+      "opencoding/aiadapter.py",
+      "opencoding/aiconfig.py",
+      "opencoding/workbench.py",
+      "tests/test_product_aiadapter.py",
       "docs/product/AGENT_NATIVE_USE.md",
-      "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json",
-      "tests/test_product_packaging.py",
-      "AGENTS.md"
-    ],
-    "partial_file_scope": {
-      "AGENTS.md": "Only the project-governance managed block; existing user edits outside it remain unstaged."
-    }
+      "docs/product/OFFLINE_INSTALLATION.md",
+      "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json"
+    ]
   },
   "following_stage": "Independent bounded agent-native workflow verification and documentation integration.",
   "ordered_successors": [
@@ -149,5 +146,32 @@
       },
       "limit": "Diagnostic success does not establish complete automatic gate coverage; the policy still declares no command gates."
     }
+  },
+  "real_ai_verification": {
+    "provider": "workbuddy_gateway",
+    "model": "glm-5.3",
+    "config_present": true,
+    "connectivity_probe": {
+      "state": "blocked",
+      "http_status": 404,
+      "reason": "服务有响应但探测接口不可用，凭据是否有效未核实"
+    },
+    "attempts": [
+      {
+        "request_id": "req-4f0190c51276491bb839ac94b105765a",
+        "max_output_tokens": 4096,
+        "status": "failed",
+        "error_code": "response_empty"
+      },
+      {
+        "request_id": "req-28c21021f13c423c9afe413e0d703923",
+        "max_output_tokens": 32768,
+        "status": "failed",
+        "error_code": "deadline_exceeded"
+      }
+    ],
+    "scope": "synthetic project only; one request per attempt; no code generation; no automatic retry",
+    "evidence_dir": ".opencoding-dev-runs/real-ai-20261008",
+    "acceptance": "not_verified"
   }
 }
