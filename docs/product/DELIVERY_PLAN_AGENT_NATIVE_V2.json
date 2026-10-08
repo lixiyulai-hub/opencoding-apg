@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "program_id": "opencoding-agent-native-delivery-v2-20260909",
-  "status": "contract-example-verified_real-evaluation-transport-unresolved",
+  "status": "real-evaluation-and-generation-verified_execution-blocked-docker-storage",
   "supersedes": {
     "path": "docs/product/DELIVERY_PLAN_V1.json",
     "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
@@ -31,23 +31,21 @@
     "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the agent-native delivery plan."
   },
   "immediate_transaction": {
-    "id": "project-api-bounded-evaluation-followup",
-    "purpose": "本地协议示例已通过实际冻结检查器的跨进程验收及反例；本轮真实重评超时，需诊断传输后再取得当前版本可执行评估。",
-    "status": "technical_followup_pending_no_immediate_human_gate",
+    "id": "restore-docker-backend-resume-saved-candidate",
+    "purpose": "真实评估契约及代码生成已成功；恢复 Docker 存储入口与受限执行后端后，零新 AI 请求接续已保存候选。",
+    "status": "blocked_host_storage_repair_confirmation",
     "paths": [
-      "opencoding/aiadapter.py",
-      "opencoding/advisor.py",
-      "tests/test_product_aiadapter.py",
-      "tests/test_product_advisor_prompt.py",
       "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json"
-    ]
+    ],
+    "run_id": "gen-c3d2fd34fd5e"
   },
-  "following_stage": "Bounded real structured evaluation, followed by reviewed plan adoption and controlled generation.",
+  "following_stage": "恢复受限执行环境并实测边界，然后接续已有候选完成冻结契约验收与事务落盘。",
   "ordered_successors": [
-    "核查本轮读取超时的请求状态与模型响应方式；保留已有凭据授权和费用边界",
-    "在已授权 50 元项目测试额度内有界重评并严格验证契约",
-    "有效契约经审阅后采用计划，按精确写入范围进行受控生成与验收",
-    "W4 Host/Connector 集成与 W5 平台验收、公开发布另行明确范围"
+    "确认保留 D 盘数据的 Docker 目录入口修复范围，并恢复引擎",
+    "核对本地 Python 镜像，运行真实 probe_boundaries 并取得有效执行资格",
+    "用绝对项目路径调用 resume_saved_candidate 接续 gen-c3d2fd34fd5e；若批次过期则走正式零 AI 新批次入口",
+    "完成冻结契约验收与事务落盘，记录独立复核和用户验收状态",
+    "W4 Host/Connector 与 W5 平台验收及发布另行明确范围"
   ],
   "retained_delivery_evidence": [
     {
@@ -89,7 +87,18 @@
     }
   ],
   "gates": {
-    "immediate_human_gate": null,
+    "immediate_human_gate": {
+      "id": "docker-migrated-directory-repair",
+      "request": "允许修复 C:/Users/Administrator/AppData/Local/Docker 的迁移目录入口并启动现有 Docker Desktop；保留原入口备份及 D:/moved-from-C/DockerDesktop/LocalDocker 全部数据。",
+      "reason": "项目外共享 Docker 存储入口无法读取；修复具有宿主范围影响，未包含在项目源码、测试和文档精确 allowlist 中。",
+      "excluded": [
+        "删除或重置 Docker 数据",
+        "卸载或注销 WSL",
+        "清空镜像、容器、卷",
+        "修改 Codex 配置"
+      ],
+      "qualification": "仅请求目录入口修复授权；不是再次索取 API key 或测试额度授权。"
+    },
     "automatic_gate_coverage": "inconclusive",
     "later": "Project API testing is authorized against the user-provided 50 RMB quota. Real data, production deployment, public package release and separately scoped Host/connector work remain outside this test."
   },
@@ -184,7 +193,7 @@
       "user_quota_rmb": 50,
       "actual_spend_rmb": "unknown",
       "remaining_rmb": "unknown",
-      "further_paid_requests": "authorized_within_project_quota; one request this checkpoint, no automatic retry after timeout",
+      "further_paid_requests": "用户允许额度内重测重试；本轮两个成功请求后转为零 AI 候选接续，不为后端故障重复生成",
       "output_limit_observation": "请求实际发送 max_tokens=2048，但多次响应 usage.completion_tokens 超过 2048；服务端执行该上限未获证实，不能将本地字段当成费用硬限制。"
     },
     "simple_generation": {
@@ -202,25 +211,28 @@
       "model": "gpt-5.5"
     },
     "structured_evaluation": {
-      "status": "binding_and_business_schema_verified_execution_contract_rejected",
+      "status": "strict_execution_contract_verified",
+      "evaluation_id": "eval-ce8c4a2f89cf0a2b",
+      "request_id": "req-9ba33dfda2f649259fd7a4010d31d137",
       "model": "gpt-6.1-sol",
-      "successful_evaluation_id": "eval-f223d238a4a54bc0",
-      "successful_request_id": "req-816dbe900f73485280e239394ebadfc9",
-      "choice": "cli",
-      "max_tokens": 2048,
       "http_status": 200,
       "finish_reason": "stop",
+      "max_tokens_sent": 4096,
+      "read_timeout_seconds": 180,
       "usage": {
-        "prompt_tokens": 2953,
-        "completion_tokens": 3034,
-        "total_tokens": 5987
+        "prompt_tokens": 3365,
+        "completion_tokens": 2990,
+        "total_tokens": 6355,
+        "completion_tokens_details": {
+          "reasoning_tokens": 92
+        }
       },
-      "status_after_reprompt": "failed_response_schema_invalid",
-      "latest_failed_request_id": "req-83ef6a9da2924eeb83e803ae41f0cf84",
-      "latest_failed_reason": "模型返回绑定字段但缺少 choice/reasons/summary；finish_reason=stop，不能归因为输出截断。",
-      "contract_revalidation": "blocked_restart_assert_unlinked",
-      "evidence_dir": ".opencoding-dev-runs/real-ai-openai-20261008",
-      "qualification": "verified 仅表示适配器绑定和评估业务字段通过；两个已存评估均未通过执行契约复核、未确认采用、未生成代码。"
+      "step_count": 26,
+      "files": [
+        "app/__init__.py",
+        "app/main.py"
+      ],
+      "qualification": "通过真实响应的绑定、业务字段和严格执行契约校验；合成计划由 agent 按委托测试授权审阅采用，不代表用户产品验收。"
     },
     "last_combined_protocol_probe": {
       "http_status": 502,
@@ -238,10 +250,10 @@
       "Prior WorkBuddy verification remains historical and does not override the new project API authorization.",
       "本轮收据 source_commit 是父提交基线；有些调用包含当时未提交的提示修复。各阶段响应不得统一归为父提交原始行为。"
     ],
-    "code_generation": false,
+    "code_generation": true,
     "independent_review": "pending_not_performed",
     "user_acceptance": "pending_not_claimed",
-    "evidence_dir": ".opencoding-dev-runs/real-ai-openai-20261008",
+    "evidence_dir": ".opencoding-dev-runs/contract-pipeline-20261008",
     "evidence_source": "Local evaluation receipts plus observed HTTP results retained in task tool history; correction supplement is a reconstruction, not a server billing ledger.",
     "current_protocol_attempts": [
       {
@@ -279,7 +291,28 @@
         "status": "response_schema_invalid",
         "detail": "只返回绑定字段，缺少业务字段；尚不能归因于模型上限。"
       }
-    ]
+    ],
+    "historical_structured_evaluation": {
+      "status": "binding_and_business_schema_verified_execution_contract_rejected",
+      "model": "gpt-6.1-sol",
+      "successful_evaluation_id": "eval-f223d238a4a54bc0",
+      "successful_request_id": "req-816dbe900f73485280e239394ebadfc9",
+      "choice": "cli",
+      "max_tokens": 2048,
+      "http_status": 200,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2953,
+        "completion_tokens": 3034,
+        "total_tokens": 5987
+      },
+      "status_after_reprompt": "failed_response_schema_invalid",
+      "latest_failed_request_id": "req-83ef6a9da2924eeb83e803ae41f0cf84",
+      "latest_failed_reason": "模型返回绑定字段但缺少 choice/reasons/summary；finish_reason=stop，不能归因为输出截断。",
+      "contract_revalidation": "blocked_restart_assert_unlinked",
+      "evidence_dir": ".opencoding-dev-runs/real-ai-openai-20261008",
+      "qualification": "verified 仅表示适配器绑定和评估业务字段通过；两个已存评估均未通过执行契约复核、未确认采用、未生成代码。"
+    }
   },
   "source_verification_20261008": {
     "scope": "OpenAI-compatible output token cap, binding/contract prompt safeguards, regression tests and real structured evaluation",
@@ -377,5 +410,133 @@
       "log": ".opencoding-dev-runs/contract-pipeline-20261008/doctor.json",
       "qualification": "成功结果来自兼容 stdout.buffer 的内存捕获；第一次捕获接口异常没有计为通过。"
     }
+  },
+  "real_pipeline_retest_20261008": {
+    "source_commit": "5b8f123876ed80223ea95c0a82fb122300fd8418",
+    "status": "blocked_execution",
+    "evaluation": {
+      "status": "strict_execution_contract_verified",
+      "evaluation_id": "eval-ce8c4a2f89cf0a2b",
+      "request_id": "req-9ba33dfda2f649259fd7a4010d31d137",
+      "model": "gpt-6.1-sol",
+      "http_status": 200,
+      "finish_reason": "stop",
+      "max_tokens_sent": 4096,
+      "read_timeout_seconds": 180,
+      "usage": {
+        "prompt_tokens": 3365,
+        "completion_tokens": 2990,
+        "total_tokens": 6355,
+        "completion_tokens_details": {
+          "reasoning_tokens": 92
+        }
+      },
+      "step_count": 26,
+      "files": [
+        "app/__init__.py",
+        "app/main.py"
+      ],
+      "qualification": "通过真实响应的绑定、业务字段和严格执行契约校验；合成计划由 agent 按委托测试授权审阅采用，不代表用户产品验收。"
+    },
+    "generation": {
+      "run_id": "gen-c3d2fd34fd5e",
+      "request_id": "req-509b7d0b711c63d6c7fb51c3e15f5ce0",
+      "http_status": 200,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5539,
+        "completion_tokens": 1950,
+        "total_tokens": 7489,
+        "completion_tokens_details": {
+          "reasoning_tokens": 435
+        }
+      },
+      "source_sha256": {
+        "opencoding/advisor.py": "9c46d5f1b22229fde438f7130db15797e8936a515b517f5be0bd365dd1a84e14",
+        "opencoding/aiadapter.py": "9e4658d0a0895076682a68af4a4f15fdbfe7a4265cffdea4063c826154cf1a53",
+        "opencoding/generic_run.py": "a97105983808ec69d179c825feae4f0d73a1f746b5b2c3a21ee6e8188eb21072"
+      },
+      "calls_dispatched": 1,
+      "repair_rounds": 0,
+      "static_ok": true,
+      "executed": false,
+      "applied": false
+    },
+    "plan_adopted": true,
+    "adoption_basis": "agent_under_delegated_synthetic_test_authorization",
+    "new_successful_api_calls": 2,
+    "reported_total_tokens": 13844,
+    "billing_rmb": "unknown",
+    "candidate_resume": {
+      "run_id": "gen-c3d2fd34fd5e",
+      "attempt": 1,
+      "status": "blocked_execution",
+      "candidate_dir": "E:\\儿童知行星球\\.tmp\\opencoding-product-foundation-20260905\\integration\\.opencoding-dev-runs\\contract-pipeline-20261008\\synthetic-project\\.opencoding\\generic_runs\\gen-c3d2fd34fd5e-candidate-attempt1",
+      "files": [
+        "app/__init__.py",
+        "app/main.py"
+      ],
+      "request_id": "req-509b7d0b711c63d6c7fb51c3e15f5ce0",
+      "adopted_plan_digest": "d088e352533d2d4ff9c6ade37361f8159b59a2442df58713308780da6b346098",
+      "input_drift": null,
+      "resumable": true
+    },
+    "backend": {
+      "engine": "dockerDesktopLinuxEngine named pipe absent",
+      "startup": "docker desktop start --timeout 45 failed; no Docker process observed after timeout",
+      "data_entry": "C:/Users/Administrator/AppData/Local/Docker",
+      "entry_attributes": "Directory, ReparsePoint, NotContentIndexed",
+      "error_win32": 649,
+      "error": "ERROR_MOUNT_POINT_NOT_RESOLVED; opening reparse entry and log/host failed",
+      "migration_document": "D:/moved-from-C/DockerDesktop/README-Docker-data-migrated-from-C.md",
+      "documented_target": "D:/moved-from-C/DockerDesktop/LocalDocker",
+      "target_readable": true,
+      "wsl_registered_base": "D:/moved-from-C/DockerDesktop/LocalDocker/wsl/main",
+      "diagnosis": "Docker startup is blocked accessing its migrated local data entry. D: target and migration note are readable; actual current reparse target could not be read. Exact corruption cause not established.",
+      "host_storage_changed": false,
+      "required_action": "Repair migrated Docker directory entry preserving existing D: images, containers and volumes, then start Desktop. Shared host storage repair awaits explicit approval."
+    },
+    "candidate_review": {
+      "syntax": "pass_ast_parse_without_execution",
+      "review": "Read full generated source: stdlib CLI, validates inputs and stored records, persists JSON with atomic replacement under app/data. Runtime behavior remains unverified.",
+      "sha256": {
+        "app/__init__.py": "0e8cb71bae9f3db42d712d741c0a9cc0ee6409d1161f427126de8c4616d80f20",
+        "app/main.py": "791c6ee3d627c65563e9f951da03ecc220996496e9e0814c3b4f19f561cce0b6"
+      }
+    },
+    "evidence_files": [
+      ".opencoding-dev-runs/contract-pipeline-20261008/evaluate-probe-92668e8af5e14832aae27af5ce21f56b.json",
+      ".opencoding-dev-runs/contract-pipeline-20261008/generate-probe-a8c4ca61e4d24b668814392a2587ed35.json",
+      ".opencoding-dev-runs/contract-pipeline-20261008/backend-diagnostic.json",
+      ".opencoding-dev-runs/contract-pipeline-20261008/validated-evaluation.json"
+    ],
+    "verification_reused": {
+      "source_unchanged": true,
+      "full_suite": {
+        "command": "python -X utf8 -m unittest",
+        "run": 590,
+        "passed": 587,
+        "skipped": 3,
+        "failed": 0,
+        "seconds": 409.298,
+        "log": ".opencoding-dev-runs/contract-pipeline-20261008/full-suite.log"
+      },
+      "governance": {
+        "exit_code": 0,
+        "classification": "pass",
+        "read_only_proof": {
+          "changed_paths": [],
+          "passed": true
+        },
+        "log": ".opencoding-dev-runs/contract-pipeline-20261008/doctor.json",
+        "qualification": "成功结果来自兼容 stdout.buffer 的内存捕获；第一次捕获接口异常没有计为通过。"
+      },
+      "qualification": "本检查点只更新交付记录；复用同一源码版本的检查，不把旧 doctor 作为新文档的复查。"
+    },
+    "codex_config_and_auth_hashes_unchanged": true,
+    "independent_review": "pending_not_performed",
+    "user_acceptance": "pending_not_claimed",
+    "continuation": "修复并启动 Docker 后，先实测同镜像同策略边界，再对绝对 synthetic-project 路径调用 resume_saved_candidate(root, gen-c3d2fd34fd5e)；候选或输入变化时拒绝复用，授权过期时走正式新批次入口。",
+    "boundary": "仅合成便签应用。运行验收前不宣称端到端交付；旧安装包未更新，W4/W5、生产部署与发布未完成。"
   }
 }
