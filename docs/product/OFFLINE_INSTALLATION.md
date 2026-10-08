@@ -35,6 +35,10 @@ python -m opencoding.workbench --workspace C:\path\to\OpenCoding-projects --port
 
 本地 CLI/API 不依赖工作台运行。CLI 的 `--autorun lendreg --mock-ai` 是明确标记的合成示例，不证明真实 AI 接通或生成了可交付产品。真实自主模式读取 `OPENCODING_AI_BASE_URL`、`OPENCODING_AI_API_KEY` 和 `OPENCODING_AI_MODEL`；只能在提供方、费用及执行范围已有授权时启用。
 
+OpenAI 兼容适配器使用 Chat Completions 协议，并在 `OPENCODING_AI_BASE_URL` 后追加 `/chat/completions`；基础地址应包含提供方要求的路径前缀（例如 `/v1`）。这不等于支持 Responses 协议。浏览器首页可打开或模型目录可读取，都不代表结构化评估已成功。
+
+`OPENCODING_AI_MAX_TOKENS` 在导入适配器时读取，须在启动项目进程前设置。OpenAI 兼容请求通过 `max_tokens` 发送该输出上限，WorkBuddy 网关沿用其对应字段；默认值为 `32768`，`0` 表示省略上限字段、使用服务端默认值。它不是人民币总费用限制，输入、服务端附加上下文及超时请求的计费仍取决于提供方。有限额度测试应先设置小上限并核对账单；失败或超时后不要盲目重试或提高上限。项目测试使用独立进程环境变量即可，无需更改 Codex 配置。
+
 ## 已安装包中的 agent 使用
 
 已安装的 wheel 提供 `python -m opencoding`、`opencoding` 和 Python 模块 API，以及上述可选工作台。以下会话、预览、文档事务和 scheduler 用法使用已有本地项目的绝对 `--root` 或 `root`，不需要 Provider 或外部服务；包内另外提供的 AI 接口可能访问网络，不能把整个包称为“无网络能力”。这里不承诺 MCP server 或特定 Host 集成。

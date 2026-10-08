@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "program_id": "opencoding-agent-native-delivery-v2-20260909",
-  "status": "real-ai-gateway-blocked_pending_human_service_gate",
+  "status": "project-api-basic-generation-verified_structured-evaluation-blocked",
   "supersedes": {
     "path": "docs/product/DELIVERY_PLAN_V1.json",
     "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
@@ -31,22 +31,21 @@
     "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the agent-native delivery plan."
   },
   "immediate_transaction": {
-    "id": "real-ai-gateway-service-check",
-    "purpose": "修正探测状态语义并等待网关/模型配置核查；真实生成成功后再进入评估确认和受控代码生成。",
-    "status": "blocked_by_human_service_gate",
+    "id": "project-api-route-and-usage-check",
+    "purpose": "项目专用凭据已完成简单生成；核查中转站上游拒绝、协议路由与已用额度，再恢复有界结构化评估。",
+    "status": "blocked_pending_relay_diagnostics_and_usage",
     "paths": [
       "opencoding/aiadapter.py",
-      "opencoding/aiconfig.py",
-      "opencoding/workbench.py",
       "tests/test_product_aiadapter.py",
-      "docs/product/AGENT_NATIVE_USE.md",
       "docs/product/OFFLINE_INSTALLATION.md",
       "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json"
     ]
   },
-  "following_stage": "Independent bounded agent-native workflow verification and documentation integration.",
+  "following_stage": "Bounded real structured evaluation, followed by reviewed plan adoption and controlled generation.",
   "ordered_successors": [
-    "Independent agent-native workflow verification and evidence-led documentation integration",
+    "核查中转站本轮请求日志、上游路由/协议和已用额度",
+    "在剩余额度内完成一次有界真实结构化评估；成功后确认方案并采用计划",
+    "在明确代码写入范围内生成、验证并独立复核交付",
     "W4 controlled Host and connector work, separately scoped and accepted",
     "W5 independent beginner/platform acceptance and publication boundaries, separately scoped and accepted"
   ],
@@ -90,9 +89,9 @@
     }
   ],
   "gates": {
-    "immediate_human_gate": null,
+    "immediate_human_gate": "仅需中转站管理侧核查上游拒绝、支持协议/路由和实际消耗；项目 API 测试已获授权，无需再次提供 key。",
     "automatic_gate_coverage": "inconclusive",
-    "later": "Real Host or connector activation, credentials, cost-bearing work, real data, deployment, and publication require separate authorization with exact target and scope."
+    "later": "Project API testing is authorized against the user-provided 50 RMB quota. Real data, production deployment, public package release and separately scoped Host/connector work remain outside this test."
   },
   "updated_at": "2026-10-08",
   "prior_immediate_transaction": {
@@ -145,7 +144,8 @@
         "changed_paths": []
       },
       "limit": "Diagnostic success does not establish complete automatic gate coverage; the policy still declares no command gates."
-    }
+    },
+    "qualification": "Historical installed-package evidence; the retained wheel/runtime predates the probe and output-token-cap fixes. Do not treat that runtime as updated source."
   },
   "real_ai_verification": {
     "provider": "workbuddy_gateway",
@@ -173,5 +173,100 @@
     "scope": "synthetic project only; one request per attempt; no code generation; no automatic retry",
     "evidence_dir": ".opencoding-dev-runs/real-ai-20261008",
     "acceptance": "not_verified"
+  },
+  "project_api_verification": {
+    "date": "2026-10-08",
+    "provider": "openai_compatible",
+    "model": "gpt-5.5",
+    "base_path": "/v1",
+    "credential_scope": "project test only; read in memory; no Codex configuration changes",
+    "budget": {
+      "user_quota_rmb": 50,
+      "actual_spend_rmb": "unknown",
+      "remaining_rmb": "unknown",
+      "further_paid_requests": "paused_pending_usage_and_route_check"
+    },
+    "simple_generation": {
+      "status": "verified",
+      "protocol": "chat_completions",
+      "http_status": 200,
+      "output": "OK",
+      "max_tokens": 16,
+      "usage": {
+        "prompt_tokens": 4391,
+        "completion_tokens": 5,
+        "total_tokens": 4396,
+        "cached_tokens": 3840
+      }
+    },
+    "structured_evaluation": {
+      "status": "not_verified",
+      "advisor_attempts": 3,
+      "error_code": "network_unavailable",
+      "timeout_seconds": [
+        120,
+        90,
+        60
+      ],
+      "sent_max_tokens": [
+        null,
+        null,
+        2048
+      ]
+    },
+    "last_combined_protocol_probe": {
+      "http_status": 502,
+      "max_tokens": 256,
+      "error_type": "upstream_error",
+      "message": "Upstream access forbidden, please contact administrator"
+    },
+    "limitations": [
+      "Simple generation and isolated field probes do not prove complete binding validation or end-to-end delivery.",
+      "Correct /v1/responses was not tested; root /responses failure is not evidence against that endpoint. Current adapter uses Chat Completions.",
+      "Timeout means unknown completion/billing outcome, not confirmed server rejection. Root cause remains unconfirmed without relay logs.",
+      "Three local evaluation-attempt receipts contain harness-generated request IDs that were not transmitted; they cannot correlate upstream requests.",
+      "First two receipts recorded intended caps 8192/2048, but old adapter omitted max_tokens. A later tiny adapter probe used default 32768 despite commentary saying 256.",
+      "Prior WorkBuddy verification remains historical and does not override the new project API authorization."
+    ],
+    "code_generation": false,
+    "independent_review": "pending_not_performed",
+    "user_acceptance": "pending_not_claimed",
+    "evidence_dir": ".opencoding-dev-runs/real-ai-openai-20261008",
+    "evidence_source": "Local evaluation receipts plus observed HTTP results retained in task tool history; correction supplement is a reconstruction, not a server billing ledger."
+  },
+  "source_verification_20261008": {
+    "scope": "OpenAI-compatible output token cap, regression test and associated documentation",
+    "command": "python -X utf8 -m unittest",
+    "first_run": {
+      "run": 586,
+      "failed": 1,
+      "skipped": 3,
+      "log": ".opencoding-dev-runs/real-ai-openai-20261008/full-suite-token-cap.log",
+      "failure": "ConfirmLockOwnershipTests.test_live_slow_owner_not_preempted_single_event: heartbeat age 17.0984 seconds exceeded 5 seconds; root cause unconfirmed"
+    },
+    "focused_recheck": {
+      "run": 1,
+      "failed": 0,
+      "log": ".opencoding-dev-runs/real-ai-openai-20261008/confirm-lock-recheck.log"
+    },
+    "full_recheck": {
+      "run": 586,
+      "passed": 583,
+      "skipped": 3,
+      "failed": 0,
+      "seconds": 404.447,
+      "log": ".opencoding-dev-runs/real-ai-openai-20261008/full-suite-token-cap-recheck.log"
+    },
+    "lock_implementation_modified": false,
+    "governance": {
+      "command": "project-governance --json doctor .",
+      "exit_code": 0,
+      "classification": "pass",
+      "read_only_proof": true,
+      "log": ".opencoding-dev-runs/real-ai-openai-20261008/doctor.log",
+      "limit": "Diagnostics do not establish complete command gate coverage."
+    },
+    "independent_review": "pending_not_performed",
+    "installed_runtime_updated": false
   }
 }

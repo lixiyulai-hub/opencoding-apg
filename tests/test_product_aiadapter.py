@@ -285,6 +285,29 @@ class RealAdapterConfigTests(unittest.TestCase):
                 )
         self.assertEqual(caught.exception.code, "response_binding_mismatch")
 
+    def test_openai_compatible_request_applies_configured_output_token_cap(self):
+        captured = {}
+
+        class Response:
+            def __enter__(self): return self
+            def __exit__(self, *_args): return False
+            def read(self, _limit):
+                binding = captured["body"]["opencoding_binding"]
+                payload = {**binding, "summary": "bounded", "choice": "cli", "reasons": ["test"]}
+                return json.dumps({"choices": [{"message": {"content": json.dumps(payload)},
+                                                 "finish_reason": "stop"}]}).encode()
+
+        def transport(request, timeout):
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return Response()
+
+        adapter = AIAdapter(base_url="https://example.invalid/v1", api_key="test-key", model="test-model")
+        with unittest.mock.patch("opencoding.aiadapter.MAX_OUTPUT_TOKENS", 2048), \
+             unittest.mock.patch("opencoding.aiadapter.urllib.request.urlopen", side_effect=transport):
+            adapter.complete([{"role": "user", "content": "synthetic"}],
+                             request_kind="evaluate", run_id="run-cap", task_id="task-cap", attempt=1)
+        self.assertEqual(captured["body"]["max_tokens"], 2048)
+
 
 class ProbeConnectionTests(unittest.TestCase):
     class Response:

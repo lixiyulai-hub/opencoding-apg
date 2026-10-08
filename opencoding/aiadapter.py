@@ -293,6 +293,8 @@ class AIAdapter:
             "response_format": {"type": "json_object"},
             "opencoding_binding": binding,
         }
+        if MAX_OUTPUT_TOKENS:
+            body["max_tokens"] = int(MAX_OUTPUT_TOKENS)
         request = urllib.request.Request(
             self.base_url + "/chat/completions",
             data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
