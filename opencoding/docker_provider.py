@@ -705,7 +705,8 @@ def probe_boundaries(scratch_host: Path, *, timeout: int = 180,
                 problems.append("network_control_unreachable")
             elif network_status not in ("failed:connection_refused", "failed:timeout",
                                         "failed:oserror:113", "failed:oserror:101",
-                                        "failed:oserror:10065", "denied"):
+                                        "failed:oserror:10065", "failed:oserror:-3",
+                                        "denied"):
                 problems.append("network=" + network_status)
         elif network_status.startswith("skipped"):
             problems.append("network=skipped_no_control_target")

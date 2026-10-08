@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "program_id": "opencoding-agent-native-delivery-v2-20260909",
-  "status": "real-evaluation-and-generation-verified_execution-blocked-docker-storage",
+  "status": "synthetic-delivery-verified-source-regression-fixed",
   "supersedes": {
     "path": "docs/product/DELIVERY_PLAN_V1.json",
     "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
@@ -31,21 +31,23 @@
     "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the agent-native delivery plan."
   },
   "immediate_transaction": {
-    "id": "restore-docker-backend-resume-saved-candidate",
-    "purpose": "真实评估契约及代码生成已成功；恢复 Docker 存储入口与受限执行后端后，零新 AI 请求接续已保存候选。",
-    "status": "blocked_host_storage_repair_confirmation",
+    "id": "record-docker-boundary-fix-and-synthetic-delivery",
+    "purpose": "修复 Docker 网络拒绝判定漏项，完成真实隔离边界实测，并零新 AI 请求接续保存候选。",
+    "status": "completed_pending_independent_review_and_user_acceptance",
     "paths": [
+      "opencoding/docker_provider.py",
+      "tests/test_docker_provider.py",
       "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json"
     ],
-    "run_id": "gen-c3d2fd34fd5e"
+    "run_id": "gen-c3d2fd34fd5e",
+    "transaction_id": "tx-20261008T152805680134Z-69ef875ca980"
   },
-  "following_stage": "恢复受限执行环境并实测边界，然后接续已有候选完成冻结契约验收与事务落盘。",
+  "following_stage": "独立复核合成交付与项目级产品接入边界；W4/W5 仍未开始。",
   "ordered_successors": [
-    "确认保留 D 盘数据的 Docker 目录入口修复范围，并恢复引擎",
-    "核对本地 Python 镜像，运行真实 probe_boundaries 并取得有效执行资格",
-    "用绝对项目路径调用 resume_saved_candidate 接续 gen-c3d2fd34fd5e；若批次过期则走正式零 AI 新批次入口",
-    "完成冻结契约验收与事务落盘，记录独立复核和用户验收状态",
-    "W4 Host/Connector 与 W5 平台验收及发布另行明确范围"
+    "独立复核本次源码、测试、Docker 入口恢复和合成事务证据",
+    "将合成便签交付与真实产品源码接入分开规划并取得产品范围",
+    "推进 W4 Host/Connector 集成（另行明确范围）",
+    "推进 W5 平台与用户验收及发布（另行明确范围）"
   ],
   "retained_delivery_evidence": [
     {
@@ -87,20 +89,9 @@
     }
   ],
   "gates": {
-    "immediate_human_gate": {
-      "id": "docker-migrated-directory-repair",
-      "request": "允许修复 C:/Users/Administrator/AppData/Local/Docker 的迁移目录入口并启动现有 Docker Desktop；保留原入口备份及 D:/moved-from-C/DockerDesktop/LocalDocker 全部数据。",
-      "reason": "项目外共享 Docker 存储入口无法读取；修复具有宿主范围影响，未包含在项目源码、测试和文档精确 allowlist 中。",
-      "excluded": [
-        "删除或重置 Docker 数据",
-        "卸载或注销 WSL",
-        "清空镜像、容器、卷",
-        "修改 Codex 配置"
-      ],
-      "qualification": "仅请求目录入口修复授权；不是再次索取 API key 或测试额度授权。"
-    },
-    "automatic_gate_coverage": "inconclusive",
-    "later": "Project API testing is authorized against the user-provided 50 RMB quota. Real data, production deployment, public package release and separately scoped Host/connector work remain outside this test."
+    "immediate_human_gate": null,
+    "automatic_gate_coverage": "source regression, Docker boundary probe, frozen main/restart checks passed; independent review pending",
+    "later": "合成事务已交付；真实产品源码、生产部署、公开发布、W4/W5 仍在范围外。"
   },
   "updated_at": "2026-10-08",
   "prior_immediate_transaction": {
@@ -413,7 +404,7 @@
   },
   "real_pipeline_retest_20261008": {
     "source_commit": "5b8f123876ed80223ea95c0a82fb122300fd8418",
-    "status": "blocked_execution",
+    "status": "delivered_synthetic_execution",
     "evaluation": {
       "status": "strict_execution_contract_verified",
       "evaluation_id": "eval-ce8c4a2f89cf0a2b",
@@ -459,8 +450,21 @@
       "calls_dispatched": 1,
       "repair_rounds": 0,
       "static_ok": true,
-      "executed": false,
-      "applied": false
+      "executed": true,
+      "applied": true,
+      "verification": {
+        "status": "passed",
+        "main_steps": 22,
+        "restart_steps": 4,
+        "main_exit": 0,
+        "restart_exit": 0,
+        "transaction_id": "tx-20261008T152805680134Z-69ef875ca980",
+        "committed_file_digests": {
+          "app/__init__.py": "0e8cb71bae9f3db42d712d741c0a9cc0ee6409d1161f427126de8c4616d80f20",
+          "app/main.py": "791c6ee3d627c65563e9f951da03ecc220996496e9e0814c3b4f19f561cce0b6"
+        },
+        "ai_requests_during_resume": 0
+      }
     },
     "plan_adopted": true,
     "adoption_basis": "agent_under_delegated_synthetic_test_authorization",
@@ -494,7 +498,42 @@
       "wsl_registered_base": "D:/moved-from-C/DockerDesktop/LocalDocker/wsl/main",
       "diagnosis": "Docker startup is blocked accessing its migrated local data entry. D: target and migration note are readable; actual current reparse target could not be read. Exact corruption cause not established.",
       "host_storage_changed": false,
-      "required_action": "Repair migrated Docker directory entry preserving existing D: images, containers and volumes, then start Desktop. Shared host storage repair awaits explicit approval."
+      "required_action": "Repair migrated Docker directory entry preserving existing D: images, containers and volumes, then start Desktop. Shared host storage repair awaits explicit approval.",
+      "status": "repaired_and_verified",
+      "repair": {
+        "authorized_at": "2026-10-08",
+        "method": "保存原 junction 原始 reparse bytes；移除损坏入口的 reparse metadata；保留原入口备份；按同一 D 盘迁移目标重建 junction。",
+        "backup": "C:/Users/Administrator/AppData/Local/Docker.entry-backup-20261008",
+        "data_target": "D:/moved-from-C/DockerDesktop/LocalDocker",
+        "data_preserved": true,
+        "docker_engine": "28.5.1",
+        "python_image": "python:3.11-slim",
+        "image_pull": "project test dependency",
+        "c_entry_status": "C:/Users/Administrator/AppData/Local/Docker remains a junction entry that is not directly traversable by Windows APIs; Docker Desktop was started against D:/moved-from-C/DockerDesktop/LocalDocker and engine is reachable. Original entry retained in Docker.entry-backup-20261008.",
+        "completed_at": "2026-10-08"
+      },
+      "boundary_probe": {
+        "status": "passed",
+        "entitlement_id": "ent-fe92c414d9faaf45ab1c1020",
+        "policy_digest": "fe92c414d9faaf45ab1c1020b8496fb157aeeda62910a11f6eedda4186ccb738",
+        "result_file": ".opencoding-dev-runs/contract-pipeline-20261008/docker-boundary-result-accepted.json",
+        "checks": [
+          "root_read_only",
+          "frozen_spec_read_only",
+          "app_data_writable",
+          "network_denied_dns_errno_-3",
+          "control_container_reachable",
+          "container_stopped",
+          "container_removed",
+          "listener_cleanup_confirmed"
+        ],
+        "direct_network_diagnostic": {
+          "status": "passed",
+          "result_file": ".opencoding-dev-runs/contract-pipeline-20261008/direct-network-diagnostic.json",
+          "bridge": "host.docker.internal resolved to 192.168.65.254 and connected to ephemeral listener",
+          "none": "same host gateway target resolved and failed with errno 101; no direct network path"
+        }
+      }
     },
     "candidate_review": {
       "syntax": "pass_ast_parse_without_execution",
@@ -508,7 +547,11 @@
       ".opencoding-dev-runs/contract-pipeline-20261008/evaluate-probe-92668e8af5e14832aae27af5ce21f56b.json",
       ".opencoding-dev-runs/contract-pipeline-20261008/generate-probe-a8c4ca61e4d24b668814392a2587ed35.json",
       ".opencoding-dev-runs/contract-pipeline-20261008/backend-diagnostic.json",
-      ".opencoding-dev-runs/contract-pipeline-20261008/validated-evaluation.json"
+      ".opencoding-dev-runs/contract-pipeline-20261008/validated-evaluation.json",
+      ".opencoding-dev-runs/contract-pipeline-20261008/docker-boundary-result-accepted.json",
+      ".opencoding-dev-runs/contract-pipeline-20261008/synthetic-project/.opencoding/generic_runs/gen-c3d2fd34fd5e-confirmation-result.json",
+      ".opencoding-dev-runs/contract-pipeline-20261008/synthetic-project/.opencoding/generic_runs/gen-c3d2fd34fd5e-resume-final.json",
+      ".opencoding-dev-runs/contract-pipeline-20261008/direct-network-diagnostic.json"
     ],
     "verification_reused": {
       "source_unchanged": true,
@@ -536,7 +579,17 @@
     "codex_config_and_auth_hashes_unchanged": true,
     "independent_review": "pending_not_performed",
     "user_acceptance": "pending_not_claimed",
-    "continuation": "修复并启动 Docker 后，先实测同镜像同策略边界，再对绝对 synthetic-project 路径调用 resume_saved_candidate(root, gen-c3d2fd34fd5e)；候选或输入变化时拒绝复用，授权过期时走正式新批次入口。",
-    "boundary": "仅合成便签应用。运行验收前不宣称端到端交付；旧安装包未更新，W4/W5、生产部署与发布未完成。"
+    "continuation": "当前合成事务已交付。后续如需继续，先独立复核本次源码和证据；真实产品源码接入必须另开明确任务与文件范围。",
+    "boundary": "本轮只交付合成便签应用和 Docker 后端判定修复；不宣称真实业务代码已生成或已部署。",
+    "source_fix": {
+      "files": [
+        "opencoding/docker_provider.py",
+        "tests/test_docker_provider.py"
+      ],
+      "change": "将 --network none 下合法 DNS 拒绝 errno -3 纳入边界验收白名单，并增加回归测试。",
+      "targeted_tests": "60 tests, 57 passed, 3 skipped",
+      "full_suite": "591 tests, 588 passed, 3 skipped",
+      "full_suite_seconds": 501.665
+    }
   }
 }

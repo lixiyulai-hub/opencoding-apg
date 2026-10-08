@@ -295,6 +295,26 @@ class DockerProbeEntitlementTests(unittest.TestCase):
         self.assertTrue(cap["verified_boundaries"])
         self.assertEqual(cap["entitlement_id"], result["entitlement_id"])
 
+    def test_network_dns_failure_is_a_valid_none_network_denial(self):
+        """DNS failure under --network none is a valid isolation refusal."""
+        probe = _ok_probe()
+        probe["network"] = {"status": "failed:oserror:-3"}
+        fake = _FakeDocker(probe)
+
+        class _ControlReachable(_FakeDocker):
+            def __call__(self, cmd, **kwargs):
+                if len(cmd) > 1 and cmd[1] == "run" and "--network" in cmd:
+                    index = cmd.index("--network")
+                    if cmd[index + 1] == "bridge":
+                        return subprocess.CompletedProcess(
+                            cmd, 0, "CONTROL:" + json.dumps({"status": "connected"}), "")
+                return super().__call__(cmd, **kwargs)
+
+        with _Ready(docker_provider):
+            result = docker_provider.probe_boundaries(
+                self.root, runner=_ControlReachable(probe))
+        self.assertTrue(result["granted"], result["reason"])
+
     def test_entitlement_expires_and_cannot_be_faked(self):
         with _Ready(docker_provider, image_id="sha256:aaaa"):
             digest = docker_provider.policy_digest(docker_provider._image(), "sha256:aaaa")
