@@ -286,6 +286,10 @@ class AIAdapter:
                     "不能只回传 nonce，不能省略 schema_version、request_id、run_id、task_id、attempt、"
                     "request_kind、input_digest 或 allowed_outputs："
                     + json.dumps(binding, ensure_ascii=False, sort_keys=True)
+                    + "。以上只是响应的绑定字段，不是完整答案；必须在同一个顶层 JSON 对象中"
+                    "加入本次任务要求的业务结果字段："
+                    + "、".join(sorted(_REQUIRED_FIELDS[request_kind] - binding.keys()))
+                    + "，以及任务消息要求的其他字段。不要只输出绑定对象，也不要把业务结果嵌套到另一个对象。"
                 ),
             },
             *[{"role": item["role"], "content": item["content"]} for item in messages],

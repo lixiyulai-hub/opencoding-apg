@@ -119,15 +119,16 @@ def build_evaluation_messages(
                 "functions": {"函数名": "签名与行为说明"},
                 "data_dir": "app/data",
                 "steps": [
-                    {"op": "call", "function": "函数名", "args": ["参数"], "save_as": "变量", "phase": "main"},
-                    {"op": "assert", "saved": "变量", "contains": [{"键": "值"}], "phase": "main"},
-                    {"op": "call", "function": "函数名", "args": [], "expect_exception": True, "phase": "main"},
-                    {"op": "call", "function": "list", "args": [], "save_as": "after_restart", "phase": "restart"},
-                    {"op": "assert", "saved": "after_restart", "contains": [{"键": "值"}], "phase": "restart"},
+                    {"op": "call", "function": "create_record", "args": ["持久化记录-A"], "save_as": "created", "phase": "main"},
+                    {"op": "assert", "saved": "created", "equals": {"name": "持久化记录-A"}, "phase": "main"},
+                    {"op": "call", "function": "create_record", "args": [""], "expect_exception": True, "phase": "main"},
+                    {"op": "call", "function": "list_records", "args": [], "save_as": "after_restart", "phase": "restart"},
+                    {"op": "assert", "saved": "after_restart", "contains": [{"name": "持久化记录-A"}], "phase": "restart"},
                     {"op": "assert_file_exists", "path": "data/xx.json", "phase": "restart"}
                 ],
                 "steps_phase_说明": "main 阶段与 restart 阶段在两个独立进程中执行;restart 阶段必须包含"
-                                    "重新调用函数读取状态的步骤和断言,用于验证数据真实落盘(缺 restart 阶段会被拒绝)",
+                                    "重新调用函数读取状态的步骤和断言,用于验证数据真实落盘(缺 restart 阶段会被拒绝)。"
+                                    "以上是算子示例，必须按本项目业务改写函数、参数与断言。",
             },
             "recommendation": {
                 "stack": "首选技术栈一句话",
@@ -152,7 +153,13 @@ def build_evaluation_messages(
                          "测试步骤写在 implementation_contract.steps 中，不要把 tests/、README.md 或其他项目根文件"
                          "放入 files；生成阶段只接受 app/ 下的候选文件。main 阶段的写入调用必须返回可识别的"
                          "业务记录标识（例如字符串 name/text/id 组合中的业务文本），restart 阶段的 assert"
-                         "必须明确包含同一业务记录标识；不能只断言数量、版本号或布尔值。",
+                         "必须明确包含同一业务记录标识；不能只断言数量、版本号或布尔值。"
+                         "执行器从 main 的 call.args 抽取字符串标识并精确匹配 restart 断言，不自动去空白或转换大小写。"
+                         "持久化用例请保留至少一条不经文本变换的稳定记录，写入参数与重启断言逐字相同；"
+                         "去空白等规范化行为另设用例，不要删除全部稳定记录。"
+                         "assert_file_exists/assert_absent 的 path 相对 app/，应写 data/xx.json，不要写 app/data/xx.json；"
+                         "files.path 和 data_dir 则相对项目根目录，需要 app/ 前缀。"
+                         "每个阶段的 save_as 变量相互独立，restart 必须重新 call 并保存返回值后再 assert。",
         "answers": _answers_summary(session),
         "facts": _facts_summary(facts),
         "rule_recommendation": {

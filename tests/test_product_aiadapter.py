@@ -313,6 +313,33 @@ class RealAdapterConfigTests(unittest.TestCase):
                              request_kind="evaluate", run_id="run-cap", task_id="task-cap", attempt=1)
         self.assertEqual(captured["body"]["max_tokens"], 2048)
 
+    def test_binding_only_response_is_rejected_for_each_request_kind(self):
+        for kind, fields in (("evaluate", ("summary", "choice", "reasons")),
+                             ("implement", ("summary", "files")),
+                             ("repair", ("summary", "fix", "files"))):
+            with self.subTest(kind=kind):
+                def transport(request, timeout):
+                    body = json.loads(request.data)
+                    instruction = body["messages"][0]["content"]
+                    for field in fields:
+                        self.assertIn(field, instruction)
+                    binding = body["opencoding_binding"]
+                    response = unittest.mock.MagicMock()
+                    response.__enter__.return_value.read.return_value = json.dumps({
+                        "choices": [{"message": {"content": json.dumps(binding)}}]
+                    }).encode()
+                    return response
+
+                adapter = AIAdapter(base_url="https://example.invalid/v1",
+                                    api_key="test-key", model="test-model")
+                with unittest.mock.patch("opencoding.aiadapter.urllib.request.urlopen",
+                                         side_effect=transport):
+                    with self.assertRaises(AIRequestError) as caught:
+                        adapter.complete([{"role": "user", "content": "synthetic"}],
+                                         request_kind=kind, run_id="run-body",
+                                         task_id="task-body", attempt=1)
+                self.assertEqual(caught.exception.code, "response_schema_invalid")
+
 
 class ProbeConnectionTests(unittest.TestCase):
     class Response:

@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "program_id": "opencoding-agent-native-delivery-v2-20260909",
-  "status": "project-api-binding-verified_execution-contract-blocked",
+  "status": "contract-example-verified_real-evaluation-transport-unresolved",
   "supersedes": {
     "path": "docs/product/DELIVERY_PLAN_V1.json",
     "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
@@ -31,9 +31,9 @@
     "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the agent-native delivery plan."
   },
   "immediate_transaction": {
-    "id": "project-api-execution-contract-repair",
-    "purpose": "对齐模型评估提示与执行器的文件、记录标识和路径契约，完成可执行契约校验；当前没有可要求用户接受的有效交付。",
-    "status": "technical_work_pending_no_immediate_human_gate",
+    "id": "project-api-bounded-evaluation-followup",
+    "purpose": "本地协议示例已通过实际冻结检查器的跨进程验收及反例；本轮真实重评超时，需诊断传输后再取得当前版本可执行评估。",
+    "status": "technical_followup_pending_no_immediate_human_gate",
     "paths": [
       "opencoding/aiadapter.py",
       "opencoding/advisor.py",
@@ -44,7 +44,7 @@
   },
   "following_stage": "Bounded real structured evaluation, followed by reviewed plan adoption and controlled generation.",
   "ordered_successors": [
-    "先在本地核对并修复评估协议与执行契约的不一致",
+    "核查本轮读取超时的请求状态与模型响应方式；保留已有凭据授权和费用边界",
     "在已授权 50 元项目测试额度内有界重评并严格验证契约",
     "有效契约经审阅后采用计划，按精确写入范围进行受控生成与验收",
     "W4 Host/Connector 集成与 W5 平台验收、公开发布另行明确范围"
@@ -184,7 +184,7 @@
       "user_quota_rmb": 50,
       "actual_spend_rmb": "unknown",
       "remaining_rmb": "unknown",
-      "further_paid_requests": "authorized_within_project_quota; paused_this_checkpoint_for_local_protocol_repair",
+      "further_paid_requests": "authorized_within_project_quota; one request this checkpoint, no automatic retry after timeout",
       "output_limit_observation": "请求实际发送 max_tokens=2048，但多次响应 usage.completion_tokens 超过 2048；服务端执行该上限未获证实，不能将本地字段当成费用硬限制。"
     },
     "simple_generation": {
@@ -320,6 +320,62 @@
       "latest_attempt": "response_schema_invalid",
       "code_generation": false,
       "user_acceptance": "not_requested_for_invalid_contract"
+    }
+  },
+  "execution_contract_followup_20261008": {
+    "parent_commit": "b80872daf90da78ffd6b0458cb1a147822e8b156",
+    "changes": [
+      "响应绑定提示同时声明 evaluate/implement/repair 所需业务字段",
+      "评估示例使用稳定写入标识并在重启阶段重新读取断言",
+      "提示区分项目相对 files/data_dir 与 app 相对文件检查路径；规范化行为单独测试"
+    ],
+    "validation_preserved": "未修改 generic_run.py 的精确标识匹配、文件边界或冻结检查器；没有修改历史模型评估来冒充新结果。",
+    "offline_evidence": {
+      "targeted_tests": 43,
+      "result": "pass",
+      "behavior": "同一提示示例在两个独立 Python 进程验证 JSON 持久化；写磁盘但读取内存的反例在 restart 阶段失败；带空白身份不匹配仍拒绝；三种请求缺少业务字段均拒绝。"
+    },
+    "live_attempt": {
+      "status": "failed",
+      "model": "gpt-6.1-sol",
+      "request_id": "req-fddbf4b992934b4fa4b642d717ab897a",
+      "max_tokens_sent": 4096,
+      "read_timeout_seconds": 120,
+      "error_code": "network_unavailable",
+      "error_message": "The read operation timed out",
+      "calls_dispatched": 1,
+      "automatic_retries": 0,
+      "usage": "unknown",
+      "billing": "unknown",
+      "evidence_dir": ".opencoding-dev-runs/contract-pipeline-20261008",
+      "source_sha256": {
+        "opencoding/advisor.py": "9c46d5f1b22229fde438f7130db15797e8936a515b517f5be0bd365dd1a84e14",
+        "opencoding/aiadapter.py": "9e4658d0a0895076682a68af4a4f15fdbfe7a4265cffdea4063c826154cf1a53",
+        "opencoding/generic_run.py": "a97105983808ec69d179c825feae4f0d73a1f746b5b2c3a21ee6e8188eb21072"
+      }
+    },
+    "plan_adopted": false,
+    "code_generated": false,
+    "independent_review": "pending_not_performed",
+    "user_acceptance": "not_claimed",
+    "full_suite": {
+      "command": "python -X utf8 -m unittest",
+      "run": 590,
+      "passed": 587,
+      "skipped": 3,
+      "failed": 0,
+      "seconds": 409.298,
+      "log": ".opencoding-dev-runs/contract-pipeline-20261008/full-suite.log"
+    },
+    "governance": {
+      "exit_code": 0,
+      "classification": "pass",
+      "read_only_proof": {
+        "changed_paths": [],
+        "passed": true
+      },
+      "log": ".opencoding-dev-runs/contract-pipeline-20261008/doctor.json",
+      "qualification": "成功结果来自兼容 stdout.buffer 的内存捕获；第一次捕获接口异常没有计为通过。"
     }
   }
 }
