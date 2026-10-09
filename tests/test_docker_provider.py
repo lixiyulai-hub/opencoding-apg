@@ -243,7 +243,7 @@ class DockerProbeEntitlementTests(unittest.TestCase):
                 if len(cmd) > 1 and cmd[1] == "run" and "--network" in cmd \
                         and cmd[cmd.index("--network") + 1] == "bridge":
                     return subprocess.CompletedProcess(
-                        cmd, 0, "CONTROL:" + json.dumps({"status": "connected"}), "")
+                        cmd, 0, "CONTROL:" + json.dumps({"status": "connected", "peer_ip": "192.168.65.254"}), "")
                 return super().__call__(cmd, **kwargs)
 
         with _Ready(docker_provider):
@@ -281,7 +281,7 @@ class DockerProbeEntitlementTests(unittest.TestCase):
                     index = cmd.index("--network")
                     if cmd[index + 1] == "bridge":
                         return subprocess.CompletedProcess(
-                            cmd, 0, "CONTROL:" + json.dumps({"status": "connected"}), "")
+                            cmd, 0, "CONTROL:" + json.dumps({"status": "connected", "peer_ip": "192.168.65.254"}), "")
                 return super().__call__(cmd, **kwargs)
 
         with _Ready(docker_provider):
@@ -307,7 +307,7 @@ class DockerProbeEntitlementTests(unittest.TestCase):
                     index = cmd.index("--network")
                     if cmd[index + 1] == "bridge":
                         return subprocess.CompletedProcess(
-                            cmd, 0, "CONTROL:" + json.dumps({"status": "connected"}), "")
+                            cmd, 0, "CONTROL:" + json.dumps({"status": "connected", "peer_ip": "192.168.65.254"}), "")
                 return super().__call__(cmd, **kwargs)
 
         with _Ready(docker_provider):
@@ -339,7 +339,7 @@ class DockerProbeEntitlementTests(unittest.TestCase):
                 def __call__(self, cmd, **kwargs):
                     if len(cmd) > 1 and cmd[1] == "run" and cmd[cmd.index("--network") + 1] == "bridge":
                         return subprocess.CompletedProcess(
-                            cmd, 0, "CONTROL:" + json.dumps({"status": "connected"}), "")
+                            cmd, 0, "CONTROL:" + json.dumps({"status": "connected", "peer_ip": "192.168.65.254"}), "")
                     return super().__call__(cmd, **kwargs)
 
             probe_result = docker_provider.probe_boundaries(self.root, runner=_Ctl())
@@ -375,7 +375,7 @@ class DockerProbeEntitlementTests(unittest.TestCase):
             def __call__(self, cmd, **kwargs):
                 if len(cmd) > 1 and cmd[1] == "run" and cmd[cmd.index("--network") + 1] == "bridge":
                     return subprocess.CompletedProcess(
-                        cmd, 0, "CONTROL:" + json.dumps({"status": "connected"}), "")
+                        cmd, 0, "CONTROL:" + json.dumps({"status": "connected", "peer_ip": "192.168.65.254"}), "")
                 return super().__call__(cmd, **kwargs)
 
         with _Ready(docker_provider, image_id="sha256:running"):

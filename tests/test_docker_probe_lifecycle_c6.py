@@ -84,7 +84,7 @@ class _ControlReachable(_FakeDocker):
         if len(cmd) > 1 and cmd[1] == "run" and "--network" in cmd \
                 and cmd[cmd.index("--network") + 1] == "bridge":
             return subprocess.CompletedProcess(
-                cmd, 0, "CONTROL:" + json.dumps({"status": "connected"}), "")
+                cmd, 0, "CONTROL:" + json.dumps({"status": "connected", "peer_ip": "192.168.65.254"}), "")
         return super().__call__(cmd, **kwargs)
 
 
@@ -197,8 +197,8 @@ class ProbeFixturePreservationTests(_EnvBase):
         digest = docker_provider.policy_digest(docker_provider._image(), ready.image_id)
         doc = docker_provider.load_entitlement(digest)
         self.assertIsNotNone(doc)
-        self.assertEqual(doc["facts"]["probe_version"], "docker-probe-v4")
-        self.assertEqual(docker_provider.PROBE_VERSION, "docker-probe-v4")
+        self.assertEqual(doc["facts"]["probe_version"], "docker-probe-v5")
+        self.assertEqual(docker_provider.PROBE_VERSION, "docker-probe-v5")
 
 
 # ---------------------------------------------------------------- classify errno 语义
@@ -360,7 +360,7 @@ class RunCommandEnvTests(_EnvBase):
         # A 侧:目标经 -e 显式进入受限容器——归一化后的宿主别名,不是回环字符串
         probe_cmd = probe_runs[0]
         pairs = [probe_cmd[i + 1] for i, v in enumerate(probe_cmd) if v == "-e"]
-        self.assertIn("OPENCODING_DOCKER_PROBE_HOST=host.docker.internal", pairs)
+        self.assertIn("OPENCODING_DOCKER_PROBE_HOST=192.168.65.254", pairs)
         self.assertIn("OPENCODING_DOCKER_PROBE_PORT=9", pairs)
         # B 侧:对照容器同一目标(命令尾部显式携带 host/port)
         control_cmd = control_runs[0]
@@ -412,7 +412,7 @@ class EphemeralListenerTests(_EnvBase):
         pairs = self._pairs(probe_runs[0])
         host_pair = next(p for p in pairs if p.startswith("OPENCODING_DOCKER_PROBE_HOST="))
         port_pair = next(p for p in pairs if p.startswith("OPENCODING_DOCKER_PROBE_PORT="))
-        self.assertEqual(host_pair, "OPENCODING_DOCKER_PROBE_HOST=host.docker.internal")
+        self.assertEqual(host_pair, "OPENCODING_DOCKER_PROBE_HOST=192.168.65.254")
         port = int(port_pair.split("=", 1)[1])
         self.assertTrue(1 <= port <= 65535)
         # B 侧:对照容器同一目标(命令尾部显式携带 host/port)

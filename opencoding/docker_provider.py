@@ -41,7 +41,7 @@ IMAGE_ENV = "OPENCODING_DOCKER_IMAGE"
 # 探针协议版本:任何 PROBE_SOURCE / 判据变更必须递增,使旧资格立即失效。
 # v3(C6-02):classify 按 errno 语义识别只读文件系统(EROFS→denied);
 # 探针环境变量由宿主显式传入容器(-e),不再假定宿主环境自动进入容器。
-PROBE_VERSION = "docker-probe-v4"
+PROBE_VERSION = "docker-probe-v5"
 # 资格有效期:过期必须重新实测,不得沿用旧结论。
 ENTITLEMENT_TTL_SECONDS = 3600
 ENTITLEMENT_DIRNAME = "opencoding-docker-entitlement"
@@ -291,7 +291,7 @@ def container_argv(argv_in_scratch: list[str], scratch_host: Path | None = None)
 # ---------------------------------------------------------------- 探针
 
 PROBE_SOURCE = '''# -*- coding: utf-8 -*-
-"""Docker 隔离边界探针 v3(只做探测,不做业务)。
+"""Docker 隔离边界探针 v5(只做探测,不做业务)。
 
 与 v2 差异(C6-02):classify 按 Python errno 语义精确分类——只读文件系统
 (EROFS)本身就是一种"策略拒绝"形态,不必是 PermissionError;权限拒绝
@@ -673,8 +673,18 @@ def probe_boundaries(scratch_host: Path, *, timeout: int = 180,
         probe_host_path.parent.mkdir(parents=True, exist_ok=True)
         probe_host_path.write_text(PROBE_SOURCE, encoding="utf-8", newline="\n")
         argv = [sys.executable, str(probe_host_path)]
-        probe_env = {"OPENCODING_DOCKER_PROBE_HOST": str(target["host"]),
-                     "OPENCODING_DOCKER_PROBE_PORT": str(target["port"])}
+        # 先在 bridge 网络中确认同一目标可达，并取得该网络实际连接到的
+        # 对端 IP；受限组随后使用这个动态 IP，避免仅凭 DNS 失败放行。
+        network_control = _network_control(scratch_host, timeout=timeout, runner=runner,
+                                           target=target)
+        probe_target = dict(target)
+        resolved_target = network_control.get("resolved_target") or {}
+        direct_ip = resolved_target.get("host")
+        if network_control.get("control_reachable") is True and direct_ip:
+            probe_target["host"] = str(direct_ip)
+            probe_target["source"] = "bridge_resolved_ip"
+        probe_env = {"OPENCODING_DOCKER_PROBE_HOST": str(probe_target["host"]),
+                     "OPENCODING_DOCKER_PROBE_PORT": str(probe_target["port"])}
         outcome = run_container(scratch_host, argv, data_dir=rel, timeout=timeout,
                                 runner=runner, label="probe", entitlement_required=False,
                                 env=probe_env)
@@ -698,11 +708,11 @@ def probe_boundaries(scratch_host: Path, *, timeout: int = 180,
             if key == "spec_readonly" and parent_flag is not True:
                 problems.append("spec_parent_missing")
         network_status = _classify_to_status(checks.get("network"))
-        network_control = _network_control(scratch_host, timeout=timeout, runner=runner,
-                                           target=target)
         if network_control["performed"]:
             if network_control["control_reachable"] is not True:
                 problems.append("network_control_unreachable")
+            elif not network_control.get("resolved_target", {}).get("host"):
+                problems.append("network_control_ip_unresolved")
             elif network_status not in ("failed:connection_refused", "failed:timeout",
                                         "failed:oserror:113", "failed:oserror:101",
                                         "failed:oserror:10065", "failed:oserror:-3",
@@ -775,8 +785,9 @@ def _network_control(scratch_host: Path, *, timeout: int,
         "host, port = sys.argv[1], int(sys.argv[2])\n"
         "try:\n"
         "    s = socket.create_connection((host, port), timeout=5)\n"
+        "    peer_ip = s.getpeername()[0]\n"
         "    s.close()\n"
-        "    print('CONTROL:' + json.dumps({'status': 'connected'}))\n"
+        "    print('CONTROL:' + json.dumps({'status': 'connected', 'peer_ip': peer_ip}))\n"
         "except Exception as exc:\n"
         "    print('CONTROL:' + json.dumps({'status': 'failed:' + type(exc).__name__, 'detail': str(exc)[:80]}))\n"
     )
@@ -802,8 +813,14 @@ def _network_control(scratch_host: Path, *, timeout: int,
             except ValueError:
                 pass
     reachable = str(payload.get("status")) == "connected"
+    resolved_target = None
+    if reachable:
+        peer = payload.get("peer_ip")
+        if isinstance(peer, str) and peer:
+            resolved_target = {"host": peer, "port": port}
     return {"performed": True, "control_reachable": reachable,
             "target": {"host": host, "port": port},
+            "resolved_target": resolved_target,
             "observed": payload.get("status"), "exit_code": proc.returncode}
 
 
