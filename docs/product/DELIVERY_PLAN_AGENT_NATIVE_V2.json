@@ -7,13 +7,13 @@
     "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
   },
   "scope": {
-    "current_product_direction": "Agent-native local use through existing CLI and Python APIs.",
+    "current_product_direction": "Complete AI coding governance workflow with agent-native local execution through existing CLI and Python APIs; agent hosts are execution engines behind explicit adapters and acceptance Gates.",
     "not_required": [
-      "browser workbench",
-      "HTTP service",
-      "embedded Codex App",
-      "MCP server",
-      "plugin architecture"
+      "browser workbench as a universal product prerequisite",
+      "HTTP service as a universal product prerequisite",
+      "embedded Codex App as a universal product prerequisite",
+      "MCP server as a universal product prerequisite",
+      "plugin architecture as a universal product prerequisite"
     ],
     "not_accepted": [
       "universal agent Host compatibility",
@@ -28,7 +28,7 @@
     "task_stage": "not-computable",
     "program_total": "not-computable",
     "program_stage": "not-computable",
-    "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the agent-native delivery plan."
+    "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the complete AI coding governance workflow and its staged agent-host acceptance."
   },
   "immediate_transaction": {
     "id": "record-docker-boundary-fix-and-synthetic-delivery",
@@ -42,7 +42,7 @@
     "run_id": "gen-c3d2fd34fd5e",
     "transaction_id": "tx-20261008T152805680134Z-69ef875ca980"
   },
-  "following_stage": "独立复核合成交付与项目级产品接入边界；W4/W5 仍未开始。",
+  "following_stage": "按 AI_CODING_GOVERNANCE_WORKFLOW_V1.md 推进 G0-G7：先统一工作流契约与 Agent Adapter，再做通用生成、独立审核、恢复和首个真实项目验收；历史 W4/W5 记录保留为证据来源。",
   "ordered_successors": [
     "独立复核本次源码、测试、Docker 入口恢复和合成事务证据",
     "将合成便签交付与真实产品源码接入分开规划并取得产品范围",

@@ -1,12 +1,12 @@
 # Agent-Native Local Use
 
-This guide is for Codex and other agents that work in a local repository. It describes the OpenCoding 0.2.7 Python and CLI entry points. The package also includes an optional loopback browser workbench (`python -m opencoding.workbench`); agents do not need it to use the local APIs. See `OFFLINE_INSTALLATION.md` for installed-package startup and AI configuration boundaries. No MCP server, plugin, or embedded Codex App compatibility is claimed here.
+This guide is for Codex and other agents that use OpenCoding inside a local repository. It describes one local entry surface of the complete AI coding governance workflow: Python and CLI APIs for sessions, project documents, TaskPlans, controlled execution, verification, recovery, and optional AI evaluation/generation. The package also includes an optional loopback browser workbench (`python -m opencoding.workbench`); agents do not need it to use the local APIs. See `OFFLINE_INSTALLATION.md` for installed-package startup and AI configuration boundaries. No MCP server, plugin, or embedded Codex App compatibility is claimed here.
 
 ## Scope and authority
 
 Every call uses an explicit existing local project root. The caller must establish that the root, user goal, reviewed preview, and any local write are within the user's authorization. An `approved` field inside an approval object is part of the local integrity check; it is not evidence that a user authorized an arbitrary scope, and it is never authorization for external work.
 
-The local session/document and scheduler flows below do not require a provider or network. Optional AI evaluation and generation interfaces can call configured providers, so this is not a package-wide offline guarantee. Establish separate authorization for provider calls, credentials, costs, real data, deployment, and publication. Path checks and application locks are not an operating-system sandbox. A TaskPlan is a planning result, not a scheduler success record or permission to run arbitrary code.
+The local session/document and scheduler flows below can run without a provider or network. Optional AI evaluation and generation interfaces can call configured providers, so this is not a package-wide offline-only product and no provider is implied by the local APIs. Establish separate authorization for provider calls, credentials, costs, real data, deployment, and publication. Path checks and application locks are not an operating-system sandbox. A TaskPlan is a planning result, not a scheduler success record or permission to run arbitrary code.
 
 ## Discover the local entry points
 
@@ -132,4 +132,4 @@ Before reporting a local operation as complete, inspect the returned structured 
 
 `aiconfig.load_config()` and `aiadapter.adapter_from_config()` expose configured providers without printing secrets. `probe_connection()` is only a low-cost service or model-directory probe: a gateway home page, HTTP 404/405/422, or any other error response does not prove credentials or generation. A real evaluation through `advisor.run_ai_evaluation()` must return `real: true`, a bound structured response, and an evaluation record before the result can be confirmed. Do not treat `response_empty`, `response_length_truncated`, `deadline_exceeded`, or `network_unavailable` as a successful AI connection; stop or reconfigure the provider instead of silently retrying.
 
-This guide does not claim universal Codex, agent, operating-system, or platform compatibility. W4 controlled Host/connectors and W5 independent beginner/platform/release acceptance remain later work. Activating a real Host or connector, using credentials or cost-bearing resources, and publication each require a separately authorized Gate.
+This guide does not claim universal Codex, agent, operating-system, or platform compatibility. The complete workflow still needs the staged Host, verification, recovery, beginner, and release acceptance described in `AI_CODING_GOVERNANCE_WORKFLOW_V1.md`. Activating a real Host or connector, using credentials or cost-bearing resources, and publication each require a separately authorized Gate.
