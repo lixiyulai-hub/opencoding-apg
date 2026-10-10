@@ -584,12 +584,23 @@
     "source_fix": {
       "files": [
         "opencoding/docker_provider.py",
-        "tests/test_docker_provider.py"
+        "opencoding/generic_run.py",
+        "tests/test_docker_provider.py",
+        "tests/test_docker_probe_lifecycle_c6.py",
+        "tests/test_product_resume_shared_gate.py"
       ],
-      "change": "将 --network none 下合法 DNS 拒绝 errno -3 纳入边界验收白名单，并增加回归测试。",
-      "targeted_tests": "60 tests, 57 passed, 3 skipped",
-      "full_suite": "591 tests, 588 passed, 3 skipped",
-      "full_suite_seconds": 501.665
+      "change": "Docker 探针升级为 docker-probe-v6：bridge 对照取得实际解析 IP 后，受限探针使用并回传同一目标；缺少目标元数据时 fail-closed。接续交付刷新本次 execution_capability 并清除旧失败原因。",
+      "targeted_tests": "97 tests, 94 passed, 3 skipped",
+      "full_suite": "592 tests, 589 passed, 3 skipped",
+      "full_suite_seconds": 417.549
+    },
+    "continuation_fix_20261010": {
+      "status": "source_regression_verified",
+      "probe_version": "docker-probe-v6",
+      "evidence": "tests.test_docker_provider + tests.test_docker_probe_lifecycle_c6: 61 tests, 58 passed, 3 skipped; tests.test_product_resume_shared_gate: 36 passed",
+      "qualification": "本次只验证源码与替身链路；未重新调用 Provider，也未把 Docker Desktop GUI 启动等同于引擎可用。",
+      "independent_review": "pending_not_performed",
+      "user_acceptance": "pending_not_claimed"
     },
     "codex_configuration_audit": {
       "config_path": "C:/Users/Administrator/.codex/config.toml",

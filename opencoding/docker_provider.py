@@ -41,7 +41,9 @@ IMAGE_ENV = "OPENCODING_DOCKER_IMAGE"
 # 探针协议版本:任何 PROBE_SOURCE / 判据变更必须递增,使旧资格立即失效。
 # v3(C6-02):classify 按 errno 语义识别只读文件系统(EROFS→denied);
 # 探针环境变量由宿主显式传入容器(-e),不再假定宿主环境自动进入容器。
-PROBE_VERSION = "docker-probe-v5"
+# v6(R02c):网络 A/B 结果显式记录 bridge 解析出的直连目标,并将同一目标
+# 绑定到受限容器探针;旧资格不能跨越这次判据收口继续使用。
+PROBE_VERSION = "docker-probe-v6"
 # 资格有效期:过期必须重新实测,不得沿用旧结论。
 ENTITLEMENT_TTL_SECONDS = 3600
 ENTITLEMENT_DIRNAME = "opencoding-docker-entitlement"
@@ -291,14 +293,16 @@ def container_argv(argv_in_scratch: list[str], scratch_host: Path | None = None)
 # ---------------------------------------------------------------- 探针
 
 PROBE_SOURCE = '''# -*- coding: utf-8 -*-
-"""Docker 隔离边界探针 v5(只做探测,不做业务)。
+"""Docker 隔离边界探针 v6(只做探测,不做业务)。
 
 与 v2 差异(C6-02):classify 按 Python errno 语义精确分类——只读文件系统
 (EROFS)本身就是一种"策略拒绝"形态,不必是 PermissionError;权限拒绝
 (PermissionError/EACCES/EPERM)与 EROFS 报 denied,路径缺失、父目录不存在、
 其他失败一律报 failed:*,避免"本来就写不了"被误判为边界成立,也避免
 "只读被误报为一般失败"。正向关键字 amount=writable / denied / failed:<reason>。
-探针目标由宿主经 docker run -e 显式传入(容器不继承宿主环境)。
+探针目标由宿主经 docker run -e 显式传入(容器不继承宿主环境);宿主会先在
+bridge 对照组取得同一端点的实际 IP,受限组随后直接使用该 IP,避免把 DNS
+失败误当作网络隔离证据。
 """
 import errno, json, os, socket, sys
 from pathlib import Path
@@ -356,6 +360,14 @@ if TARGET_HOST and TARGET_PORT:
     result["network"] = classify(connect)
 else:
     result["network"] = {"status": "skipped:no_control_target"}
+
+# R02c:把本次受限网络尝试的目标写入结果,供宿主核对它是否与 bridge
+# 对照解析出的同一目标一致;只看 network 状态码不足以证明 A/B 同目标。
+result["network_target"] = {
+    "host": TARGET_HOST,
+    "port": TARGET_PORT,
+    "mode": "direct_target" if TARGET_HOST and TARGET_PORT else "none",
+}
 
 result["targets"] = {
     "ro_root": "/usr/local/lib/opencoding_probe_should_fail",
@@ -683,6 +695,12 @@ def probe_boundaries(scratch_host: Path, *, timeout: int = 180,
         if network_control.get("control_reachable") is True and direct_ip:
             probe_target["host"] = str(direct_ip)
             probe_target["source"] = "bridge_resolved_ip"
+        network_control["restricted_target"] = {
+            "host": str(probe_target.get("host") or ""),
+            "port": int(probe_target.get("port") or 0),
+            "source": str(probe_target.get("source") or "configured"),
+        }
+        network_control["same_target_required"] = True
         probe_env = {"OPENCODING_DOCKER_PROBE_HOST": str(probe_target["host"]),
                      "OPENCODING_DOCKER_PROBE_PORT": str(probe_target["port"])}
         outcome = run_container(scratch_host, argv, data_dir=rel, timeout=timeout,
@@ -713,10 +731,20 @@ def probe_boundaries(scratch_host: Path, *, timeout: int = 180,
                 problems.append("network_control_unreachable")
             elif not network_control.get("resolved_target", {}).get("host"):
                 problems.append("network_control_ip_unresolved")
-            elif network_status not in ("failed:connection_refused", "failed:timeout",
-                                        "failed:oserror:113", "failed:oserror:101",
-                                        "failed:oserror:10065", "failed:oserror:-3",
-                                        "denied"):
+            else:
+                observed_target = checks.get("network_target")
+                expected_host = str(probe_target.get("host") or "")
+                expected_port = int(probe_target.get("port") or 0)
+                if not isinstance(observed_target, Mapping):
+                    problems.append("network_target_missing")
+                elif (str(observed_target.get("host") or "") != expected_host
+                      or int(observed_target.get("port") or 0) != expected_port
+                      or observed_target.get("mode") != "direct_target"):
+                    problems.append("network_target_mismatch")
+            if network_status not in ("failed:connection_refused", "failed:timeout",
+                                      "failed:oserror:113", "failed:oserror:101",
+                                      "failed:oserror:10065", "failed:oserror:-3",
+                                      "denied"):
                 problems.append("network=" + network_status)
         elif network_status.startswith("skipped"):
             problems.append("network=skipped_no_control_target")
@@ -756,6 +784,20 @@ def probe_boundaries(scratch_host: Path, *, timeout: int = 180,
         "policy_digest": readiness["policy_digest"],
         "checks": checks,
         "control": {**control, "network": network_control},
+        "network_diagnostic": {
+            "mode": "bridge_resolved_ip" if network_control.get("resolved_target") else "unresolved",
+            "control_target": network_control.get("target"),
+            "resolved_target": network_control.get("resolved_target"),
+            "restricted_target": network_control.get("restricted_target"),
+            "same_target": bool(
+                network_control.get("control_reachable") is True
+                and network_control.get("resolved_target")
+                and network_control.get("restricted_target", {}).get("host")
+                == network_control.get("resolved_target", {}).get("host")
+                and int(network_control.get("restricted_target", {}).get("port") or 0)
+                == int(network_control.get("resolved_target", {}).get("port") or 0)
+            ),
+        },
         "lifecycle": raw_outcome,
         "listener_cleanup": listener_cleanup,
         "reason": ("四项边界实测通过并签发资格(根只读/规范只读/数据区可写/网络不可达)"

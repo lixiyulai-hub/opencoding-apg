@@ -57,11 +57,17 @@ class _FakeDocker:
         self.inspect_state = inspect_state
         self.rm_succeeds = rm_succeeds
         self._inspect_calls = 0
+        self._probe_env = {}
 
     def __call__(self, cmd, **_kwargs):
         self.calls.append(list(cmd))
         sub = cmd[1] if len(cmd) > 1 else ""
         if sub == "run":
+            pairs = [cmd[i + 1] for i, value in enumerate(cmd[:-1]) if value == "-e"]
+            self._probe_env = {
+                item.split("=", 1)[0]: item.split("=", 1)[1]
+                for item in pairs if "=" in item
+            }
             return subprocess.CompletedProcess(cmd, 0, "opencoding-cid-c6feed\n", "")
         if sub == "wait":
             return subprocess.CompletedProcess(cmd, 0, "0\n", "")
@@ -71,7 +77,14 @@ class _FakeDocker:
                 return subprocess.CompletedProcess(cmd, 0, self.inspect_state + "\n", "")
             return subprocess.CompletedProcess(cmd, 1 if self.rm_succeeds else 0, "", "")
         if sub == "logs":
-            return subprocess.CompletedProcess(cmd, 0, "PROBE:" + json.dumps(self.probe), "")
+            probe = dict(self.probe)
+            if self._probe_env.get("OPENCODING_DOCKER_PROBE_HOST"):
+                probe["network_target"] = {
+                    "host": self._probe_env["OPENCODING_DOCKER_PROBE_HOST"],
+                    "port": int(self._probe_env.get("OPENCODING_DOCKER_PROBE_PORT", "0")),
+                    "mode": "direct_target",
+                }
+            return subprocess.CompletedProcess(cmd, 0, "PROBE:" + json.dumps(probe), "")
         if sub == "rm":
             return subprocess.CompletedProcess(cmd, 0 if self.rm_succeeds else 1, "", "")
         return subprocess.CompletedProcess(cmd, 0, "", "")
@@ -184,12 +197,16 @@ class ProbeFixturePreservationTests(_EnvBase):
         self.assertFalse(result["granted"])
         self.assertIn("spec 目标缺失", result["reason"])
 
-    def test_probe_happy_path_keeps_spec_and_grants_v4(self):
+    def test_probe_happy_path_keeps_spec_and_grants_v6(self):
         probe = _ok_probe()
         probe["network"] = {"status": "failed:oserror:113"}
         with _Ready() as ready:
             result = docker_provider.probe_boundaries(self.root, runner=_ControlReachable(probe))
         self.assertTrue(result["granted"], result["reason"])
+        self.assertTrue(result["network_diagnostic"]["same_target"])
+        self.assertEqual(result["network_diagnostic"]["mode"], "bridge_resolved_ip")
+        self.assertEqual(result["control"]["network"]["restricted_target"]["host"],
+                         result["control"]["network"]["resolved_target"]["host"])
         self.assertTrue(result["control"]["spec_exists"])
         spec = self.root / "frozen_checks" / "spec.json"
         self.assertTrue(spec.is_file())
@@ -197,8 +214,8 @@ class ProbeFixturePreservationTests(_EnvBase):
         digest = docker_provider.policy_digest(docker_provider._image(), ready.image_id)
         doc = docker_provider.load_entitlement(digest)
         self.assertIsNotNone(doc)
-        self.assertEqual(doc["facts"]["probe_version"], "docker-probe-v5")
-        self.assertEqual(docker_provider.PROBE_VERSION, "docker-probe-v5")
+        self.assertEqual(doc["facts"]["probe_version"], "docker-probe-v6")
+        self.assertEqual(docker_provider.PROBE_VERSION, "docker-probe-v6")
 
 
 # ---------------------------------------------------------------- classify errno 语义

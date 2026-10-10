@@ -2474,6 +2474,9 @@ def _resume_inner(project: Path, receipt: dict[str, Any], candidate: Mapping[str
     # C6-01(U03-取消):接续正式开始先持久化真实运行阶段——
     # request_cancel 必须能在接续进行中登记并中断后继,不能仍显示旧终态。
     receipt["status"] = "running"
+    # 接续会覆盖旧的阻塞/授权失败终态;若本次仍失败,由本次闸门重新写入
+    # 精确原因,避免交付回执残留此前的 grant_expired 等历史文案。
+    receipt.pop("failure", None)
     receipt["cancel_requested"] = False
     receipt["current_request"] = {"request_id": candidate.get("request_id"),
                                   "kind": "resume", "attempt": attempt,
@@ -2498,6 +2501,9 @@ def _resume_inner(project: Path, receipt: dict[str, Any], candidate: Mapping[str
     receipt["grant_id_active"] = attempt_record.get("grant_used")
 
     capability = _capability()
+    # 后端能力可能在候选保存后恢复;接续回执必须记录本次实际复核结果,
+    # 不能继续沿用首次生成时的 unavailable 快照。
+    receipt["execution_capability"] = capability
     if not capability["available"]:
         attempt_record["executed"] = False
         attempt_record["note"] = ("实际受限后端仍不可用(" + str(capability["kind"])

@@ -45,11 +45,17 @@ class _FakeDocker:
         self.inspect_state = inspect_state
         self.rm_succeeds = rm_succeeds
         self._inspect_calls = 0
+        self._probe_env = {}
 
     def __call__(self, cmd, **_kwargs):
         self.calls.append(list(cmd))
         sub = cmd[1] if len(cmd) > 1 else ""
         if sub == "run":
+            pairs = [cmd[i + 1] for i, value in enumerate(cmd[:-1]) if value == "-e"]
+            self._probe_env = {
+                item.split("=", 1)[0]: item.split("=", 1)[1]
+                for item in pairs if "=" in item
+            }
             return subprocess.CompletedProcess(cmd, 0, "opencoding-cid-abcdef\n", "")
         if sub == "wait":
             return subprocess.CompletedProcess(cmd, 0, "0\n", "")
@@ -60,7 +66,14 @@ class _FakeDocker:
             # rm 之后的 inspect:容器应已不存在(returncode != 0)
             return subprocess.CompletedProcess(cmd, 1 if self.rm_succeeds else 0, "", "")
         if sub == "logs":
-            return subprocess.CompletedProcess(cmd, 0, "PROBE:" + json.dumps(self.probe), "")
+            probe = dict(self.probe)
+            if self._probe_env.get("OPENCODING_DOCKER_PROBE_HOST"):
+                probe["network_target"] = {
+                    "host": self._probe_env["OPENCODING_DOCKER_PROBE_HOST"],
+                    "port": int(self._probe_env.get("OPENCODING_DOCKER_PROBE_PORT", "0")),
+                    "mode": "direct_target",
+                }
+            return subprocess.CompletedProcess(cmd, 0, "PROBE:" + json.dumps(probe), "")
         if sub == "rm":
             return subprocess.CompletedProcess(cmd, 0 if self.rm_succeeds else 1, "", "")
         return subprocess.CompletedProcess(cmd, 0, "", "")
@@ -314,6 +327,29 @@ class DockerProbeEntitlementTests(unittest.TestCase):
             result = docker_provider.probe_boundaries(
                 self.root, runner=_ControlReachable(probe))
         self.assertTrue(result["granted"], result["reason"])
+
+    def test_network_target_metadata_is_required_for_direct_ab_evidence(self):
+        """仅有 DNS/连接错误码而没有实际直连目标回传时必须拒绝。"""
+        probe = _ok_probe()
+        probe["network"] = {"status": "failed:oserror:113"}
+
+        class _NoTarget(_FakeDocker):
+            def __call__(self, cmd, **kwargs):
+                if len(cmd) > 1 and cmd[1] == "run" and "--network" in cmd:
+                    index = cmd.index("--network")
+                    if cmd[index + 1] == "bridge":
+                        return subprocess.CompletedProcess(
+                            cmd, 0, "CONTROL:" + json.dumps({
+                                "status": "connected", "peer_ip": "192.168.65.254"}), "")
+                if len(cmd) > 1 and cmd[1] == "logs":
+                    return subprocess.CompletedProcess(cmd, 0, "PROBE:" + json.dumps(self.probe), "")
+                return super().__call__(cmd, **kwargs)
+
+        with _Ready(docker_provider):
+            result = docker_provider.probe_boundaries(
+                self.root, runner=_NoTarget(probe))
+        self.assertFalse(result["granted"])
+        self.assertIn("network_target_missing", result["reason"])
 
     def test_entitlement_expires_and_cannot_be_faked(self):
         with _Ready(docker_provider, image_id="sha256:aaaa"):

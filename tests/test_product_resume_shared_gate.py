@@ -337,6 +337,9 @@ class ResumeReauthorizationTests(_Base):
              mock.patch.object(generic_run, "_stage_and_verify", side_effect=fake_stage):
             resumed = generic_run.resume_saved_candidate(self.project, run_id)
         self.assertEqual(resumed["status"], "delivered", resumed.get("failure"))
+        self.assertTrue(resumed["execution_capability"]["available"])
+        self.assertNotIn("failure", resumed,
+                         "交付回执不得残留确认前的 grant_expired 等历史失败原因")
         self.assertIsNotNone(resumed.get("transaction_id"), "产生一次真实提交事务")
         self.assertEqual(captured["grant_id"], new_grant_id, "接续实际使用新批次")
         self.assertEqual(captured["files"], ["app/main.py", "app/selftest.py"],
