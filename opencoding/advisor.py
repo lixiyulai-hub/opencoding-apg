@@ -17,18 +17,20 @@ import json
 import platform as _platform
 import re
 import shutil
+import uuid
+from functools import wraps
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-from . import plansource, service
+from . import plansource, service, request_budget
 from .aiadapter import AIRequestError
 from .service import ServiceError
 from .decisions import (  # 私有符号:硬约束守门与技术栈随平台重算
     _CONSTRAINT_EFFECTS, _stack, build_recommendation, derive_fact_constraints)
 from .facts import list_facts
-from .safety import sanitize_text, sha256_bytes
-from .sessions import SessionLockError, session_write_lock
+from .safety import sanitize_text, sha256_bytes, _root_path
+from .sessions import SessionLockError, session_write_lock, _check_existing_chain
 
 EVALUATIONS_SCHEMA_VERSION = 1
 EVALUATION_STATUSES = ("pending_confirmation", "confirmed", "superseded", "rejected")
@@ -43,17 +45,22 @@ def _now() -> str:
 
 
 def _eval_dir(root: Path) -> Path:
-    return Path(root) / ".opencoding" / _EVAL_DIR_NAME
+    root = _root_path(root)
+    path = root / ".opencoding" / _EVAL_DIR_NAME
+    _check_existing_chain(path, root=root)
+    return path
 
 
 def _atomic_write(path: Path, doc: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".json.tmp")
+    _check_existing_chain(path, root=_root_path(path.parent.parent.parent))
+    tmp = path.with_name("." + path.name + ".tmp-" + uuid.uuid4().hex)
     tmp.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
     tmp.replace(path)
 
 
 def _load(path: Path) -> dict[str, Any]:
+    _check_existing_chain(path, root=_root_path(path.parent.parent.parent))
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -80,7 +87,7 @@ def _facts_summary(facts: list[Mapping[str, Any]]) -> list[dict[str, str]]:
     for fact in facts:
         out.append({
             "kind": str(fact.get("kind", "")),
-            "text": sanitize_text(str(fact.get("text", "")))[:300],
+            "text": sanitize_text(str(fact.get("content", fact.get("text", ""))))[:300],
             "source": str(fact.get("source_type", "")),
             "confirmed": bool(fact.get("confirmed")),
         })
@@ -239,6 +246,17 @@ def _validate_recommendation(value: Any) -> dict[str, Any]:
     return out
 
 
+def _session_operation(function):
+    @wraps(function)
+    def guarded(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except SessionLockError as exc:
+            raise ServiceError(exc.code, "项目状态正在更新，请稍后重试") from exc
+    return guarded
+
+
+@_session_operation
 def run_ai_evaluation(
     root: str | Path,
     session_id: str,
@@ -247,22 +265,73 @@ def run_ai_evaluation(
     run_id: str = "advisor",
 ) -> dict[str, Any]:
     """发起一次真实 AI 评估并落盘。返回评估记录(脱敏,不含凭据)。"""
-    root_path = Path(root)
-    view = service.session_view(root_path, session_id)
+    root_path = _root_path(root)
+    # Capture under the same lock as confirm/adopt/fact/session writers; release
+    # before provider dispatch and compare again before any result becomes active.
+    with session_write_lock(root_path):
+        binding = _evaluation_binding(root_path, session_id)
+        view = service.session_view(root_path, session_id)
+        session = view["session"] if "session" in view else view
+        facts = list_facts(root_path, session_id)
+        constraints = derive_fact_constraints(facts)
+        recommendation = build_recommendation(session, constraints)
+        previous = latest_evaluation(root_path, session_id, status="confirmed")
+        messages = build_evaluation_messages(
+            session, facts, recommendation, constraints, capability_view(),
+            previous.get("structured") if previous else None,
+        )
+    scope = "evaluation:" + session_id
+    request_id = "req-" + uuid.uuid4().hex
+    reservation = request_budget.reserve(root_path, scope, run_id=run_id, request_id=request_id,
+                                          task_id="ai-evaluation", session_id=session_id)
+    try:
+        record = _dispatch_evaluation(root_path, session_id, adapter, run_id, session,
+                                      recommendation, messages, binding, request_id, reservation["reservation_id"])
+    except BaseException as exc:
+        # A transport failure or interruption does not prove the provider failed.
+        # Keep the reservation spent even when recording the outcome also fails.
+        uncertain_codes = {"read_idle_timeout", "network_unavailable", "deadline_exceeded",
+                           "gateway_stream_interrupted", "http_5xx", "http_4xx"}
+        definite = ((isinstance(exc, AIRequestError) and exc.code not in uncertain_codes)
+                    or isinstance(exc, ServiceError))
+        try:
+            request_budget.finish(root_path, scope, reservation["reservation_id"],
+                                  status="failed" if definite else "unknown")
+        except Exception:
+            pass  # Preserve the original exception; the reserved unknown remains spent.
+        raise
+    try:
+        request_budget.finish(root_path, scope, reservation["reservation_id"], status="succeeded")
+    except Exception:
+        # The evaluation is already persisted. Do not rewrite its successful outcome
+        # merely because the accounting update failed; expose the unresolved ledger.
+        record["request_budget_status"] = "unknown"
+        record["request_budget_reservation_id"] = reservation["reservation_id"]
+    return record
+
+
+def _evaluation_binding(root, session_id):
+    view = service.session_view(root, session_id)
     session = view["session"] if "session" in view else view
-    facts = list_facts(root_path, session_id)
-    constraints = derive_fact_constraints(facts)
-    recommendation = build_recommendation(session, constraints)
-    capability = capability_view()
-    previous = latest_evaluation(root_path, session_id, status="confirmed")
-    messages = build_evaluation_messages(
-        session, facts, recommendation, constraints, capability,
-        previous.get("structured") if previous else None,
-    )
+    evaluations = [{"id": item.get("evaluation_id"), "status": item.get("status")}
+                   for item in list_evaluations(root, session_id)]
+    adoption_path = Path(root) / ".opencoding" / "adoptions" / (session_id + ".json")
+    _check_existing_chain(adoption_path, root=Path(root))
+    return {
+        "session": sha256_bytes(json.dumps(session, sort_keys=True).encode()),
+        "facts": sha256_bytes(json.dumps(list_facts(root, session_id), sort_keys=True).encode()),
+        "evaluations": sha256_bytes(json.dumps(evaluations, sort_keys=True).encode()),
+        "adoption": sha256_bytes(adoption_path.read_bytes()) if adoption_path.exists() else None,
+    }
+
+
+def _dispatch_evaluation(root_path, session_id, adapter, run_id, session,
+                         recommendation, messages, binding, request_id, reservation_id):
     task_id = "ai-evaluation"
     result = adapter.complete(
         messages,
         request_kind="evaluate",
+        request_id=request_id,
         run_id=run_id,
         task_id=task_id,
         attempt=1,
@@ -277,7 +346,8 @@ def run_ai_evaluation(
     advisor_module_sha = sha256_bytes(Path(__file__).read_bytes())
     record = {
         "schema_version": EVALUATIONS_SCHEMA_VERSION,
-        "evaluation_id": "eval-" + hashlib.sha256((result["request_id"] + _now()).encode("utf-8")).hexdigest()[:16],
+        "root": str(root_path),
+        "evaluation_id": "eval-" + hashlib.sha256((request_id + _now()).encode("utf-8")).hexdigest()[:16],
         "advisor_module_sha256": advisor_module_sha,
         "session_id": session_id,
         "created_at": _now(),
@@ -285,7 +355,11 @@ def run_ai_evaluation(
         "real": bool(result.get("real")),
         "provider": result.get("provider"),
         "model": result.get("model"),
-        "request_id": result.get("request_id"),
+        "request_id": request_id,
+        "adapter_request_id": result.get("request_id"),
+        "request_budget_reservation_id": reservation_id,
+        "run_id": run_id,
+        "task_id": task_id,
         "input_sha256": result.get("input_sha256"),
         "response_sha256": result.get("response_sha256"),
         "latency_ms": result.get("latency_ms"),
@@ -299,17 +373,21 @@ def run_ai_evaluation(
             "implementation_contract": _validate_contract(structured.get("implementation_contract")),
         },
         "confirmation": None,
+        "evaluation_binding": binding,
     }
-    _atomic_write(_eval_dir(root_path) / (record["evaluation_id"] + ".json"), record)
-    # 旧的同会话待确认评估标记为被取代
-    for old in _eval_dir(root_path).glob("eval-*.json"):
-        if old.name == record["evaluation_id"] + ".json":
-            continue
-        doc = _load(old)
-        if doc.get("session_id") == session_id and doc.get("status") == "pending_confirmation":
-            doc["status"] = "superseded"
-            doc["superseded_by"] = record["evaluation_id"]
-            _atomic_write(old, doc)
+    with session_write_lock(root_path):
+        if _evaluation_binding(root_path, session_id) != binding:
+            raise ServiceError("evaluation_input_drift", "评估期间需求、事实或方案已变化，请重新评估")
+        _atomic_write(_eval_dir(root_path) / (record["evaluation_id"] + ".json"), record)
+        # 旧的同会话待确认评估标记为被取代
+        for old in _eval_dir(root_path).glob("eval-*.json"):
+            if old.name == record["evaluation_id"] + ".json":
+                continue
+            doc = _load(old)
+            if doc.get("session_id") == session_id and doc.get("status") == "pending_confirmation":
+                doc["status"] = "superseded"
+                doc["superseded_by"] = record["evaluation_id"]
+                _atomic_write(old, doc)
     return _public(record)
 
 
@@ -342,7 +420,13 @@ def _ai_plan_recommendation(rule_recommendation: Mapping[str, Any],
     return plansource.plan_input_for_choice(rule_recommendation, choice, ai_view), ai_view
 
 
+@_session_operation
 def adopt_confirmed_evaluation(root: str | Path, session_id: str) -> dict[str, Any]:
+    with session_write_lock(_root_path(root)):
+        return _adopt_confirmed_evaluation_locked(root, session_id)
+
+
+def _adopt_confirmed_evaluation_locked(root: str | Path, session_id: str) -> dict[str, Any]:
     """R07-A2 / CP5 §4.2:用户已确认的 AI 决策成为**正式计划本身**。
 
     实现要点:
@@ -359,6 +443,7 @@ def adopt_confirmed_evaluation(root: str | Path, session_id: str) -> dict[str, A
     if record.get("session_revision_at_eval") != session.get("revision"):
         raise ValueError("已确认评估基于旧会话版本(r%s,当前 r%s);请在当前版本下重新评估并确认"
                          % (record.get("session_revision_at_eval"), session.get("revision")))
+    _check_record_inputs(root, session_id, record)
     structured = record.get("structured") or {}
     contract = structured.get("implementation_contract") or {}
     if not contract.get("files") or not contract.get("steps"):
@@ -417,7 +502,7 @@ def adopt_confirmed_evaluation(root: str | Path, session_id: str) -> dict[str, A
         },
     }
     try:
-        adopted = service.adopt_evaluation_plan(root, session_id,
+        adopted = service._adopt_evaluation_plan_locked(root, session_id,
                                                 recommendation_override=ai_rec, extras=extras)
     except ServiceError as exc:
         if str(exc.code) != "evaluation_plan_invalid":
@@ -480,6 +565,14 @@ def confirm_evaluation(
         raise ServiceError(exc.code, "会话正在更新，请稍后重新确认") from exc
 
 
+def _check_record_inputs(root, session_id, record):
+    binding = record.get("evaluation_binding")
+    if binding:
+        current = _evaluation_binding(root, session_id)
+        if any(binding.get(key) != current[key] for key in ("session", "facts")):
+            raise ServiceError("evaluation_input_drift", "评估所依据的需求或事实已变化，请重新评估")
+
+
 def _confirm_evaluation_locked(
     root: str | Path, session_id: str, evaluation_id: str, *,
     expected_revision: int, accepted: bool,
@@ -501,6 +594,7 @@ def _confirm_evaluation_locked(
         raise ValueError(
             "评估已过期:评估时会话版本 r%s,当前 r%d;请在当前版本下重新评估"
             % (record.get("session_revision_at_eval"), current_revision))
+    _check_record_inputs(root, session_id, record)
     record["confirmation"] = {
         "accepted": accepted,
         "at": _now(),

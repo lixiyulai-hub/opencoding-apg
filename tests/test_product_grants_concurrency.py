@@ -29,6 +29,14 @@ def _issue(root, grant_id, kind="local_write"):
         targets=["app/main.py"], action_digest="action-1", input_digest="input-1")
 
 
+def _check(root, credential_id, **overrides):
+    expected = dict(expect_task_id="task-1", expect_attempt=1,
+                    expect_action_kind="local_write", expect_targets=["app/main.py"],
+                    expect_action_digest="action-1", expect_input_digest="input-1")
+    expected.update(overrides)
+    return grants.check_step_credential(root, credential_id, **expected)
+
+
 def _compete(root, operation, identity, barrier, results):
     """Spawn-safe child; all competitors use the actual public API and filesystem."""
     try:
@@ -36,7 +44,7 @@ def _compete(root, operation, identity, barrier, results):
         if operation == "issue":
             _issue(root, identity, "ai_request")
         elif operation == "consume":
-            grants.check_step_credential(root, identity, expect_task_id="task-1")
+            _check(root, identity)
         elif operation in ("repair_rounds", "no_progress_rounds"):
             grants.consume_budget_counter(root, identity, counter=operation)
         elif operation == "revoke":
@@ -114,13 +122,13 @@ class GrantIdentityTests(unittest.TestCase):
         shutil.copyfile(original, clone)
         for consume in (False, True):
             with self.subTest(consume=consume), self.assertRaises(grants.GrantError) as caught:
-                grants.check_step_credential(self.root, alias, consume=consume)
+                _check(self.root, alias, consume=consume)
             self.assertEqual(caught.exception.code, "credential_identity_mismatch")
         self.assertFalse(json.loads(original.read_text(encoding="utf-8"))["used"])
         self.assertEqual(grants.grant_consumption_journal(self.root, self.grant["grant_id"]), [])
-        grants.check_step_credential(self.root, credential["credential_id"])
+        _check(self.root, credential["credential_id"])
         with self.assertRaises(grants.GrantError) as caught:
-            grants.check_step_credential(self.root, alias)
+            _check(self.root, alias)
         self.assertEqual(caught.exception.code, "credential_identity_mismatch")
         journal = grants.grant_consumption_journal(self.root, self.grant["grant_id"])
         self.assertEqual([item["credential_id"] for item in journal], [credential["credential_id"]])
@@ -129,9 +137,9 @@ class GrantIdentityTests(unittest.TestCase):
         credential = _issue(self.root, self.grant["grant_id"])
         with mock.patch.object(grants, "_atomic_write_json", side_effect=OSError("interrupted")):
             with self.assertRaises(OSError):
-                grants.check_step_credential(self.root, credential["credential_id"])
+                _check(self.root, credential["credential_id"])
         with self.assertRaises(grants.GrantError) as caught:
-            grants.check_step_credential(self.root, credential["credential_id"])
+            _check(self.root, credential["credential_id"])
         self.assertEqual(caught.exception.code, "credential_journal_mismatch")
 
     def test_interrupted_revocation_epoch_cache_cannot_hide_revocation(self):
@@ -153,7 +161,7 @@ class GrantIdentityTests(unittest.TestCase):
         journal.parent.mkdir(exist_ok=True)
         journal.write_text('{"kind":"credential_consumed"', encoding="utf-8")
         with self.assertRaises(grants.GrantError) as caught:
-            grants.check_step_credential(self.root, credential["credential_id"])
+            _check(self.root, credential["credential_id"])
         self.assertEqual(caught.exception.code, "grant_journal_invalid")
 
     def test_partial_revocation_journal_is_fail_closed(self):

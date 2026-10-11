@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "program_id": "opencoding-agent-native-delivery-v2-20260909",
-  "status": "audit-remediation-wave-1-verified-followups-open",
+  "status": "audit-remediation-wave-2-verified-host-contract-next",
   "supersedes": {
     "path": "docs/product/DELIVERY_PLAN_V1.json",
     "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
@@ -31,38 +31,30 @@
     "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the complete AI coding governance workflow and its staged agent-host acceptance."
   },
   "immediate_transaction": {
-    "id": "audit-remediation-wave-1-20261011",
-    "purpose": "修复确认类型、会话归属、授权与累计预算并发、AI计划预览应用一致性；独立复核后全量回归。",
-    "status": "implemented_regression_verified_pending_user_acceptance",
-    "paths": [
-      "opencoding/workbench.py",
-      "opencoding/grants.py",
-      "opencoding/generic_run.py",
-      "opencoding/service.py",
-      "opencoding/advisor.py"
+    "id": "host-contract-and-task-wave-execution-r3",
+    "status": "ready_for_local_implementation",
+    "purpose": "复用现有任务图与SQLite调度状态，定义统一Host协议与能力登记，再以逐任务执行包接入Codex。",
+    "ordered_work": [
+      "定义Host请求、结果、能力及运行身份；绑定root/session/plan/task/run/outputs，默认拒绝未验证能力",
+      "以替身完成协议一致性测试：幂等、取消、超时、重复/迟到结果；明确这些测试不证明真实接入",
+      "将TaskPlan波次连接到逐任务执行包，保留依赖、预算、候选、验证及回滚证据",
+      "实现并独立验证首个Codex Host适配；需要真实接入配置时通知用户在本地设置",
+      "进入候选与验收摘要绑定的独立Reviewer，再完成真实项目和新手旅程"
     ],
-    "evidence": "docs/product/COMPREHENSIVE_FIRST_PRINCIPLES_ADVERSARIAL_REVIEW_20261011.md",
-    "verification": {
-      "full_suite": {
-        "tests": 633,
-        "passed": 630,
-        "skipped": 3,
-        "seconds": 595.66,
-        "log": "artifacts/audit-remediation-20261011/unittest.log",
-        "scope_note": "在最终确认锁错误映射和旧库只读兼容增量前运行；后续变更另有定向验证"
-      },
-      "final_plan_source_tests": 16,
-      "final_grant_tests": 37,
-      "independent_review": "cross-reviewed; legacy read P2 resolved and independently reviewed at b010cccbcdc14dbebd94f7ad4d95507e09c767bb",
-      "final_budget_tests": 21,
-      "source_manifest": "artifacts/audit-remediation-20261011/source-sha256.json"
-    },
-    "source_commit": "b010cccbcdc14dbebd94f7ad4d95507e09c767bb"
+    "reuse": [
+      "opencoding/planning.py",
+      "opencoding/scheduler.py"
+    ],
+    "current_gap": "aiadapter.complete是模型调用接口；generic_run仍以generate-app-v3执行整应用，尚不能宣称Codex Host生命周期和逐任务波次已接通。",
+    "api_requirement": "协议及替身测试无需真实API；真实Provider验证受用户级配置未恢复影响，届时通过本地接入向导恢复，不索取聊天密钥。",
+    "not_required": [
+      "Docker Desktop GUI",
+      "单独安装MCP",
+      "更换为特定IDE"
+    ]
   },
-  "following_stage": "继续完整 AI Coding 治理工作流修复：先收口生产调用授权与评估预算，再贯通 G2/G3 Host 任务波次和 G4 独立审核，随后完成 G5/G6/G7。",
+  "following_stage": "R3：统一 Host 能力、任务波次、运行身份和状态契约，再验证首个真实 Host；继续 R4 独立 Reviewer，随后 R5 真实项目及新手验收。",
   "ordered_successors": [
-    "修复首批反例并通过独立代码复核及全量回归",
-    "收口正式入口计划绑定、评估/连接测试预算和凭据消费输入摘要核验",
     "统一 Host Adapter 能力、任务波次、运行身份和状态契约，验证首个真实 Host",
     "实现候选与测试摘要绑定的独立 Reviewer Gate，blocker/unavailable 禁止交付",
     "完善有界修复、取消、超时/迟到响应与断点恢复",
@@ -110,7 +102,7 @@
   ],
   "gates": {
     "immediate_human_gate": null,
-    "automatic_gate_coverage": "首批全量633 tests OK skipped3；最终计划16项、授权37项和累计预算21项增量通过；diff检查与compileall通过。",
+    "automatic_gate_coverage": "R2 最终全量697项：694通过、3跳过；测试期间源码未变化；独立复核及最终18项生产绑定检查通过；diff、compileall、JavaScript语法检查通过。",
     "later": "首批本地修复不等于 G2/G4/G6/G7 通过；Agent 为执行引擎，Docker GUI 不是产品 Gate；真实外部动作与公开发布需具体授权。"
   },
   "updated_at": "2026-10-11",
@@ -650,5 +642,78 @@
     "code": "ai_configuration_lost_by_audit_probe",
     "effect": "真实Provider验证暂停；本地修复不受阻",
     "recovery": "测试占位配置及同次探测状态已隔离；无可信原配置备份，需接入向导恢复；不在聊天/日志记录密钥"
+  },
+  "remediation_wave_1": {
+    "id": "audit-remediation-wave-1-20261011",
+    "purpose": "修复确认类型、会话归属、授权与累计预算并发、AI计划预览应用一致性；独立复核后全量回归。",
+    "status": "implemented_regression_verified_pending_user_acceptance",
+    "paths": [
+      "opencoding/workbench.py",
+      "opencoding/grants.py",
+      "opencoding/generic_run.py",
+      "opencoding/service.py",
+      "opencoding/advisor.py"
+    ],
+    "evidence": "docs/product/COMPREHENSIVE_FIRST_PRINCIPLES_ADVERSARIAL_REVIEW_20261011.md",
+    "verification": {
+      "full_suite": {
+        "tests": 633,
+        "passed": 630,
+        "skipped": 3,
+        "seconds": 595.66,
+        "log": "artifacts/audit-remediation-20261011/unittest.log",
+        "scope_note": "在最终确认锁错误映射和旧库只读兼容增量前运行；后续变更另有定向验证"
+      },
+      "final_plan_source_tests": 16,
+      "final_grant_tests": 37,
+      "independent_review": "cross-reviewed; legacy read P2 resolved and independently reviewed at b010cccbcdc14dbebd94f7ad4d95507e09c767bb",
+      "final_budget_tests": 21,
+      "source_manifest": "artifacts/audit-remediation-20261011/source-sha256.json"
+    },
+    "source_commit": "b010cccbcdc14dbebd94f7ad4d95507e09c767bb"
+  },
+  "remediation_wave_2": {
+    "id": "audit-remediation-wave-2-20261011",
+    "purpose": "正式生成与接续计划绑定、凭据实际输入核验、评估和连接测试持久预算，修复独立审查发现的派发与冻结材料一致性缺口。",
+    "status": "implemented_regression_verified_pending_user_acceptance",
+    "paths": [
+      "opencoding/generic_run.py",
+      "opencoding/grants.py",
+      "opencoding/autorun.py",
+      "opencoding/advisor.py",
+      "opencoding/facts.py",
+      "opencoding/request_budget.py",
+      "opencoding/aiadapter.py",
+      "opencoding/service.py",
+      "opencoding/workbench.py"
+    ],
+    "evidence": "docs/product/COMPREHENSIVE_FIRST_PRINCIPLES_ADVERSARIAL_REVIEW_20261011.md",
+    "user_acceptance": "pending_not_claimed",
+    "real_api_calls": 0,
+    "verification": {
+      "prior_full_suite": {
+        "tests": 691,
+        "passed": 688,
+        "skipped": 3,
+        "seconds": 870.245,
+        "log": "artifacts/audit-remediation-r2-20261011/unittest-before-final-review.log",
+        "scope_note": "在最终派发与冻结材料补正前运行，不代表最终源码全量通过"
+      },
+      "command": "python -X utf8 -m unittest",
+      "tests": 697,
+      "passed": 694,
+      "skipped": 3,
+      "failed": 0,
+      "seconds": 817.859,
+      "log": "artifacts/audit-remediation-r2-20261011/unittest.log",
+      "isolated_LOCALAPPDATA": true,
+      "source_changed_during_test": [],
+      "source_manifest": "artifacts/audit-remediation-r2-20261011/source-sha256.json",
+      "diff_check": "pass",
+      "compileall": "pass",
+      "workbench_javascript_syntax": "pass",
+      "independent_review": "pass_cross_review_and_final_18_production_binding_tests",
+      "real_api_calls": 0
+    }
   }
 }

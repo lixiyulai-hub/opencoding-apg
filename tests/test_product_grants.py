@@ -98,6 +98,15 @@ class BatchGrantLifecycleTests(unittest.TestCase):
 
 
 class StepCredentialTests(unittest.TestCase):
+    def _check(self, root, credential_id, **overrides):
+        expected = {
+            "expect_task_id": "task-1", "expect_attempt": 1,
+            "expect_action_kind": "local_write", "expect_targets": ["lendreg/pkg.py"],
+            "expect_action_digest": "d1", "expect_input_digest": "i1",
+        }
+        expected.update(overrides)
+        return grants.check_step_credential(root, credential_id, **expected)
+
     def _credential(self, root, grant, **overrides):
         options = {
             "task_id": "task-1", "attempt": 1, "action_kind": "local_write",
@@ -111,7 +120,7 @@ class StepCredentialTests(unittest.TestCase):
             root = Path(directory).resolve()
             grant = make_grant(root)
             credential = self._credential(root, grant)
-            result = grants.check_step_credential(
+            result = self._check(
                 root, credential["credential_id"], expect_task_id="task-1", expect_action_digest="d1"
             )
             self.assertTrue(result["credential"]["used"])
@@ -125,11 +134,11 @@ class StepCredentialTests(unittest.TestCase):
             grant = make_grant(root)
             credential = self._credential(root, grant)
             with self.assertRaises(grants.GrantError) as caught:
-                grants.check_step_credential(root, credential["credential_id"], expect_task_id="other-task")
+                self._check(root, credential["credential_id"], expect_task_id="other-task")
             self.assertEqual(caught.exception.code, "credential_task_mismatch")
             credential = self._credential(root, grant)
             with self.assertRaises(grants.GrantError) as caught:
-                grants.check_step_credential(root, credential["credential_id"], expect_action_digest="tampered")
+                self._check(root, credential["credential_id"], expect_action_digest="tampered")
             self.assertEqual(caught.exception.code, "credential_action_mismatch")
 
     def test_expired_credential_is_rejected_but_grant_can_reissue(self):
@@ -142,7 +151,7 @@ class StepCredentialTests(unittest.TestCase):
                 grants.check_step_credential(root, credential["credential_id"], consume=False)
             self.assertEqual(caught.exception.code, "credential_expired")
             fresh = self._credential(root, grant)
-            result = grants.check_step_credential(root, fresh["credential_id"], expect_task_id="task-1")
+            result = self._check(root, fresh["credential_id"], expect_task_id="task-1")
             self.assertTrue(result["credential"]["used"])
 
     def test_ai_budget_is_enforced_and_persisted(self):

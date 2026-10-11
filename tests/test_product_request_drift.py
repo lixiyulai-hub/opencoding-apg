@@ -41,7 +41,7 @@ class MidRequestFactTests(unittest.TestCase):
         self._tmp.cleanup()
 
     def _adopt_binding(self, choice="cli"):
-        payload = eval_response(choice=choice)
+        payload = eval_response(contract=_contract(), choice=choice)
         with mock.patch.dict(os.environ, {"LOCALAPPDATA": str(self.workspace / "appdata")}):
             aiconfig.save_config({"provider": "openai_compatible", "base_url": "https://x/v1",
                                   "api_key": "k", "model": "m"})

@@ -460,6 +460,20 @@ def evaluate_session(root: str | Path, session_id: str, *,
 def adopt_evaluation_plan(root: str | Path, session_id: str, *,
                           recommendation_override: Mapping[str, Any] | None = None,
                           extras: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """Serialize explicit adoption against session, fact and evaluation updates."""
+    project_root = _root_path(root)
+    try:
+        with session_write_lock(project_root):
+            return _adopt_evaluation_plan_locked(
+                project_root, session_id,
+                recommendation_override=recommendation_override, extras=extras)
+    except SessionLockError as exc:
+        raise ServiceError("session_lock_busy", "项目状态正在更新，请稍后重新采用计划") from exc
+
+
+def _adopt_evaluation_plan_locked(root: str | Path, session_id: str, *,
+                                  recommendation_override: Mapping[str, Any] | None = None,
+                                  extras: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Persist an explicit, revalidated adoption of the current evaluated plan.
 
     ``recommendation_override`` 传入已确认 AI 决策时，落盘的 recommendation/
@@ -475,6 +489,7 @@ def adopt_evaluation_plan(root: str | Path, session_id: str, *,
     mapping = _executor_mapping(evaluated)
     record = {
         "schema_version": SCHEMA_VERSION,
+        "root": str(project_root),
         "session_id": evaluated["session_id"],
         "revision": evaluated["revision"],
         "plan_digest": evaluated["adopted_plan_digest"],
@@ -497,6 +512,8 @@ def adopt_evaluation_plan(root: str | Path, session_id: str, *,
         "adopted_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
     if extras:
+        if set(extras).intersection(record):
+            raise ServiceError("adoption_reserved_fields", "附加说明不能覆盖计划身份、输入或校验结果")
         record.update({str(key): value for key, value in extras.items()})
     if not record["validated"]:
         raise ServiceError("evaluation_plan_invalid", "评估计划未通过校验，不能采用")

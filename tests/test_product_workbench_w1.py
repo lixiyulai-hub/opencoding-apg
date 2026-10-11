@@ -190,14 +190,17 @@ class SessionFlowTests(_Base):
         project = self.workspace / "家庭借还登记"
         view = _complete(project)
         sid = view["session"]["id"]
-        payload = eval_response(choice="cli")
+        payload = eval_response(contract=_contract(), choice="cli")
         aiconfig.save_config({"provider": "openai_compatible",
                               "base_url": "https://x/v1", "api_key": "k", "model": "m"})
         record = advisor.run_ai_evaluation(project, sid, FakeAdapter([payload]), run_id="t")
         revision = service.session_view(project, sid)["session"]["revision"]
         advisor.confirm_evaluation(project, sid, record["evaluation_id"],
                                    expected_revision=revision, accepted=True)
-        advisor.adopt_confirmed_evaluation(project, sid)
+        adopted = advisor.adopt_confirmed_evaluation(project, sid)["adoption"]
+        binding = {"session_id": sid, "evaluation_id": record["evaluation_id"],
+                   "plan_digest": adopted["plan_digest"],
+                   "contract_sha256": adopted["ai_binding"]["contract_sha256"]}
 
         class Adapter:
             real = True
@@ -217,7 +220,7 @@ class SessionFlowTests(_Base):
                                              "command": [], "reason": "替身:后端不可用"}):
             receipt = generic_run.run_generic_app(
                 project, "家庭借还登记", Adapter(), contract=contract,
-                session_id=sid, adoption_binding=None, run_id="gen-0000c6b00001",
+                session_id=sid, adoption_binding=binding, run_id="gen-0000c6b00001",
                 max_repair_rounds=0, acknowledged_unknown=True)
         self.assertEqual(receipt["status"], "blocked_execution")
 

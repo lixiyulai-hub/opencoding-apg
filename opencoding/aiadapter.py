@@ -801,7 +801,68 @@ class WorkBuddyGatewayAdapter:
         }
 
 
+CONNECTION_BUDGET_SCOPE = "connection-probe"
+
+
+def connection_budget_root(*, create: bool = False):
+    from . import aiconfig
+    from .safety import _reject_linked_ancestors
+
+    root = aiconfig.config_path().parent.absolute()
+    _reject_linked_ancestors(root)
+    if create:
+        root.mkdir(parents=True, exist_ok=True)
+        _reject_linked_ancestors(root)
+    return root
+
+
+def connection_budget_state() -> dict[str, Any]:
+    from . import request_budget
+
+    root = connection_budget_root()
+    state = request_budget.read(root, CONNECTION_BUDGET_SCOPE) if root.is_dir() else {}
+    return {key: state.get(key, default) for key, default in (
+        ("limit", 20), ("used", 0), ("remaining", 20),
+        ("window_limit", 3), ("window_seconds", 60),
+        ("window_remaining", 3), ("retry_after_seconds", 0))}
+
+
 def probe_connection(config: Mapping[str, Any], *, timeout_seconds: float = 15.0) -> dict[str, Any]:
+    """One explicit probe, with persistent capacity shared across all configurations."""
+    from . import request_budget
+
+    provider = config.get("provider")
+    if provider not in ("openai_compatible", "workbuddy_gateway"):
+        return {"state": "blocked", "reason": "未知 AI 提供方类型，无法探测"}
+    request_id = "req-" + uuid.uuid4().hex
+    run_id = "probe-" + uuid.uuid4().hex
+    try:
+        root = connection_budget_root(create=True)
+        reserved = request_budget.reserve(
+            root, CONNECTION_BUDGET_SCOPE, limit=20, window_limit=3, window_seconds=60,
+            request_id=request_id, run_id=run_id, task_id="connection-probe")
+    except (ValueError, OSError) as exc:
+        return {"state": "blocked", "code": getattr(exc, "code", "request_budget_unavailable"),
+                "reason": "连接测试未派发：" + sanitize_text(str(exc))[:200]}
+    try:
+        result = _probe_connection_once(config, timeout_seconds=timeout_seconds)
+    except Exception as exc:  # Configuration/transport setup failures also keep their reservation.
+        result = {"state": "unreachable", "reason": "探测未完成：" + type(exc).__name__}
+    outcome = "unknown" if result["state"] == "unreachable" else (
+        "succeeded" if result["state"] == "verified" else "failed")
+    try:
+        request_budget.finish(root, CONNECTION_BUDGET_SCOPE,
+                              reserved["reservation_id"], status=outcome)
+        budget = connection_budget_state()
+    except (ValueError, OSError):
+        return {"state": "blocked", "code": "request_budget_record_failed",
+                "request_id": request_id, "run_id": run_id,
+                "reason": "连接测试已尝试，但结果记录失败；额度保持已占用，请核查后再试"}
+    return {**result, "request_id": request_id, "run_id": run_id,
+            "reservation_id": reserved["reservation_id"], "budget": budget}
+
+
+def _probe_connection_once(config: Mapping[str, Any], *, timeout_seconds: float = 15.0) -> dict[str, Any]:
     """只探测服务或模型目录，不把 HTTP 响应等同于鉴权或生成成功。
 
     明确边界:

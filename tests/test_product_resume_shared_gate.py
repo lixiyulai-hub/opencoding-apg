@@ -67,7 +67,7 @@ class _Base(unittest.TestCase):
                 "reason": "测试替身:仅用于控制链,不运行真实候选"}
 
     def _adopt_binding(self):
-        payload = eval_response(choice="cli")
+        payload = eval_response(contract=_contract(), choice="cli")
         with mock.patch.dict(os.environ, {"LOCALAPPDATA": str(self.workspace / "appdata")}):
             aiconfig.save_config({"provider": "openai_compatible", "base_url": "https://x/v1",
                                   "api_key": "k", "model": "m"})
@@ -1088,7 +1088,7 @@ class NormalPathGrantGateTests(_Base):
         with mock.patch.dict(os.environ, {"LOCALAPPDATA": str(self.workspace / "appdata")}):
             aiconfig.save_config({"provider": "openai_compatible", "base_url": "https://x/v1",
                                   "api_key": "k", "model": "m"})
-            payload = eval_response(choice="cli")
+            payload = eval_response(contract=_contract(), choice="cli")
             record = advisor.run_ai_evaluation(self.project, self.sid,
                                                FakeAdapter([payload]), run_id="t")
         revision = service.session_view(self.project, self.sid)["session"]["revision"]

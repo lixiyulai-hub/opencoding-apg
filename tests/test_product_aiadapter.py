@@ -7,6 +7,8 @@ import unittest
 import unittest.mock
 import urllib.error
 import io
+import os
+import tempfile
 
 from opencoding.aiadapter import (
     ADAPTER_SCHEMA_VERSION,
@@ -342,6 +344,13 @@ class RealAdapterConfigTests(unittest.TestCase):
 
 
 class ProbeConnectionTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        isolated = unittest.mock.patch.dict(os.environ, {"LOCALAPPDATA": temporary.name})
+        isolated.start()
+        self.addCleanup(isolated.stop)
+
     class Response:
         def __init__(self, status, payload=b""):
             self.status = status

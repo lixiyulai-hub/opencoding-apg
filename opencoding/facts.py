@@ -16,6 +16,21 @@ from typing import Any, Mapping
 
 from .documents import validate_recommendation
 from .safety import _root_path, sanitize_text
+from .sessions import SessionLockError, session_write_lock, _ensure_metadata_root
+from functools import wraps
+
+def _fact_write_locked(function):
+    @wraps(function)
+    def locked(root, *args, **kwargs):
+        try:
+            project_root = _root_path(root)
+            _ensure_metadata_root(project_root)
+            with session_write_lock(project_root):
+                return function(root, *args, **kwargs)
+        except SessionLockError as exc:
+            raise FactError(exc.code, "项目状态正在更新，请稍后重试") from exc
+    return locked
+
 
 
 FACT_SCHEMA_VERSION = "1.0"
@@ -107,6 +122,7 @@ def _load_book(root: Path, session_id: str) -> dict[str, Any]:
     return {"schema_version": value["schema_version"], "session_id": session_id, "facts": [_validate_fact(item) for item in facts]}
 
 
+@_fact_write_locked
 def add_fact(
     root: str | Path,
     session_id: str,
@@ -162,6 +178,7 @@ def list_facts(root: str | Path, session_id: str, *, source_type: str | None = N
     return [dict(item) for item in facts]
 
 
+@_fact_write_locked
 def mark_fact_confirmed(root: str | Path, session_id: str, fact_id: str) -> dict[str, Any]:
     """用户确认一条事实（例如把合理假设升级为已确认事实）。"""
 

@@ -701,18 +701,75 @@ def _load_credential(root: Path, credential_id: str) -> dict[str, Any]:
     return credential
 
 
-@_serialized_store(write_flag="consume")
 def check_step_credential(
     root: str | Path,
     credential_id: str,
     *,
     expect_task_id: str | None = None,
+    expect_attempt: int | None = None,
+    expect_action_kind: str | None = None,
     expect_action_digest: str | None = None,
+    expect_input_digest: str | None = None,
+    expect_targets: list[str] | None = None,
+    expect_grant_id: str | None = None,
     consume: bool = True,
 ) -> dict[str, Any]:
-    """应用前校验凭据：一次性使用、绑定任务、过期与撤销均拒绝。"""
+    """消费必须绑定实际操作的六项信息；旧调用仅可做 consume=False 只读检查。
+
+    预期值应来自调用方正在执行的操作，不能从待检凭据复制。拒绝不会创建
+    旧库的锁或改写记录；通过只读预检后，在同一个写锁内重新核验并消费。
+    """
+
+    expected = {
+        "task_id": expect_task_id, "attempt": expect_attempt,
+        "action_kind": expect_action_kind, "action_digest": expect_action_digest,
+        "input_digest": expect_input_digest, "targets": expect_targets,
+    }
+    if not isinstance(consume, bool):
+        raise GrantError("credential_binding_invalid", "consume 必须是布尔值")
+    if consume and any(value is None for value in expected.values()):
+        raise GrantError("credential_binding_required", "消费凭据必须提供任务、尝试、动作类别、动作摘要、输入摘要与目标")
+    if expect_grant_id is not None:
+        expected["grant_id"] = expect_grant_id
+    for field, value in expected.items():
+        if value is None:
+            continue
+        valid = True
+        if field == "attempt":
+            valid = isinstance(value, int) and not isinstance(value, bool) and value >= 1
+        elif field == "targets":
+            if not isinstance(value, (list, tuple)):
+                valid = False
+            else:
+                try:
+                    expected[field] = sorted({_norm_path_prefix(item) for item in value})
+                except (TypeError, ValueError):
+                    valid = False
+        elif field == "task_id":
+            valid = isinstance(value, str) and bool(_TASK_ID.fullmatch(value))
+        elif field == "grant_id":
+            valid = isinstance(value, str) and bool(_GRANT_ID.fullmatch(value))
+        elif field == "action_kind":
+            valid = isinstance(value, str) and value in ACTION_KINDS
+        else:
+            valid = isinstance(value, str) and bool(value)
+        if not valid:
+            raise GrantError("credential_binding_invalid", "凭据预期绑定无效：" + field)
 
     project_root = _root_path(root)
+    with _grant_store_lock(project_root, create=False):
+        checked = _check_step_credential_locked(project_root, credential_id, expected, consume=False)
+    if not consume:
+        return checked
+    with _grant_store_lock(project_root, create=True):
+        return _check_step_credential_locked(project_root, credential_id, expected, consume=True)
+
+
+def _check_step_credential_locked(
+    project_root: Path, credential_id: str, expected: Mapping[str, Any], *, consume: bool,
+) -> dict[str, Any]:
+    """调用者持有授权状态锁；正式消费前再次核对，避免预检与消费之间漂移。"""
+
     credential = _load_credential(project_root, credential_id)
     if credential["root"] != str(project_root):
         raise GrantError("credential_root_mismatch", "凭据根目录不匹配")
@@ -729,10 +786,13 @@ def check_step_credential(
         for item in _journal_entries(project_root, credential["grant_id"]):
             if item.get("kind") == "credential_consumed" and item.get("credential_id") == credential_id:
                 raise GrantError("credential_journal_mismatch", "凭据使用标记与消费日志不一致，疑似被重置；拒绝使用")
-    if expect_task_id is not None and credential["task_id"] != expect_task_id:
-        raise GrantError("credential_task_mismatch", "凭据绑定的任务不匹配")
-    if expect_action_digest is not None and credential["action_digest"] != expect_action_digest:
-        raise GrantError("credential_action_mismatch", "凭据动作摘要不匹配")
+    codes = {"task_id": "task", "attempt": "attempt", "action_kind": "kind",
+             "action_digest": "action", "input_digest": "input", "targets": "targets",
+             "grant_id": "grant"}
+    for field, value in expected.items():
+        if value is not None and (credential[field] != value or
+                                  (field == "attempt" and type(credential[field]) is not int)):
+            raise GrantError("credential_" + codes[field] + "_mismatch", "凭据绑定不匹配：" + field)
     if consume:
         _journal_append(project_root, credential["grant_id"], {
             "kind": "credential_consumed",

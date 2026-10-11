@@ -204,7 +204,7 @@ class GenericRunV3Tests(unittest.TestCase):
         contract = generic_run._validate_contract(_contract())
         receipt = generic_run.run_generic_app(self.root, "目标", adapter,
                                               contract=contract, run_id="gen-p01regre0001",
-                                              max_repair_rounds=0)
+                                              max_repair_rounds=0, _internal_test_mode=True)
         self.assertEqual((self.root / "app" / "main.py").read_text(encoding="utf-8"), "ORIGINAL")
         self.assertEqual((self.root / "control.txt").read_text(encoding="utf-8"), "CONTROL")
         self.assertIn(receipt["status"], ("exhausted", "failed"))
@@ -216,7 +216,7 @@ class GenericRunV3Tests(unittest.TestCase):
         adapter = MockAdapter(responder=self._responder(files))
         contract = generic_run._validate_contract(_contract())
         receipt = generic_run.run_generic_app(self.root, "家庭借还登记", adapter,
-                                              contract=contract, run_id="gen-blockv30001")
+                                              contract=contract, run_id="gen-blockv30001", _internal_test_mode=True)
         self.assertEqual(receipt["status"], "blocked_execution")
         self.assertFalse((self.root / "app" / "main.py").exists())
         self.assertTrue(receipt["attempts"][0].get("candidate_preserved"))
@@ -234,7 +234,7 @@ class GenericRunV3Tests(unittest.TestCase):
         adapter = TimeoutAdapter()
         contract = generic_run._validate_contract(_contract())
         receipt = generic_run.run_generic_app(self.root, "x", adapter, contract=contract,
-                                              run_id="gen-p04budget0001", max_repair_rounds=1)
+                                              run_id="gen-p04budget0001", max_repair_rounds=1, _internal_test_mode=True)
         self.assertEqual(receipt["ai_requests_dispatched"], 1, "传输失败即停,不转修复不重发")
         self.assertEqual(receipt["status"], "failed_transport", "传输失败不得伪装为业务修复")
         self.assertEqual(receipt["current_request"]["effect"], "unknown")
@@ -255,7 +255,7 @@ class GenericRunV3Tests(unittest.TestCase):
             barrier.wait()
             results.append(generic_run.run_generic_app(
                 self.root, "x", adapter, contract=generic_run._validate_contract(_contract()),
-                run_id="gen-p06conc0001", max_repair_rounds=0))
+                run_id="gen-p06conc0001", max_repair_rounds=0, _internal_test_mode=True))
 
         threads = [threading.Thread(target=worker) for _ in range(2)]
         for th in threads:
@@ -275,7 +275,7 @@ class GenericRunV3Tests(unittest.TestCase):
 
         adapter = MockAdapter(responder=respond)
         receipt = generic_run.run_generic_app(self.root, "x", adapter, contract=generic_run._validate_contract(_contract()),
-                                              run_id="gen-c4fce1000001", max_repair_rounds=0)
+                                              run_id="gen-c4fce1000001", max_repair_rounds=0, _internal_test_mode=True)
         self.assertEqual(receipt["status"], "cancelled")
         self.assertNotIn("transaction_id", receipt)
 
@@ -439,7 +439,7 @@ class StageSafetyTests(unittest.TestCase):
         _os.utime(lp, (old_m, old_m))
         result = generic_run.run_generic_app(
             self.root, "x", MockAdapter(responder=lambda *a, **k: "{}"),
-            contract=generic_run._validate_contract(_contract()), run_id="gen-newrun000001")
+            contract=generic_run._validate_contract(_contract()), run_id="gen-newrun000001", _internal_test_mode=True)
         self.assertEqual(result["status"], "already_running")
         self.assertTrue(lp.exists(), "存活 owner 的锁不得被删除")
 
@@ -461,11 +461,11 @@ class V5GateTests(unittest.TestCase):
         adapter = MockAdapter(responder=lambda *a, **k: json.dumps({"summary": "s", "files": []}))
         contract = generic_run._validate_contract(_contract())
         result = generic_run.run_generic_app(self.root, "x", adapter, contract=contract,
-                                             run_id="gen-0ffe0c000002")
+                                             run_id="gen-0ffe0c000002", _internal_test_mode=True)
         self.assertEqual(result["status"], "pending_verification", result)
         generic_run.acknowledge_unknown(self.root, run_id, "已知悉不确定性,发起新尝试")
         result2 = generic_run.run_generic_app(self.root, "x", adapter, contract=contract,
-                                              run_id="gen-0ffe0c000002")
+                                              run_id="gen-0ffe0c000002", _internal_test_mode=True)
         self.assertNotEqual(result2["status"], "pending_verification")
 
     def test_r05_access_denied_owner_not_dead(self):

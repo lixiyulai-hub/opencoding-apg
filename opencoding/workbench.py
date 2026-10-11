@@ -25,7 +25,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-from . import advisor, aiconfig, service
+from . import advisor, aiconfig, request_budget, service
 
 MAX_BODY_BYTES = 512 * 1024
 
@@ -111,7 +111,7 @@ def _check_project_paths(root: Path) -> None:
     marker = root / ".opencoding"
     _check_directory(marker)
     for name in ("sessions", "adoptions", "evaluations", "generic_runs", "grants",
-                 "transactions", "frozen_checks", "task-budgets", "dev-runs"):
+                 "transactions", "frozen_checks", "task-budgets", "request-budgets", "dev-runs"):
         _check_directory(marker / name)
     _check_regular_file(marker / "project.json")
 
@@ -131,6 +131,8 @@ def _session_run(root: Path, session_id: str, run_id: str, *,
     if (not isinstance(doc, dict) or doc.get("run_id") != run_id
             or doc.get("session_id") != session_id):
         raise WorkbenchError(409, "run_session_mismatch", "运行不属于当前会话")
+    if doc.get("execution_mode") not in (None, "production"):
+        raise WorkbenchError(409, "internal_test_receipt", "内部测试回执不能作为正式项目运行操作")
     return doc
 
 
@@ -358,6 +360,17 @@ class Workbench:
                     "note": "已保存(未测试):点击“测试连接”才会真正发起一次外部请求"}
         if path == "/api/ai/status" and method == "GET":
             return {"ai": aiconfig.describe_status(), "test": aiconfig.load_last_test()}
+        if path == "/api/ai/budget" and method == "GET":
+            from .aiadapter import connection_budget_state
+
+            return connection_budget_state()
+        if path == "/api/ai/extend-budget" and method == "POST":
+            from .aiadapter import CONNECTION_BUDGET_SCOPE, connection_budget_root, connection_budget_state
+
+            request_budget.extend(connection_budget_root(), CONNECTION_BUDGET_SCOPE,
+                                  additional=body.get("amount"), confirmed=body.get("confirm"),
+                                  reason=body.get("reason"), issued_by="工作台用户明确追加连接测试额度")
+            return connection_budget_state()
         if path == "/api/ai/test" and method == "POST":
             # W1:真实连通性测试——只有用户显式点击才发起一次外部请求。
             # 只探测服务/模型目录，不把 HTTP 响应当成鉴权或生成成功。
@@ -436,6 +449,9 @@ class Workbench:
                                                                     session_id=sid)}
                 except GenericRunError as exc:
                     raise WorkbenchError(400, exc.code, str(exc)) from exc
+            if len(rest) == 3 and rest[2] == "evaluation-budget":
+                service.session_view(root, sid)
+                return request_budget.read(root, "evaluation:" + sid)
             if len(rest) != 2:
                 raise WorkbenchError(405, "method_not_allowed", "该会话动作不支持 GET")
             view = service.session_view(root, sid)
@@ -449,6 +465,12 @@ class Workbench:
         if len(rest) >= 2 and rest[0] == "session" and method == "POST":
             sid = rest[1]
             action = rest[2] if len(rest) > 2 else ""
+            if action == "extend-evaluation-budget":
+                service.session_view(root, sid)
+                return request_budget.extend(
+                    root, "evaluation:" + sid, additional=body.get("amount"),
+                    confirmed=body.get("confirm"), reason=body.get("reason"),
+                    issued_by="工作台用户明确追加本会话评估额度")
             if action == "answer":
                 result = service.submit_answer(
                     root, sid, int(body.get("revision", 0)),
@@ -503,11 +525,6 @@ class Workbench:
                                            "status": pending.get("status"),
                                            "failure": pending.get("failure")},
                             "note": "此前有已派发但结果未知的请求;请在页面确认后再发起新尝试"}
-                config, err = aiconfig.load_config()
-                if config is None:
-                    raise WorkbenchError(400, "ai_not_configured", err or "请先完成 AI 接入向导")
-                from .aiadapter import adapter_from_config
-
                 # 派发前置:必须存在已确认评估(含实现契约)
                 confirmed = next((e for e in advisor.list_evaluations(root, sid)
                                   if e.get("status") == "confirmed"), None)
@@ -582,6 +599,11 @@ class Workbench:
                             "resume_path": f"/api/project/{name}/session/{sid}/resume",
                             "how_to_regenerate": {"mode": "regenerate"},
                         }
+                config, err = aiconfig.load_config()
+                if config is None:
+                    raise WorkbenchError(400, "ai_not_configured", err or "请先完成 AI 接入向导")
+                from .aiadapter import adapter_from_config
+
                 run_id = "gen-" + uuid.uuid4().hex[:12]
                 adapter = adapter_from_config(config)
 
@@ -766,6 +788,7 @@ ul.history{margin:4px 0;padding-left:18px;font-size:13px}
    <div id="questions"></div>
    <div class="row" style="margin-top:12px">
     <button id="btn-eval" onclick="runEvaluation()">🤖 让 AI 评估方案</button>
+    <button class="sec" onclick="requestBudget('evaluation')">查看/追加评估额度</button>
     <span class="mut" id="eval-hint">回答完问题后,让真实 AI 给出有依据的首选方案</span>
    </div>
    <div id="resume-area" style="margin-top:12px"></div>
@@ -816,9 +839,11 @@ ul.history{margin:4px 0;padding-left:18px;font-size:13px}
  <div class="row" style="margin-top:12px">
   <button onclick="saveWizard()">保存配置</button>
   <button class="sec" onclick="testConnection()">测试连接(会发起一次真实请求)</button>
+  <button class="sec" onclick="requestBudget('connection')">查看/追加连接测试额度</button>
   <button class="sec" onclick="showView('view-home')">返回</button></div>
  <p class="mut"><b>保存</b>只把配置写到本机,不等于能连上。<b>测试连接</b>才会真正访问外部服务一次,
-  并且只验证"地址可达、凭据被接受",不消耗生成额度;生成能力要等第一次真实评估才算验证过。</p>
+  只检查服务响应或模型目录，不能证明模型生成可用。默认连接测试共 20 次、每分钟最多 3 次；
+  每个会话评估共 20 次、每分钟最多 5 次。失败和效果未知也计数，追加总次数不会解除频率限制。</p>
 </div>
 </main>
 <div id="toast"></div>
@@ -868,7 +893,8 @@ async function openProject(name){ST.project=name;$('#proj-title').textContent='�
 async function newSession(){const goal=prompt('用大白话说清楚你想做什么:');
  if(!goal)return;const r=await api('/api/project/'+encodeURIComponent(ST.project)+'/session',{method:'POST',body:{goal}});
  openSession(r.session.id)}
-async function openSession(sid){ST.session=sid;const v=await api('/api/project/'+encodeURIComponent(ST.project)+'/session/'+sid);
+async function openSession(sid){ST.session=sid;ST.preview=null;ST.approval=null;ST.evaluation=null;
+ $('#eval-card').classList.add('hide');const v=await api('/api/project/'+encodeURIComponent(ST.project)+'/session/'+sid);
  ST.revision=v.session.revision;$('#sess-goal').textContent='🎯 '+v.session.goal;
  $('#sess-status').textContent='状态:'+(v.status||'-')+' · 版本 r'+ST.revision;
  const q=$('#questions');q.innerHTML='';
@@ -917,7 +943,8 @@ async function answer(qid){const val=$('#ans-'+qid).value.trim();if(!val)return 
  const r=await api(`/api/project/${encodeURIComponent(ST.project)}/session/${ST.session}/answer`,
   {method:'POST',body:{question_id:qid,answer:val,revision:ST.revision}});
  ST.revision=r.session.revision;toast('已记录');openSession(ST.session)}
-function renderEvals(evs){if(!evs.length)return;const e=evs[0];ST.evaluation=e;
+function renderEvals(evs){if(!evs.length){ST.evaluation=null;$('#eval-card').classList.add('hide');
+ $('#eval-body').innerHTML='';$('#eval-meta').textContent='';return}const e=evs[0];ST.evaluation=e;
  $('#eval-card').classList.remove('hide');
  $('#eval-meta').textContent=`${e.provider}/${e.model} · ${e.real?'真实调用':'模拟(测试)'} · ${e.status==='pending_confirmation'?'待确认':e.status}`;
  $('#eval-body').innerHTML=`<p><b>首选平台:</b>${esc(e.structured.choice)}</p><p>${esc(e.structured.summary||'')}</p>
@@ -933,8 +960,9 @@ function renderRec(r){if(!r||!Object.keys(r).length)return'';
   ${r.clarifying_questions&&r.clarifying_questions.length?'<b>想问你的问题:</b><ul class="history">'+r.clarifying_questions.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':''}
  </details>`}
 async function runEvaluation(){$('#btn-eval').disabled=true;$('#eval-hint').textContent='正在调用真实 AI 评估,约需 30-90 秒…';
- try{const r=await api(`/api/project/${encodeURIComponent(ST.project)}/session/${ST.session}/evaluate`,{method:'POST',body:{}});
-  toast('评估完成');renderEvals([r])}catch(e){console.error(e)}finally{$('#btn-eval').disabled=false;
+ const project=ST.project,session=ST.session;
+ try{const r=await api(`/api/project/${encodeURIComponent(project)}/session/${session}/evaluate`,{method:'POST',body:{}});
+  if(ST.project===project&&ST.session===session){toast('评估完成');renderEvals([r])}}catch(e){console.error(e)}finally{$('#btn-eval').disabled=false;
   $('#eval-hint').textContent='回答完问题后,让真实 AI 给出有依据的首选方案'}}
 async function confirmEval(ok){const r=await api(`/api/project/${encodeURIComponent(ST.project)}/session/${ST.session}/confirm-evaluation`,
   {method:'POST',body:{evaluation_id:ST.evaluation.evaluation_id,accepted:ok,revision:ST.revision}});
@@ -944,6 +972,17 @@ async function confirmEval(ok){const r=await api(`/api/project/${encodeURICompon
 function planBlock(t,d){return `<details open><summary>${t}</summary><pre>${d.replace(/</g,'&lt;')}</pre></details>`}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function jsArg(s){return esc(JSON.stringify(String(s==null?'':s)))}
+async function requestBudget(kind){const base=kind==='connection'?'/api/ai':
+ `/api/project/${encodeURIComponent(ST.project)}/session/${ST.session}`;
+ const statePath=kind==='connection'?'/budget':'/evaluation-budget';
+ const extendPath=kind==='connection'?'/extend-budget':'/extend-evaluation-budget';
+ try{const b=await api(base+statePath);if(!b.used)return toast('尚未使用请求额度，默认可用 20 次');
+ const amount=prompt(`已使用 ${b.used} 次，剩余 ${b.remaining} 次。冷却约 ${b.retry_after_seconds||0} 秒。\n要追加多少次（1-100，取消则不变）？`);
+ if(amount===null)return;const n=Number(amount);if(!Number.isInteger(n)||n<1||n>100)return toast('请输入 1-100 的整数');
+ const reason=prompt('追加的原因是什么？');if(!reason||!reason.trim())return;
+ if(!confirm('确认追加 '+n+' 次请求额度？后续实际调用可能产生服务费用，频率限制保持不变。'))return;
+ await api(base+extendPath,{method:'POST',body:{amount:n,reason:reason.trim(),confirm:true}});toast('已记录追加额度')
+ }catch(e){console.error(e)}}
 async function doAdopt(){const r=await api(`/api/project/${encodeURIComponent(ST.project)}/session/${ST.session}/adopt`,{method:'POST',body:{}});
  $('#plan-area').innerHTML=planBlock('已采用评估计划',JSON.stringify(r,null,1));toast('已采用,可以生成文档预览')}
 async function doPreview(){const r=await api(`/api/project/${encodeURIComponent(ST.project)}/session/${ST.session}/preview`);
@@ -1205,6 +1244,9 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_json(exc.status, {"code": exc.code, "message": exc.message})
         except service.ServiceError as exc:
             self._send_json(400, {"code": getattr(exc, "code", "service_error"), "message": str(exc)})
+        except request_budget.RequestBudgetError as exc:
+            status = 429 if exc.code in ("request_budget_exhausted", "request_budget_rate_limited") else 400
+            self._send_json(status, {"code": exc.code, "message": str(exc)})
         except ValueError as exc:
             self._send_json(400, {"code": "invalid_request", "message": str(exc)})
         except Exception as exc:  # noqa: BLE001 - 统一错误出口,不泄露内部栈

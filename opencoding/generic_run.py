@@ -38,6 +38,7 @@ from .autorun import (  # 复用既有受控原语(与借还链同一实现)
     _stage_and_verify,
 )
 from .safety import canonical_json, sanitize_text, sha256_bytes
+from .sessions import SessionLockError, session_write_lock
 
 GENERIC_RUN_SCHEMA_VERSION = 3
 APP_DIR = "app"
@@ -68,7 +69,7 @@ def _runs_dir(root: Path) -> Path:
 # 这一层访问,不允许"每加一个目录只在外层补一个名字"。
 _RUNTIME_STATE_SUBDIRS = (
     "generic_runs", "frozen_checks", "grants", "transactions",
-    "adoptions", "evaluations", "sessions", "dev-runs", "task-budgets",
+    "adoptions", "evaluations", "sessions", "dev-runs", "task-budgets", "request-budgets",
 )
 
 
@@ -1093,6 +1094,7 @@ def _write_frozen_checks(root: Path, run_id: str, goal: str, contract: dict[str,
         "checker_sha256": sha256_bytes(checker.read_bytes()),
         "checker_name": checker_name,
         "runtime": runtime,
+        "data_dir": contract["data_dir"],
         "controller_note": "冻结于候选生成之前;候选白名单=契约 files;检查区不可写。",
     }
     (fdir / "frozen_record.json").write_text(json.dumps(record, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -1172,21 +1174,25 @@ def _repair_messages(goal: str, contract: dict[str, Any], failures: list[str],
 def _consume_ai_budget(project: Path, grant: dict[str, Any], attempt: int,
                        input_digest: str) -> None:
     """派发前预记并消耗一次 ai_request 预算(失败/超时同样计入)。"""
+    action_digest = sha256_bytes(canonical_json(
+        {"type": "ai_request", "task_id": TASK_ID, "attempt": attempt}))
     credential = grants.issue_step_credential(
         project, grant["grant_id"], task_id=TASK_ID, attempt=attempt,
         action_kind="ai_request", targets=[],
-        action_digest=sha256_bytes(canonical_json(
-            {"type": "ai_request", "task_id": TASK_ID, "attempt": attempt})),
-        input_digest=input_digest or sha256_bytes(canonical_json({"attempt": attempt})),
+        action_digest=action_digest, input_digest=input_digest,
     )
     grants.check_step_credential(project, credential["credential_id"],
-                                 expect_task_id=TASK_ID, consume=True)
+                                 expect_grant_id=grant["grant_id"], expect_task_id=TASK_ID,
+                                 expect_attempt=attempt, expect_action_kind="ai_request",
+                                 expect_targets=[], expect_action_digest=action_digest,
+                                 expect_input_digest=input_digest, consume=True)
 
 
 # ------------------------------------------------------- 验证器(CP1-04)
 
 def _make_verifier(project: Path, run_id: str,
-                   data_dir: str = "app/data") -> Callable[[Path], tuple[bool, list[str]]]:
+                   data_dir: str = "app/data", *,
+                   expected_record: Mapping[str, Any] | None = None) -> Callable[[Path], tuple[bool, list[str]]]:
     """验证器:复制前/后核对冻结字节;先跑冻结检查器(数据驱动),后跑辅助 selftest。
 
     data_dir 传给执行后端(Docker 模式下唯一可写业务区)。
@@ -1196,6 +1202,8 @@ def _make_verifier(project: Path, run_id: str,
         evidence: list[str] = []
         fdir_src = project / ".opencoding" / "frozen_checks" / run_id
         record = json.loads((fdir_src / "frozen_record.json").read_text(encoding="utf-8"))
+        if expected_record is not None and record != expected_record:
+            return False, ["frozen_receipt_mismatch"]
         runtime = str(record.get("runtime") or "python-stdlib")
         checker_name = str(record.get("checker_name")
                            or _RUNTIME_CHECKERS.get(runtime, ("app_contract_v2.py", "python"))[0])
@@ -1657,8 +1665,13 @@ def resumable_candidate(root: str | Path, session_id: str | None) -> dict[str, A
         if candidate is None:
             # C6-01:身份核对未通过的候选不进接续预览;精确原因在真正接续时报出。
             continue
-        binding = doc.get("ai_binding") if isinstance(doc.get("ai_binding"), dict) else None
-        drift = _input_drift_during_request(project, binding)
+        if doc.get("execution_mode") == "internal_test":
+            continue
+        try:
+            binding = _verified_receipt_adoption(project, doc)
+            drift = _input_drift_during_request(project, binding)
+        except GenericRunError as exc:
+            drift = str(exc)
         current = {"run_id": doc.get("run_id"), "attempt": candidate["attempt"],
                    "status": doc.get("status"), "candidate_dir": candidate["candidate_dir"],
                    "files": [item["path"] for item in candidate["files"]],
@@ -1690,6 +1703,7 @@ def resume_saved_candidate(root: str | Path, run_id: str) -> dict[str, Any]:
     receipt = load_receipt(project, run_id)
     if receipt is None:
         raise GenericRunError("run_not_found", "运行不存在:" + str(run_id))
+    binding = _verified_receipt_adoption(project, receipt)
     if receipt.get("transaction_id"):
         raise GenericRunError("candidate_already_committed", "该运行的候选已提交,不可重复接续")
     candidate, reject = _pending_candidate(project, run_id, receipt)
@@ -1698,8 +1712,6 @@ def resume_saved_candidate(root: str | Path, run_id: str) -> dict[str, Any]:
             raise GenericRunError(reject, _CANDIDATE_REJECT_TEXT.get(
                 reject, "候选本体校验未通过:" + reject))
         raise GenericRunError("resume_material_missing", "没有可接续的候选本体:该运行未保存候选")
-    binding = receipt.get("ai_binding") if isinstance(receipt.get("ai_binding"), dict) else None
-    _verify_adoption_binding(project, binding)
     drift = _input_drift_during_request(project, binding)
     if drift:
         raise GenericRunError("adoption_input_drift", "接" + drift + ";旧候选不可接续,请重新评估采用")
@@ -1772,6 +1784,7 @@ def describe_resume_confirmation(root: str | Path, run_id: str, *,
     receipt = load_receipt(project, run_id)
     if receipt is None:
         raise GenericRunError("run_not_found", "运行不存在:" + str(run_id))
+    binding = _verified_receipt_adoption(project, receipt)
     if receipt.get("transaction_id"):
         raise GenericRunError("candidate_already_committed",
                               "该运行的候选已提交,无需新批次确认")
@@ -1785,8 +1798,6 @@ def describe_resume_confirmation(root: str | Path, run_id: str, *,
                 reject, "候选本体校验未通过:" + reject))
         raise GenericRunError("resume_material_missing",
                               "没有可接续的候选本体:该运行未保存候选")
-    binding = receipt.get("ai_binding") if isinstance(receipt.get("ai_binding"), dict) else None
-    _verify_adoption_binding(project, binding)
     drift = _input_drift_during_request(project, binding)
     if drift:
         raise GenericRunError("adoption_input_drift",
@@ -1947,9 +1958,7 @@ def _reconfirm_confirmation_basis(project: Path, run_id: str, session_id: str | 
             != preview["candidate"]["content_sha256"]):
         raise GenericRunError("confirmation_state_changed",
                               "确认过程中候选已变化;本次确认取消,请刷新预览后重新确认")
-    recheck_binding = (recheck.get("ai_binding")
-                       if isinstance(recheck.get("ai_binding"), dict) else None)
-    _verify_adoption_binding(project, recheck_binding)
+    recheck_binding = _verified_receipt_adoption(project, recheck)
     recheck_drift = _input_drift_during_request(project, recheck_binding)
     if recheck_drift:
         raise GenericRunError("adoption_input_drift",
@@ -2465,6 +2474,9 @@ def _resume_grant_for_resume(project: Path, receipt: Mapping[str, Any],
 
 def _resume_inner(project: Path, receipt: dict[str, Any], candidate: Mapping[str, Any],
                   binding: dict[str, Any] | None) -> dict[str, Any]:
+    contract = _verify_adoption_binding(project, binding)
+    if contract is None:
+        raise GenericRunError("adoption_binding_required", "接续需要当前已确认采用契约")
     run_id = str(receipt["run_id"])
     outputs = sorted({item["path"] for item in candidate["files"]}) or \
         list((receipt.get("preimage_at_dispatch") or {}).keys())
@@ -2529,8 +2541,8 @@ def _resume_inner(project: Path, receipt: dict[str, Any], candidate: Mapping[str
 
     ok, evidence, _digests = _stage_and_verify(
         project, grant, task, candidate["files"], run_id, attempt,
-        _make_verifier(project, run_id, str((receipt.get("frozen_checks") or {}).get(
-            "data_dir", "app/data"))))
+        _make_verifier(project, run_id, contract["data_dir"],
+                       expected_record=receipt["frozen_checks"]))
     attempt_record["executed"] = True
     attempt_record["verified"] = ok
     attempt_record["evidence"] = evidence
@@ -2600,33 +2612,126 @@ def _input_drift_during_request(project: Path, binding: dict[str, Any] | None) -
     return None
 
 
-def _verify_adoption_binding(project: Path, binding: dict[str, Any] | None) -> None:
-    """R07:采用绑定复核——生成开始与提交前各一次。
+def _verified_receipt_adoption(project: Path, receipt: Mapping[str, Any]) -> dict[str, Any]:
+    """正式恢复和续批次不可借旧回执绕过采用；内部夹具不升级为正式运行。"""
+    if receipt.get("execution_mode") not in (None, "production"):
+        raise GenericRunError("internal_test_receipt", "内部测试回执不能进入正式接续或新批次确认")
+    binding = receipt.get("ai_binding")
+    if not isinstance(binding, dict) or not binding:
+        raise GenericRunError("adoption_binding_required", "接续回执缺少采用绑定；请重新评估并生成")
+    if receipt.get("session_id") != binding.get("session_id"):
+        raise GenericRunError("adoption_session_mismatch", "接续回执的会话与采用绑定不一致")
+    if receipt.get("adopted_plan_digest") != binding.get("plan_digest"):
+        raise GenericRunError("adoption_binding_drifted", "接续回执的计划摘要与采用绑定不一致")
+    contract = _verify_adoption_binding(project, binding)
+    _verify_frozen_receipt(project, receipt, contract)
+    return binding
 
-    要求当前采用记录仍存在,且 ai_binding(evaluation_id/contract_sha256/plan_digest)
-    与派发时传入完全一致;确认后的会话修订变化、重新评估、重新采用都会导致不一致 → 拒绝。
-    """
-    if not binding:
-        return  # 非工作台链路(如 CLI 直调)不强制;工作台路由必须传
-    sid = str(binding.get("session_id") or "")
-    if not sid or any(ch in sid for ch in "/\\:*?\"<>|"):
-        raise GenericRunError("adoption_binding_invalid", "采用绑定的会话标识无效")
-    path = project / ".opencoding" / "adoptions" / (sid + ".json")
-    if not path.is_file():
-        raise GenericRunError("adoption_binding_missing", "采用记录已不存在;请重新评估并采用")
+
+def _verify_frozen_receipt(project: Path, receipt: Mapping[str, Any], contract: Mapping[str, Any]) -> None:
+    """冻结材料必须同时匹配原回执承诺、运行身份及当前权威契约，且只读。"""
+    from .safety import _reject_linked_ancestors
+
+    run_id = receipt.get("run_id")
+    if not isinstance(run_id, str) or not re.fullmatch(r"gen-[0-9a-f]{12}", run_id):
+        raise GenericRunError("frozen_binding_invalid", "冻结材料的运行身份无效")
+    frozen_dir = project / ".opencoding" / "frozen_checks" / run_id
+
+    def read_bytes(path):
+        _reject_linked_ancestors(path)
+        if not path.is_file() or path.stat().st_nlink != 1:
+            raise ValueError("unsafe frozen file")
+        return path.read_bytes()
+
     try:
-        doc = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        raise GenericRunError("adoption_binding_missing", "采用记录不可读:" + str(exc)) from exc
-    ai = doc.get("ai_binding") or {}
+        promised = receipt.get("frozen_checks")
+        record = json.loads(read_bytes(frozen_dir / "frozen_record.json"))
+        if not isinstance(promised, dict) or record != promised:
+            raise ValueError("frozen receipt promise mismatch")
+        runtime = contract["runtime"]
+        checker_name = _RUNTIME_CHECKERS[runtime][0]
+        if (record.get("run_id") != run_id or record.get("runtime") != runtime
+                or record.get("checker_name") != checker_name
+                or record.get("data_dir", contract["data_dir"]) != contract["data_dir"]):
+            raise ValueError("frozen identity mismatch")
+        raw_spec = read_bytes(frozen_dir / "spec.json")
+        if (sha256_bytes(raw_spec) != record.get("spec_sha256")
+                or sha256_bytes(read_bytes(frozen_dir / checker_name)) != record.get("checker_sha256")):
+            raise ValueError("frozen digest mismatch")
+        spec = json.loads(raw_spec)
+        expected = _frozen_check_spec(run_id, receipt.get("goal"), dict(contract))
+        expected["frozen_at"] = record.get("frozen_at")
+        if spec != expected:
+            raise ValueError("frozen contract mismatch")
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        raise GenericRunError("frozen_binding_mismatch", "冻结验收材料与原回执或采用契约不一致，拒绝接续") from exc
+
+
+def _verify_adoption_binding(project: Path, binding: dict[str, Any] | None) -> dict[str, Any] | None:
+    """核对项目、会话、已确认评估和采用摘要；返回权威规范化执行契约。
+
+    无绑定仅供显式内部夹具的控制闸使用；正式入口在任何状态写入前拒绝它。
+    """
+    if binding is None:
+        return None
+    if not isinstance(binding, dict):
+        raise GenericRunError("adoption_binding_invalid", "采用绑定必须是对象")
+    sid = binding.get("session_id")
+    if not isinstance(sid, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", sid):
+        raise GenericRunError("adoption_binding_invalid", "采用绑定的会话标识无效")
+    from .safety import _reject_linked_ancestors
+
+    def read_record(path: Path) -> dict[str, Any]:
+        try:
+            _reject_linked_ancestors(path)
+            if path.stat().st_nlink != 1:
+                raise ValueError("linked state file")
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(doc, dict):
+                raise ValueError("record must be an object")
+            return doc
+        except FileNotFoundError as exc:
+            message = "采用记录已不存在" if path.parent.name == "adoptions" else "评估记录已不存在"
+            raise GenericRunError("adoption_binding_missing", message + "；请重新评估并采用") from exc
+        except (OSError, ValueError) as exc:
+            raise GenericRunError("adoption_binding_missing", "采用或评估记录不可安全读取；请重新评估并采用") from exc
+
+    doc = read_record(project / ".opencoding" / "adoptions" / (sid + ".json"))
+    root = str(project.resolve(strict=True))
+    if doc.get("root") != root or binding.get("root", root) != root:
+        raise GenericRunError("adoption_root_mismatch", "采用记录未绑定当前项目；请在本项目重新采用")
+    if doc.get("session_id") != sid or doc.get("validated") is not True:
+        raise GenericRunError("adoption_binding_invalid", "采用记录会话或验证状态无效")
+    ai = doc.get("ai_binding")
+    source = doc.get("plan_source")
+    if (not isinstance(ai, dict) or not isinstance(source, dict)
+            or source.get("kind") != "confirmed_ai_evaluation"):
+        raise GenericRunError("adoption_binding_invalid", "正式执行需要已确认 AI 评估派生的采用计划")
     for key in ("evaluation_id", "contract_sha256"):
-        if str(ai.get(key) or "") != str(binding.get(key) or ""):
-            raise GenericRunError(
-                "adoption_binding_drifted",
-                "采用绑定已变化(" + key + ");请基于当前已确认评估重新采用后再生成")
-    if str(doc.get("plan_digest") or "") != str(binding.get("plan_digest") or ""):
-        raise GenericRunError("adoption_binding_drifted",
-                              "采用计划摘要已变化;请基于当前评估重新采用")
+        value = binding.get(key)
+        if not isinstance(value, str) or not value or ai.get(key) != value:
+            raise GenericRunError("adoption_binding_drifted", "采用绑定已变化(" + key + ")；请重新采用")
+    if (not isinstance(binding.get("plan_digest"), str) or not binding["plan_digest"]
+            or doc.get("plan_digest") != binding["plan_digest"]):
+        raise GenericRunError("adoption_binding_drifted", "采用计划摘要已变化；请重新采用")
+    eid = binding["evaluation_id"]
+    if not re.fullmatch(r"eval-[0-9a-f]{16}", eid) or source.get("evaluation_id") != eid:
+        raise GenericRunError("adoption_binding_invalid", "采用记录的评估来源无效")
+    evaluation = read_record(project / ".opencoding" / "evaluations" / (eid + ".json"))
+    if evaluation.get("root") != root:
+        raise GenericRunError("adoption_root_mismatch", "评估记录不属于当前项目；请重新评估并采用")
+    confirmation = evaluation.get("confirmation")
+    if (evaluation.get("evaluation_id") != eid or evaluation.get("session_id") != sid
+            or evaluation.get("status") != "confirmed" or not isinstance(confirmation, dict)
+            or confirmation.get("accepted") is not True
+            or evaluation.get("session_revision_at_eval") != doc.get("revision")):
+        raise GenericRunError("evaluation_not_confirmed", "采用所依据的评估未在对应会话版本下确认")
+    structured = evaluation.get("structured")
+    raw_contract = structured.get("implementation_contract") if isinstance(structured, dict) else None
+    digest = sha256_bytes(json.dumps(raw_contract, ensure_ascii=False, sort_keys=True).encode("utf-8"))
+    if digest != binding["contract_sha256"]:
+        raise GenericRunError("adoption_contract_mismatch", "评估契约与采用摘要不一致")
+    return _validate_contract(raw_contract)
 
 
 def run_generic_app(
@@ -2641,6 +2746,7 @@ def run_generic_app(
     adoption_binding: dict[str, Any] | None = None,
     run_id: str | None = None,
     max_repair_rounds: int = 2,
+    _internal_test_mode: bool = False,
 ) -> dict[str, Any]:
     """完整链:根校验→冻结契约检查→授权→真实 AI 生成→静态检查→(受限后端可用时)隔离验收→事务提交。
 
@@ -2649,6 +2755,7 @@ def run_generic_app(
     session_id: 关联工作台会话(权威采用链与累计预算的归属键)。
     adoption_binding: R07 采用绑定 {session_id, evaluation_id, plan_digest, contract_sha256};
         运行开始与提交前各复核一次,任何漂移拒绝继续。
+    _internal_test_mode: 仅限低层控制流测试的显式豁免；正式调用必须保留 False。
     """
     project = Path(root)
     if not project.is_dir():
@@ -2659,6 +2766,27 @@ def run_generic_app(
         raise GenericRunError("adapter_required", "必须提供已配置的真实 AI 适配器")
     if not isinstance(contract, dict) or "files" not in contract:
         raise GenericRunError("contract_required", "必须提供已确认评估的实现契约")
+    if type(_internal_test_mode) is not bool:
+        raise GenericRunError("execution_mode_invalid", "内部测试模式必须显式使用布尔值")
+    from .safety import _root_path
+    try:
+        project = _root_path(project)
+    except ValueError as exc:
+        raise GenericRunError("runtime_root_unsafe", "项目根或祖先路径不安全") from exc
+    if not _internal_test_mode or adoption_binding is not None:
+        if not isinstance(adoption_binding, dict) or not adoption_binding:
+            raise GenericRunError("adoption_binding_required", "正式执行必须绑定当前已确认并采用的计划")
+        if not isinstance(session_id, str) or session_id != adoption_binding.get("session_id"):
+            raise GenericRunError("adoption_session_mismatch", "执行会话与采用绑定不一致")
+        expected_contract = _verify_adoption_binding(project, adoption_binding)
+        if contract != expected_contract:
+            raise GenericRunError("adoption_contract_mismatch", "执行契约不是已确认并采用的契约")
+        if adopted_plan_digest is not None and adopted_plan_digest != adoption_binding["plan_digest"]:
+            raise GenericRunError("adoption_binding_drifted", "执行计划摘要与采用绑定不一致")
+        adopted_plan_digest = adoption_binding["plan_digest"]
+        drift = _input_drift_during_request(project, adoption_binding)
+        if drift:
+            raise GenericRunError("adoption_input_drift", "正式执行前采用输入已漂移:" + drift)
     existing = active_run(project)
     if existing is not None:
         return {"status": "already_running", "run_id": existing["run_id"],
@@ -2683,7 +2811,8 @@ def run_generic_app(
     try:
         return _run_inner(project, goal, adapter, contract, adopted_plan_digest,
                           run_id, max_repair_rounds,
-                          session_id=session_id, adoption_binding=adoption_binding)
+                          session_id=session_id, adoption_binding=adoption_binding,
+                          internal_test_mode=_internal_test_mode)
     finally:
         _release(project, run_id)
 
@@ -2691,7 +2820,8 @@ def run_generic_app(
 def _run_inner(project: Path, goal: str, adapter: Any, contract: dict[str, Any],
                adopted_plan_digest: str | None, run_id: str, max_repair_rounds: int,
                session_id: str | None = None,
-               adoption_binding: dict[str, Any] | None = None) -> dict[str, Any]:
+               adoption_binding: dict[str, Any] | None = None,
+               internal_test_mode: bool = False) -> dict[str, Any]:
     # R07/CP5/C6-01:派发前最后一道复核(路由校验与真实派发之间的时间窗)——
     # 采用绑定与当前事实经共用控制闸(与接续同一入口);取消检查在循环起点。
     gate = _control_gate(project, run_id=run_id, stage="派发前", binding=adoption_binding)
@@ -2747,6 +2877,7 @@ def _run_inner(project: Path, goal: str, adapter: Any, contract: dict[str, Any],
                 for rel in outputs}
     receipt: dict[str, Any] = {
         "schema_version": GENERIC_RUN_SCHEMA_VERSION,
+        "execution_mode": "internal_test" if internal_test_mode else "production",
         "run_id": run_id,
         "task_id": TASK_ID,
         "session_id": session_id,
@@ -2820,16 +2951,36 @@ def _run_inner(project: Path, goal: str, adapter: Any, contract: dict[str, Any],
             receipt["current_request"] = {"request_id": request_id, "nonce_prefix": nonce[:14],
                                           "kind": kind, "attempt": attempt,
                                           "effect": "not_dispatched"}
-            if session_id:
-                # 累计账本按真实派发次数递增(新 run 不再自带全额新额度)
-                record_dispatch(project, TASK_ID, session_id, run_id,
-                                dispatched=next_dispatched,
-                                grant_id=grant["grant_id"])
-            receipt["ai_requests_dispatched"] = next_dispatched
-            receipt["current_request"]["effect"] = "dispatching"
-            _write_receipt(project, receipt)
-            # 预算消耗(失败/超时同样计入真实账本)
-            _consume_ai_budget(project, grant, attempt, "")
+            # 本次派发的线性化点：消息已组装，在共享会话锁内复核输入并登记
+            # 派发/预算。锁外才调用网络；此后更新按派发后漂移处理，不宣称撤回请求。
+            # 锁顺序固定为 session -> grant，绝不跨 adapter.complete 持锁。
+            try:
+                with session_write_lock(project):
+                    gate = _control_gate(project, run_id=run_id, stage="请求派发前",
+                                         binding=adoption_binding, grant=grant)
+                    if gate:
+                        attempt_record["gate_reject"] = dict(gate)
+                        attempt_record["executed"] = False
+                        if gate["reason"] == "cancel":
+                            receipt["status"] = "cancelled"
+                            receipt["cancel_requested"] = True
+                            break
+                        raise GenericRunError(gate["code"], "请求派发前" + gate["detail"])
+                    if session_id:
+                        # 累计账本按真实派发次数递增(新 run 不再自带全额新额度)
+                        record_dispatch(project, TASK_ID, session_id, run_id,
+                                        dispatched=next_dispatched,
+                                        grant_id=grant["grant_id"])
+                    receipt["ai_requests_dispatched"] = next_dispatched
+                    receipt["current_request"]["effect"] = "dispatching"
+                    _write_receipt(project, receipt)
+                    # 预算消耗(失败/超时同样计入真实账本)
+                    _consume_ai_budget(project, grant, attempt, sha256_bytes(canonical_json({
+                        "messages": messages, "request_id": request_id, "nonce": nonce,
+                        "contract": contract, "adopted_plan_digest": adopted_plan_digest,
+                    })))
+            except SessionLockError as exc:
+                raise GenericRunError("session_lock_busy", "派发前项目正在更新，本次请求未发送") from exc
             result = adapter.complete(
                 messages, request_kind=kind, run_id=run_id, task_id=TASK_ID,
                 attempt=attempt, allowed_outputs=list(outputs),
@@ -2905,7 +3056,8 @@ def _run_inner(project: Path, goal: str, adapter: Any, contract: dict[str, Any],
                     break
                 ok, evidence, digests = _stage_and_verify(
                     project, grant, task, files, run_id, attempt,
-                    _make_verifier(project, run_id, str(contract.get("data_dir", "app/data"))))
+                    _make_verifier(project, run_id, str(contract.get("data_dir", "app/data")),
+                                   expected_record=receipt["frozen_checks"]))
                 attempt_record["executed"] = True
                 attempt_record["verified"] = ok
                 attempt_record["evidence"] = evidence

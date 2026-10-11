@@ -1,0 +1,28 @@
+{
+  "scope": "R2 source and tests frozen for full regression",
+  "files": {
+    "opencoding/advisor.py": "f4ee40e6aac20b7e0b338326838f46bbba35c90d7035c48dee8f73b3da370fa4",
+    "opencoding/aiadapter.py": "8c4efdf36923343a1ad2ca93664cd12ebcc5ea0b97f6932094f7a16c17945dd7",
+    "opencoding/autorun.py": "a159c6ec77cb3bdf596357b298a64e9f32b22393bd8fab37e4584e5a65c2ae4b",
+    "opencoding/facts.py": "5dbde6cca469b201d2e5736e2e893fcbeffcfb621662cb1dff6d155f80849fce",
+    "opencoding/generic_run.py": "73b043fed8bf4020ebd0038a9bb125e05e4bb694cbe29eee0680415e9f12f731",
+    "opencoding/grants.py": "75ba5a38d566b8cf0e4b34250fd00adb007ce57f3aed1f90441c65a1af761ae4",
+    "opencoding/request_budget.py": "e53ecd57bbf459d4565a1ebd07db3c6fdc83b6282c0ab56bf0c3ef8639de4cf1",
+    "opencoding/service.py": "9f12897f2b356dd423a6780d31c7a5f9f6c10bc08c4948e1e783bfd17442b742",
+    "opencoding/workbench.py": "c035d52e9d7cef08f38052d38ff19c0a43072c29fb535178498f76e049ea41ab",
+    "tests/test_product_adoption_identity.py": "e090d423a967d9004baba67e7cb26fe7d85734fb177e6a69842f6fa332583352",
+    "tests/test_product_aiadapter.py": "4dc4047716865deac6ded24be06cd45d960b5c20c0400f343322d457b2ffe99b",
+    "tests/test_product_commit_consistency_w0.py": "9ba8ecd4060c74b02662b645d092a0a89b18f6206101127a46f1f31e91fa8abe",
+    "tests/test_product_credential_binding.py": "fb8ff32abf8ef59cee2bc284e9b9afad8020ec0f2824eb5fceb3df9452c39845",
+    "tests/test_product_evaluation_budget.py": "705cd3b8c9045782963e802d0f170e20c41acadd1d62cd7264bdd98b83acf901",
+    "tests/test_product_generic_run_v2.py": "c353cc81f8741d49b114c456b00bdf1b0f99bd6834db03db0ac819f8b8b3f7f5",
+    "tests/test_product_grants.py": "12ff2b40dde7081d8244b20817c9406f6e74ee0ad252f7175da919926f32192e",
+    "tests/test_product_grants_concurrency.py": "a61b2e00ed1a0db50eb1416a5c372a78d8e775d8364cb493329b30a116f40804",
+    "tests/test_product_probe_budget.py": "3df45d2cb453a0a85310a3b40c6aff0deff4addedc45b4fa2310a1e923bc7178",
+    "tests/test_product_production_binding.py": "aa21d725c8902a096d7166c82a511fc4d76ddc0a10e5411330e0615f1c3fa3e6",
+    "tests/test_product_request_drift.py": "d2ab4e53792ef1f7a39b3729b1819768a87334bcc5dd9bed075fc6dabcb62119",
+    "tests/test_product_resume_shared_gate.py": "f21ba6f1aa64688467574d60ad959e4d1539f4203af457ed16416dddcc562061",
+    "tests/test_product_task_budget.py": "35624d02ca28b50f9d12264ae053b59303bb5fef96329f2f33d2892b7666f138",
+    "tests/test_product_workbench_w1.py": "a5634c18a2a6f3d5c7fe51d6e1dc67590f22f99f1867702d7a2bec051c52ac26"
+  }
+}

@@ -2204,6 +2204,16 @@ def _copy_tree(source: Path, target: Path, relative: str, grant: Mapping[str, An
     return skipped
 
 
+def _run_credential_binding(task_id: str, attempt: int, digests: Mapping[str, Any], verifier: Verifying | None) -> dict[str, Any]:
+    verifier_id = getattr(verifier, "__name__", None) or getattr(verifier, "__qualname__", None) or "unknown"
+    return {
+        "task_id": task_id, "attempt": attempt, "action_kind": "local_run",
+        "targets": sorted(digests),
+        "action_digest": sha256_bytes(canonical_json({"task": task_id, "kind": "local_run", "attempt": attempt, "verifier": str(verifier_id)})),
+        "input_digest": sha256_bytes(canonical_json({"files": {key: digests[key] for key in sorted(digests)}})),
+    }
+
+
 def _issue_run_credential(project: Path, grant: Mapping[str, Any], task_id: str, attempt: int, digests: Mapping[str, Any], verifier: Verifying | None = None) -> dict[str, Any]:
     """真实运行候选/验收器前核对 local_run 授权动作；未授权即拒绝（F07）。
 
@@ -2212,13 +2222,9 @@ def _issue_run_credential(project: Path, grant: Mapping[str, Any], task_id: str,
 
     if "local_run" not in grant["action_kinds"]:
         raise AutorunError("local_run_not_granted", "批次授权未包含 local_run，不能运行候选代码或验收器")
-    verifier_id = getattr(verifier, "__name__", None) or getattr(verifier, "__qualname__", None) or "unknown"
     return grants.issue_step_credential(
         project, grant["grant_id"],
-        task_id=task_id, attempt=attempt, action_kind="local_run",
-        targets=sorted(digests),
-        action_digest=sha256_bytes(canonical_json({"task": task_id, "kind": "local_run", "attempt": attempt, "verifier": str(verifier_id)})),
-        input_digest=sha256_bytes(canonical_json({"files": {key: digests[key] for key in sorted(digests)}})),
+        **_run_credential_binding(task_id, attempt, digests, verifier),
     )
 
 
@@ -2234,7 +2240,12 @@ def _stage_and_verify(project: Path, grant: Mapping[str, Any], task: Mapping[str
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8", newline="\n")
     credential = _issue_run_credential(project, grant, task["task_id"], attempt, digests, verifier)
-    grants.check_step_credential(project, credential["credential_id"], expect_task_id=task["task_id"], consume=True)
+    grants.check_step_credential(
+        project, credential["credential_id"], expect_grant_id=grant["grant_id"],
+        **{"expect_" + key: value for key, value in _run_credential_binding(
+            task["task_id"], attempt, _snapshot_files(scratch, list(digests)), verifier).items()},
+        consume=True,
+    )
     try:
         ok, evidence = verifier(scratch)
     except Exception as exc:
@@ -2252,7 +2263,12 @@ def _verify_copy(project: Path, grant: Mapping[str, Any], task: Mapping[str, Any
     _prepare_sandbox(project, scratch, trusted_fixture=trusted_fixture)
     _copy_granted_paths(project, grant, scratch)
     credential = _issue_run_credential(project, grant, task["task_id"], attempt, digests, verifier)
-    grants.check_step_credential(project, credential["credential_id"], expect_task_id=task["task_id"], consume=True)
+    grants.check_step_credential(
+        project, credential["credential_id"], expect_grant_id=grant["grant_id"],
+        **{"expect_" + key: value for key, value in _run_credential_binding(
+            task["task_id"], attempt, _snapshot_files(scratch, list(task["outputs"])), verifier).items()},
+        consume=True,
+    )
     try:
         return verifier(scratch)
     except Exception as exc:
@@ -2624,7 +2640,13 @@ def _commit_candidate(project: Path, grant: Mapping[str, Any], task: Mapping[str
             action_digest=sha256_bytes(canonical_json({"type": "write_text", "path": normalized, "content": content})),
             input_digest=sha256_bytes(content.encode("utf-8")),
         )
-        grants.check_step_credential(project, credential["credential_id"], expect_task_id=task_id, consume=True)
+        grants.check_step_credential(
+            project, credential["credential_id"], expect_grant_id=grant["grant_id"],
+            expect_task_id=task_id, expect_attempt=attempt, expect_action_kind="local_write",
+            expect_targets=[normalized],
+            expect_action_digest=sha256_bytes(canonical_json({"type": "write_text", "path": normalized, "content": content})),
+            expect_input_digest=sha256_bytes(content.encode("utf-8")), consume=True,
+        )
     # R01 伴随修复:计划根必须与事务层校验根同源(preview/apply 都经 _root 规范化)。
     # 此前用未解析的 str(project),工作区路径含 8.3 短名/未规范组件时
     # apply 端 _validate_plan 必报 "plan root mismatch",任何真实提交都无法完成。
@@ -2859,6 +2881,23 @@ def existing_run_grant_id(root: str | Path, run_id: str) -> str | None:
     return value if isinstance(value, str) and value.startswith("grant-") else None
 
 
+def _ai_request_action_digest(task_id: str, attempt: int, request_kind: str) -> str:
+    return sha256_bytes(canonical_json({
+        "task": task_id, "kind": "ai_request", "attempt": attempt,
+        "request_kind": request_kind,
+    }))
+
+
+def _prepared_request_input_digest(prepared: Mapping[str, Any]) -> str:
+    return sha256_bytes(canonical_json({
+        "schema_version": ADAPTER_SCHEMA_VERSION,
+        **{key: prepared[key] for key in (
+            "request_id", "run_id", "task_id", "attempt", "request_kind", "nonce",
+            "allowed_outputs", "preimage_digests", "messages",
+        )},
+    }))
+
+
 def _request_implementation(
     adapter,
     task: Mapping[str, Any],
@@ -3014,19 +3053,7 @@ def _prepare_implementation_request(
         nonce=nonce,
         attempt=attempt,
     )
-    input_digest = sha256_bytes(canonical_json({
-        "schema_version": ADAPTER_SCHEMA_VERSION,
-        "request_id": request_id,
-        "run_id": run_id,
-        "task_id": task["task_id"],
-        "attempt": attempt,
-        "request_kind": request_kind,
-        "nonce": nonce,
-        "allowed_outputs": allowed_outputs,
-        "preimage_digests": snapshot,
-        "messages": messages,
-    }))
-    return {
+    prepared = {
         "request_id": request_id,
         "nonce": nonce,
         "run_id": run_id,
@@ -3036,12 +3063,13 @@ def _prepare_implementation_request(
         "allowed_outputs": allowed_outputs,
         "preimage_digests": snapshot,
         "messages": messages,
-        "input_digest": input_digest,
         "remaining_budget": remaining_budget,
         "source_digests": {
             path: sha256_bytes(content.encode("utf-8")) for path, content in source_files.items()
         },
     }
+    prepared["input_digest"] = _prepared_request_input_digest(prepared)
+    return prepared
 
 
 def cancel_run(root: str | Path, run_id: str, *, reason: str) -> dict[str, Any]:
@@ -3847,7 +3875,7 @@ def run_batch(
                 project, grant_id,
                 task_id=task_id, attempt=attempt, action_kind="ai_request",
                 targets=list(task["outputs"]),
-                action_digest=sha256_bytes(canonical_json({"task": task_id, "kind": "ai_request"})),
+                action_digest=_ai_request_action_digest(task_id, attempt, prepared_request["request_kind"]),
                 input_digest=prepared_request["input_digest"],
             )
             # S03/C04：请求凭据即预算预留；记录阶段，不把预留展示为实际成功请求。
@@ -3882,7 +3910,11 @@ def run_batch(
                 else:
                     grants.check_step_credential(
                         project, credential["credential_id"],
-                        expect_task_id=task_id, consume=True,
+                        expect_grant_id=grant_id, expect_task_id=task_id,
+                        expect_attempt=attempt, expect_action_kind="ai_request",
+                        expect_action_digest=_ai_request_action_digest(task_id, attempt, prepared_request["request_kind"]),
+                        expect_input_digest=_prepared_request_input_digest(prepared_request),
+                        expect_targets=list(task["outputs"]), consume=True,
                     )
                     # N02：派发意图先落盘，再调用适配器（承认落盘与发送之间仍有不确定窗口）。
                     dispatch_id = str(record.get("current_request_id") or request_id)
@@ -4081,7 +4113,7 @@ def run_batch(
                     project, grant_id,
                     task_id=task_id, attempt=attempt, action_kind="ai_request",
                     targets=list(task["outputs"]),
-                    action_digest=sha256_bytes(canonical_json({"task": task_id, "kind": "ai_request", "repair": repairs})),
+                    action_digest=_ai_request_action_digest(task_id, attempt, prepared_request["request_kind"]),
                     input_digest=prepared_request["input_digest"],
                 )
                 # N02：修复请求与实现请求复用同一套持久化流程（此处仅登记预留，

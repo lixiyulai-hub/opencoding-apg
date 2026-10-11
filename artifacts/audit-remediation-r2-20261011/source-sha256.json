@@ -1,0 +1,49 @@
+{
+  "scope": "R2 final source and tests frozen after independent adversarial remediation",
+  "files": {
+    "opencoding/advisor.py": "f4ee40e6aac20b7e0b338326838f46bbba35c90d7035c48dee8f73b3da370fa4",
+    "opencoding/aiadapter.py": "8c4efdf36923343a1ad2ca93664cd12ebcc5ea0b97f6932094f7a16c17945dd7",
+    "opencoding/autorun.py": "a159c6ec77cb3bdf596357b298a64e9f32b22393bd8fab37e4584e5a65c2ae4b",
+    "opencoding/facts.py": "5dbde6cca469b201d2e5736e2e893fcbeffcfb621662cb1dff6d155f80849fce",
+    "opencoding/generic_run.py": "02d8a993d5455cbdd7f5c21fea32a91d4bcd8fbd666a91314f12f00aad87bb9f",
+    "opencoding/grants.py": "75ba5a38d566b8cf0e4b34250fd00adb007ce57f3aed1f90441c65a1af761ae4",
+    "opencoding/request_budget.py": "e53ecd57bbf459d4565a1ebd07db3c6fdc83b6282c0ab56bf0c3ef8639de4cf1",
+    "opencoding/service.py": "9f12897f2b356dd423a6780d31c7a5f9f6c10bc08c4948e1e783bfd17442b742",
+    "opencoding/workbench.py": "c035d52e9d7cef08f38052d38ff19c0a43072c29fb535178498f76e049ea41ab",
+    "tests/test_product_adoption_identity.py": "e090d423a967d9004baba67e7cb26fe7d85734fb177e6a69842f6fa332583352",
+    "tests/test_product_aiadapter.py": "4dc4047716865deac6ded24be06cd45d960b5c20c0400f343322d457b2ffe99b",
+    "tests/test_product_commit_consistency_w0.py": "9ba8ecd4060c74b02662b645d092a0a89b18f6206101127a46f1f31e91fa8abe",
+    "tests/test_product_credential_binding.py": "fb8ff32abf8ef59cee2bc284e9b9afad8020ec0f2824eb5fceb3df9452c39845",
+    "tests/test_product_evaluation_budget.py": "705cd3b8c9045782963e802d0f170e20c41acadd1d62cd7264bdd98b83acf901",
+    "tests/test_product_generic_run_v2.py": "c353cc81f8741d49b114c456b00bdf1b0f99bd6834db03db0ac819f8b8b3f7f5",
+    "tests/test_product_grants.py": "12ff2b40dde7081d8244b20817c9406f6e74ee0ad252f7175da919926f32192e",
+    "tests/test_product_grants_concurrency.py": "a61b2e00ed1a0db50eb1416a5c372a78d8e775d8364cb493329b30a116f40804",
+    "tests/test_product_probe_budget.py": "3df45d2cb453a0a85310a3b40c6aff0deff4addedc45b4fa2310a1e923bc7178",
+    "tests/test_product_production_binding.py": "f2c850d547447b8a35fcfd6ebfc12150100d99ce6fcea0adb5628c851e3912fd",
+    "tests/test_product_request_drift.py": "d2ab4e53792ef1f7a39b3729b1819768a87334bcc5dd9bed075fc6dabcb62119",
+    "tests/test_product_resume_shared_gate.py": "f21ba6f1aa64688467574d60ad959e4d1539f4203af457ed16416dddcc562061",
+    "tests/test_product_task_budget.py": "35624d02ca28b50f9d12264ae053b59303bb5fef96329f2f33d2892b7666f138",
+    "tests/test_product_workbench_w1.py": "a5634c18a2a6f3d5c7fe51d6e1dc67590f22f99f1867702d7a2bec051c52ac26"
+  },
+  "verification": {
+    "command": "python -X utf8 -m unittest",
+    "tests": 697,
+    "passed": 694,
+    "skipped": 3,
+    "failed": 0,
+    "seconds": 817.859,
+    "log": "artifacts/audit-remediation-r2-20261011/unittest.log",
+    "isolated_LOCALAPPDATA": true,
+    "source_changed_during_test": [],
+    "source_manifest": "artifacts/audit-remediation-r2-20261011/source-sha256.json",
+    "diff_check": "pass",
+    "compileall": "pass",
+    "workbench_javascript_syntax": "pass",
+    "independent_review": "pass_cross_review_and_final_18_production_binding_tests",
+    "real_api_calls": 0
+  },
+  "evidence_sha256": {
+    "unittest.log": "cbb326fd278504cf38a4ca22fd9e703243fd40ed4a7b6046d42fa0e42918b261",
+    "unittest-before-final-review.log": "c326d600d51476eabbe4bd67824d2ebb59d4cc493220ffa968e188b74295dcff"
+  }
+}
