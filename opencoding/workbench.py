@@ -13,7 +13,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
+import stat
 import uuid
 import secrets
 import threading
@@ -58,12 +60,85 @@ class WorkbenchError(Exception):
 
 
 def _project_root(workspace: Path, name: str) -> Path:
-    if not name or any(ch in name for ch in "\\/:*?\"<>|") or name.startswith("."):
-        raise WorkbenchError(400, "invalid_project_name", "项目名不能为空且不能包含路径字符")
+    _validate_project_name(name)
     root = workspace / name
+    _check_project_paths(root)
     if not root.is_dir():
         raise WorkbenchError(404, "project_not_found", "项目不存在:" + name)
     return root
+
+
+def _validate_project_name(name: str) -> None:
+    from .safety import _relative_parts
+
+    try:
+        parts = _relative_parts(name)
+        if len(parts) != 1 or name.startswith("."):
+            raise ValueError("invalid name")
+    except (TypeError, ValueError) as exc:
+        raise WorkbenchError(400, "invalid_project_name",
+                             "项目名不能为空、不能是路径或系统保留名称") from exc
+
+
+def _check_directory(path: Path) -> None:
+    from .safety import _reject_linked_ancestors
+
+    try:
+        _reject_linked_ancestors(path)
+        if path.exists() and not path.is_dir():
+            raise ValueError("not a directory")
+    except (OSError, ValueError) as exc:
+        raise WorkbenchError(400, "unsafe_project_path",
+                             "项目路径含链接、重解析点或非目录条目") from exc
+
+
+def _check_regular_file(path: Path) -> None:
+    from .safety import _reject_linked_ancestors
+
+    try:
+        _reject_linked_ancestors(path)
+        if path.exists():
+            info = path.stat(follow_symlinks=False)
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise ValueError("not a regular single-link file")
+    except (OSError, ValueError) as exc:
+        raise WorkbenchError(400, "unsafe_project_path", "项目状态文件不是安全的普通文件") from exc
+
+
+def _check_project_paths(root: Path) -> None:
+    """在首次读写前检查原始路径；不能先 resolve 隐去链接。"""
+    _check_directory(root)
+    marker = root / ".opencoding"
+    _check_directory(marker)
+    for name in ("sessions", "adoptions", "evaluations", "generic_runs", "grants",
+                 "transactions", "frozen_checks", "task-budgets", "dev-runs"):
+        _check_directory(marker / name)
+    _check_regular_file(marker / "project.json")
+
+
+def _session_run(root: Path, session_id: str, run_id: str, *,
+                 allow_missing: bool = False) -> dict[str, Any] | None:
+    from .generic_run import load_receipt
+
+    if not re.fullmatch(r"gen-[0-9a-f]{12}", run_id):
+        raise WorkbenchError(400, "invalid_run_id", "运行编号无效")
+    _check_regular_file(root / ".opencoding" / "generic_runs" / (run_id + ".json"))
+    doc = load_receipt(root, run_id)
+    if doc is None:
+        if allow_missing:
+            return None  # worker 预约后尚未写回执，轮询可以继续。
+        raise WorkbenchError(404, "run_not_found", "找不到这次运行")
+    if (not isinstance(doc, dict) or doc.get("run_id") != run_id
+            or doc.get("session_id") != session_id):
+        raise WorkbenchError(409, "run_session_mismatch", "运行不属于当前会话")
+    return doc
+
+
+def _check_document_owner(root: Path, session_id: str, payload: dict, *, preview: bool) -> None:
+    owner = (payload.get("session") or {}).get("id") if isinstance(
+        payload.get("session"), dict) and preview else payload.get("session_id")
+    if owner != session_id or payload.get("root") != str(root.resolve(strict=True)):
+        raise WorkbenchError(409, "document_session_mismatch", "预览或审批不属于当前项目和会话")
 
 
 PROJECT_IDENTITY_SCHEMA = "1.0"
@@ -78,8 +153,7 @@ def _write_project_identity(root: Path, name: str, origin: str) -> dict[str, Any
 
     不枚举时初始化每个用户目录;不对符号链接/重解析点建身份。
     """
-    if root.is_symlink():
-        raise WorkbenchError(400, "unsafe_project_path", "该路径是链接,不能作为项目")
+    _check_project_paths(root)
     marker_dir = root / ".opencoding"
     marker_dir.mkdir(parents=True, exist_ok=True)
     (marker_dir / "sessions").mkdir(exist_ok=True)
@@ -121,7 +195,8 @@ def _latest_session(root: Path) -> str | None:
 
 class Workbench:
     def __init__(self, workspace: Path):
-        self.workspace = workspace
+        _check_directory(workspace)
+        self.workspace = workspace.absolute()
         self.workspace.mkdir(parents=True, exist_ok=True)
         self.token = secrets.token_urlsafe(24)
         self._authed: set[str] = set()
@@ -185,7 +260,8 @@ class Workbench:
                 "path": rel,
                 "absolute": str((root / rel).resolve()),
                 "exists": (root / rel).is_file(),
-                "raw_url": f"/api/raw/{name}/{rel}",
+                "raw_url": "/api/raw/" + urllib.parse.quote(name, safe="") + "/"
+                           + urllib.parse.quote(rel, safe="/"),
             })
         return {"run_id": run_id, "status": doc.get("status"),
                 "project_root": str(root.resolve()), "files": files,
@@ -224,10 +300,15 @@ class Workbench:
 
     def api(self, method: str, path: str, query: dict, body: dict) -> dict[str, Any]:
         if path == "/api/bootstrap" and method == "GET":
+            _check_directory(self.workspace)
             projects = []
             uninitialized: list[str] = []
             for child in sorted(self.workspace.iterdir()):
                 if not child.is_dir() or child.name.startswith("."):
+                    continue
+                try:
+                    _check_project_paths(child)
+                except WorkbenchError:
                     continue
                 if not (child / ".opencoding").is_dir():
                     # W1:只列举名字,不在列举时写入任何东西(A23 只读原则)
@@ -250,16 +331,14 @@ class Workbench:
         if path == "/api/project/import" and method == "POST":
             # W1:显式导入工作区里已存在但还没有项目身份的目录(不破坏用户前像)
             name = str(body.get("name", "")).strip()
-            if not name or any(ch in name for ch in "\\/:*?\"<>|") or name.startswith("."):
-                raise WorkbenchError(400, "invalid_project_name", "项目名不能为空且不能包含路径字符")
+            _validate_project_name(name)
             root = self.workspace / name
+            _check_project_paths(root)
             if not root.is_dir():
                 raise WorkbenchError(404, "project_not_found", "工作区里没有这个目录:" + name)
-            if root.is_symlink():
-                raise WorkbenchError(400, "unsafe_project_path", "该目录是链接,不能作为项目")
             if (root / ".opencoding").is_dir():
                 raise WorkbenchError(409, "project_exists", "该目录已经是项目,直接打开即可")
-            if not bool(body.get("confirm")):
+            if body.get("confirm") is not True:
                 raise WorkbenchError(400, "import_unconfirmed",
                                      "把已有目录作为项目需要先确认(confirm=true):"
                                      "仅写入项目身份文件,不会移动或删除你的文件")
@@ -282,7 +361,7 @@ class Workbench:
         if path == "/api/ai/test" and method == "POST":
             # W1:真实连通性测试——只有用户显式点击才发起一次外部请求。
             # 只探测服务/模型目录，不把 HTTP 响应当成鉴权或生成成功。
-            if not bool(body.get("confirm")):
+            if body.get("confirm") is not True:
                 raise WorkbenchError(400, "ai_test_unconfirmed",
                                      "测试连接会向外部服务发起一次真实请求;需要显式确认")
             config, err = aiconfig.load_config()
@@ -298,14 +377,10 @@ class Workbench:
 
         if path == "/api/project" and method == "POST":
             name = str(body.get("name", "")).strip()
-            if not name:
-                raise WorkbenchError(400, "invalid_project_name", "请填写项目名")
-            if any(ch in name for ch in "\\/:*?\"<>|") or name.startswith("."):
-                raise WorkbenchError(400, "invalid_project_name", "项目名不能包含路径字符")
+            _validate_project_name(name)
             root = self.workspace / name
+            _check_project_paths(root)
             existed = root.is_dir()
-            if root.is_symlink():
-                raise WorkbenchError(400, "unsafe_project_path", "同名链接已存在,换个名字")
             root.mkdir(parents=True, exist_ok=True)
             # W1:创建即建立项目身份,使新项目在列表里立即可见、重开后仍在。
             # 写入只发生在这个显式创建动作里;GET /api/bootstrap 仍然只读。
@@ -321,7 +396,7 @@ class Workbench:
         if not parts or parts[0] != "api":
             raise WorkbenchError(404, "not_found", "未知接口")
         parts = parts[1:]
-        if not parts or parts[0] != "project":
+        if len(parts) < 2 or parts[0] != "project":
             raise WorkbenchError(404, "not_found", "未知接口")
         name = parts[1]
         root = _project_root(self.workspace, name)
@@ -344,9 +419,7 @@ class Workbench:
             if len(rest) >= 3 and rest[2] == "preview":
                 return service.preview_session(root, sid)
             if len(rest) >= 4 and rest[2] == "gen-status":
-                from .generic_run import load_receipt
-
-                doc = load_receipt(root, rest[3])
+                doc = _session_run(root, sid, rest[3], allow_missing=True)
                 return doc if doc is not None else {"run_id": rest[3], "status": "unknown"}
             if len(rest) >= 3 and rest[2] == "confirm-new-batch":
                 # R01:新批次确认的中文预览(只读)——看清接续要素再决定是否确认;
@@ -363,6 +436,8 @@ class Workbench:
                                                                     session_id=sid)}
                 except GenericRunError as exc:
                     raise WorkbenchError(400, exc.code, str(exc)) from exc
+            if len(rest) != 2:
+                raise WorkbenchError(405, "method_not_allowed", "该会话动作不支持 GET")
             view = service.session_view(root, sid)
             view["evaluations"] = advisor.list_evaluations(root, sid)
             view["ai"] = aiconfig.describe_status()
@@ -389,10 +464,16 @@ class Workbench:
                 record = advisor.run_ai_evaluation(root, sid, adapter, run_id="workbench")
                 return record
             if action == "confirm-evaluation":
+                if type(body.get("accepted")) is not bool:
+                    raise WorkbenchError(400, "evaluation_confirmation_invalid",
+                                         "确认或拒绝评估必须使用 JSON 布尔值")
+                revision = body.get("revision")
+                if type(revision) is not int or revision < 0:
+                    raise WorkbenchError(400, "revision_invalid", "会话版本必须是非负整数")
                 record = advisor.confirm_evaluation(
                     root, sid, str(body.get("evaluation_id", "")),
-                    expected_revision=int(body.get("revision", 0)),
-                    accepted=bool(body.get("accepted")))
+                    expected_revision=revision,
+                    accepted=body["accepted"])
                 view = service.session_view(root, sid)
                 return {"evaluation": record, "view": view}
             if action == "adopt":
@@ -400,6 +481,8 @@ class Workbench:
 
                 return adopt_confirmed_evaluation(root, sid)
             if action == "generate":
+                if "regenerate" in body and type(body["regenerate"]) is not bool:
+                    raise WorkbenchError(400, "regenerate_invalid", "重新生成标记必须是 JSON 布尔值")
                 from .generic_run import (_validate_contract, active_run, run_generic_app,
                                           unknown_effect_run, validate_runtime_roots,
                                           write_worker_outcome)
@@ -486,7 +569,7 @@ class Workbench:
                 from .generic_run import resumable_candidate
 
                 force_new = (str(body.get("mode", "")).lower() == "regenerate"
-                             or bool(body.get("regenerate")))
+                             or body.get("regenerate") is True)
                 if not force_new:
                     pending_resume = resumable_candidate(root, sid)
                     if pending_resume is not None and pending_resume.get("resumable"):
@@ -527,6 +610,7 @@ class Workbench:
                 run_id = str(body.get("run_id", ""))
                 if not re.fullmatch(r"gen-[0-9a-f]{12}", run_id):
                     raise WorkbenchError(400, "invalid_run_id", "运行编号无效")
+                _session_run(root, sid, run_id)
                 try:
                     doc = resume_saved_candidate(root, run_id)
                 except GenericRunError as exc:
@@ -569,23 +653,25 @@ class Workbench:
                 reason = str(body.get("reason", "")).strip()
                 if len(reason) < 4:
                     raise WorkbenchError(400, "budget_reason_required", "追加额度必须写明理由")
-                if not bool(body.get("confirm")):
+                if body.get("confirm") is not True:
                     raise WorkbenchError(400, "budget_extension_unconfirmed",
                                          "追加额度需要显式确认(confirm=true)并写明理由")
-                state = extend_task_budget(root, TASK_ID, sid, amount=int(body.get("amount", 1)),
+                amount = body.get("amount", 1)
+                if type(amount) is not int:
+                    raise WorkbenchError(400, "budget_amount_invalid", "追加额度必须是整数")
+                state = extend_task_budget(root, TASK_ID, sid, amount=amount,
                                            reason=reason, issued_by=str(body.get("issued_by", "工作台用户")))
                 return {"task_budget": state, "note": "已记录追加授权;继续生成时按新上限结算剩余额度"}
             if action == "gen-status" and len(rest) >= 4:
-                from .generic_run import load_receipt
-
                 run_id = rest[3]
-                doc = load_receipt(root, run_id)
+                doc = _session_run(root, sid, run_id, allow_missing=True)
                 if doc is None:
                     return {"run_id": run_id, "status": "unknown"}
                 return doc
             if action == "cancel-generation" and len(rest) >= 4:
                 from .generic_run import request_cancel
 
+                _session_run(root, sid, rest[3])
                 return request_cancel(root, rest[3])
             if action == "ack-unknown" and method == "POST":
                 from .generic_run import acknowledge_unknown
@@ -593,6 +679,7 @@ class Workbench:
                 run_id = str(body.get("run_id", ""))
                 if not re.fullmatch(r"gen-[0-9a-f]{12}", run_id):
                     raise WorkbenchError(400, "invalid_run_id", "运行编号无效")
+                _session_run(root, sid, run_id)
                 return acknowledge_unknown(root, run_id, str(body.get("note", "用户知悉旧请求结果未知,发起新尝试")))
             if action == "preview":
                 return service.preview_session(root, sid)
@@ -600,11 +687,13 @@ class Workbench:
                 preview = body.get("preview")
                 if not isinstance(preview, dict):
                     raise WorkbenchError(400, "preview_required", "缺少预览内容")
+                _check_document_owner(root, sid, preview, preview=True)
                 return service.approve_preview(preview)
             if action == "apply":
                 approval = body.get("approval")
                 if not isinstance(approval, dict):
                     raise WorkbenchError(400, "approval_required", "缺少审批凭据")
+                _check_document_owner(root, sid, approval, preview=False)
                 return service.apply_approved(root, approval)
             if action == "status":
                 return service.execution_status(root, sid)
@@ -753,13 +842,13 @@ async function loadBoot(){const b=await api('/api/bootstrap');ST.ai=b.ai||{};ST.
  aiBadge(ST.ai,ST.aiTest);
  const list=$('#proj-list');list.innerHTML='';
  (b.projects||[]).forEach(p=>{const d=document.createElement('div');d.className='row';
-  d.innerHTML=`<button class="sec" onclick="openProject('${esc(p.name)}')">📁 ${esc(p.name)}</button><span class="mut">${p.sessions} 个会话</span>`;
+  d.innerHTML=`<button class="sec" onclick="openProject(${jsArg(p.name)})">📁 ${esc(p.name)}</button><span class="mut">${p.sessions} 个会话</span>`;
   list.appendChild(d)});
  if(!(b.projects||[]).length)list.innerHTML='<p class="mut">还没有项目。在上面填个名字点“创建项目”就行。</p>';
  const imp=$('#import-list');imp.innerHTML='';const un=b.uninitialized||[];
  $('#import-area').classList.toggle('hide',!un.length);
  un.forEach(n=>{const d=document.createElement('div');d.className='row';
-  d.innerHTML=`<span>📂 ${esc(n)}</span><button class="sec" onclick="importExisting('${esc(n)}')">作为项目打开</button>`;
+  d.innerHTML=`<span>📂 ${esc(n)}</span><button class="sec" onclick="importExisting(${jsArg(n)})">作为项目打开</button>`;
   imp.appendChild(d)})}
 async function createProject(){const name=$('#np-name').value.trim();if(!name)return toast('请填写项目名');
  const r=await api('/api/project',{method:'POST',body:{name}});$('#np-name').value='';
@@ -786,7 +875,7 @@ async function openSession(sid){ST.session=sid;const v=await api('/api/project/'
  (v.session.questions||[]).forEach(qq=>{const cur=v.session.answers[qq.id]||'';
   const d=document.createElement('div');d.className='q';
   d.innerHTML=`<b>${qq.question}</b><div class="why">${qq.why}</div>
-   <div class="row"><input id="ans-${qq.id}" value="${cur.replace(/"/g,'&quot;')}" style="flex:1">
+   <div class="row"><input id="ans-${qq.id}" value="${esc(cur)}" style="flex:1">
    <button onclick="answer('${qq.id}')">回答</button></div>
    ${cur?'<span class="badge ok">已回答</span>':''}`;
   q.appendChild(d)});
@@ -816,7 +905,7 @@ async function openResult(rid){try{
  const r=await api(`/api/project/${encodeURIComponent(ST.project)}/result?run_id=${encodeURIComponent(rid)}`);
  const head=`<div class="card"><h2>产物位置</h2><p class="mut">项目目录:${esc(r.project_root)}</p><ul class="history">`
   +r.files.map(f=>`<li><b>${esc(f.path)}</b> ${f.exists?'':'<span class="mut">(文件不在)</span>'}
-    <button class="sec" onclick="window.open('${esc(f.raw_url)}','_blank')">打开/预览</button>
+    <button class="sec" onclick="window.open(${jsArg(f.raw_url)},'_blank','noopener,noreferrer')">打开/预览</button>
     <button class="sec" onclick="copyPath(this)" data-path="${esc(f.absolute)}">复制完整路径</button></li>`).join('')
   +`</ul><p class="mut">${esc(r.note||'')}</p></div>`;
  $('#plan-area').innerHTML=head+$('#plan-area').innerHTML;toast('已列出产物')}
@@ -854,6 +943,7 @@ async function confirmEval(ok){const r=await api(`/api/project/${encodeURICompon
  openSession(ST.session)}
 function planBlock(t,d){return `<details open><summary>${t}</summary><pre>${d.replace(/</g,'&lt;')}</pre></details>`}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function jsArg(s){return esc(JSON.stringify(String(s==null?'':s)))}
 async function doAdopt(){const r=await api(`/api/project/${encodeURIComponent(ST.project)}/session/${ST.session}/adopt`,{method:'POST',body:{}});
  $('#plan-area').innerHTML=planBlock('已采用评估计划',JSON.stringify(r,null,1));toast('已采用,可以生成文档预览')}
 async function doPreview(){const r=await api(`/api/project/${encodeURIComponent(ST.project)}/session/${ST.session}/preview`);
@@ -947,6 +1037,39 @@ class _Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):  # 不回显 query(token)
         pass
 
+    def _validate_request_context(self, method: str) -> None:
+        """拒绝 DNS rebinding、跨来源写入和浏览器简单 POST。
+
+        非浏览器客户端可不带 Origin，但必须使用已鉴权的 JSON 请求；浏览器
+        跨来源 JSON 预检不被支持，且显式 Origin/Fetch Metadata 必须一致。
+        """
+        port = self.server.server_port
+        allowed_hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
+        if port == 80:
+            allowed_hosts.update({"127.0.0.1", "localhost"})
+        hosts = self.headers.get_all("Host", [])
+        if len(hosts) != 1 or hosts[0].lower() not in allowed_hosts:
+            raise WorkbenchError(403, "host_rejected", "请求地址不是本工作台入口")
+        if method != "POST":
+            return
+        origins = self.headers.get_all("Origin", [])
+        if origins and (len(origins) != 1 or origins[0].lower() != "http://" + hosts[0].lower()):
+            raise WorkbenchError(403, "origin_rejected", "写请求必须来自当前工作台")
+        sites = self.headers.get_all("Sec-Fetch-Site", [])
+        if sites and (len(sites) != 1 or sites[0] != "same-origin"):
+            raise WorkbenchError(403, "origin_rejected", "不接受跨来源写请求")
+        if sites and not origins:
+            raise WorkbenchError(403, "origin_rejected", "浏览器写请求缺少来源")
+        content_types = self.headers.get_all("Content-Type", [])
+        if (len(content_types) != 1
+                or content_types[0].split(";", 1)[0].strip().lower() != "application/json"):
+            raise WorkbenchError(415, "content_type_rejected", "写请求必须是 application/json")
+
+    def _security_headers(self) -> None:
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("X-Frame-Options", "DENY")
+
     def _authorized(self) -> bool:
         cookies = self.headers.get("Cookie", "")
         for part in cookies.split(";"):
@@ -958,6 +1081,7 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
+        self._security_headers()
         if cookie:
             self.send_header("Set-Cookie", cookie + "; HttpOnly; SameSite=Strict; Path=/")
         self.send_header("Content-Length", str(len(data)))
@@ -965,7 +1089,12 @@ class _Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def _read_body(self) -> dict:
+        if (self.headers.get("Transfer-Encoding") is not None
+                or len(self.headers.get_all("Content-Length", [])) > 1):
+            raise WorkbenchError(400, "invalid_body_length", "请求体长度无效")
         length = int(self.headers.get("Content-Length", 0) or 0)
+        if length < 0:
+            raise WorkbenchError(400, "invalid_body_length", "请求体长度无效")
         if length > MAX_BODY_BYTES:
             raise WorkbenchError(413, "body_too_large", "请求体过大")
         if length == 0:
@@ -993,46 +1122,73 @@ class _Handler(BaseHTTPRequestHandler):
         name = urllib.parse.unquote(raw_name)
         rel = urllib.parse.unquote(rel)
         root = _project_root(self.bench.workspace, name)
-        target = (root / rel).resolve()
-        base = root.resolve()
-        if target != base and base not in target.parents:
+        from .safety import safe_target
+
+        if ".." in rel.replace("\\", "/").split("/"):
             raise WorkbenchError(400, "path_out_of_project", "文件不在项目内")
-        if not target.is_file() or target.is_symlink():
-            raise WorkbenchError(404, "file_not_found", "文件不存在或是链接")
-        if target.stat().st_size > 2 * 1024 * 1024:
+        try:
+            target = safe_target(root, rel)
+        except (OSError, ValueError) as exc:
+            raise WorkbenchError(400, "unsafe_file_path", "文件路径包含链接或不安全条目") from exc
+        if not target.is_file():
+            raise WorkbenchError(404, "file_not_found", "文件不存在")
+        expected = target.stat(follow_symlinks=False)
+        if expected.st_size > 2 * 1024 * 1024:
             raise WorkbenchError(413, "file_too_large", "文件超过 2 MB,请用本地编辑器打开")
-        data = target.read_bytes()
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        try:
+            with os.fdopen(os.open(target, flags), "rb") as stream:
+                actual = os.fstat(stream.fileno())
+                safe_target(root, rel, allow_missing=False)
+                if (not stat.S_ISREG(actual.st_mode) or actual.st_nlink != 1
+                        or (actual.st_dev, actual.st_ino) != (expected.st_dev, expected.st_ino)):
+                    raise ValueError("file changed before open")
+                data = stream.read(2 * 1024 * 1024 + 1)
+        except (OSError, ValueError) as exc:
+            raise WorkbenchError(400, "unsafe_file_path", "文件在读取前发生变化或路径不安全") from exc
+        if len(data) > 2 * 1024 * 1024:
+            raise WorkbenchError(413, "file_too_large", "文件超过 2 MB,请用本地编辑器打开")
         ctype = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
-        if ctype.startswith("text/") or ctype in ("application/json", "application/javascript"):
-            ctype += "; charset=utf-8"
+        # 候选 HTML/SVG/JS 不得继承工作台 Cookie/API 权限；只把安全位图直接预览。
+        if ctype not in {"image/png", "image/jpeg", "image/gif", "image/webp"}:
+            ctype = "text/plain; charset=utf-8"
         self.send_response(200)
         self.send_header("Content-Type", ctype)
         self.send_header("Cache-Control", "no-store")
+        _Handler._security_headers(self)
+        self.send_header("Content-Security-Policy",
+                         "sandbox; default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Content-Disposition", "inline")
         self.end_headers()
         self.wfile.write(data)
 
     def _dispatch(self, method: str) -> None:
-        parsed = urllib.parse.urlparse(urllib.parse.unquote(self.path, errors="replace"))
+        parsed = urllib.parse.urlparse(self.path)
+        path = urllib.parse.unquote(parsed.path, errors="replace")
         query = dict(urllib.parse.parse_qsl(parsed.query))
         try:
+            self._validate_request_context(method)
             if not self._authorized():
                 token = query.get("t", "")
                 if method == "GET" and token and secrets.compare_digest(token, self.bench.token):
                     page = _html(token).encode("utf-8")
                     self.send_response(200)
                     self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Cache-Control", "no-store")
+                    self._security_headers()
                     self.send_header("Set-Cookie", "oc_token=" + token + "; HttpOnly; SameSite=Strict; Path=/")
                     self.send_header("Content-Length", str(len(page)))
                     self.end_headers()
                     self.wfile.write(page)
                     return
                 raise WorkbenchError(401, "unauthorized", "请从启动窗口给出的完整地址打开工作台")
-            if method == "GET" and parsed.path in ("/", "/index.html"):
+            if method == "GET" and path in ("/", "/index.html"):
                 page = _html(self.bench.token).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                self._security_headers()
                 self.send_header("Content-Length", str(len(page)))
                 self.end_headers()
                 self.wfile.write(page)
@@ -1040,10 +1196,10 @@ class _Handler(BaseHTTPRequestHandler):
             if method == "GET" and parsed.path.startswith("/api/raw/"):
                 self._serve_raw(parsed.path[len("/api/raw/"):])
                 return
-            if not parsed.path.startswith("/api/"):
+            if not path.startswith("/api/"):
                 raise WorkbenchError(404, "not_found", "未知路径")
             body = self._read_body() if method == "POST" else {}
-            result = self.bench.api(method, parsed.path, query, body)
+            result = self.bench.api(method, path, query, body)
             self._send_json(200, result)
         except WorkbenchError as exc:
             self._send_json(exc.status, {"code": exc.code, "message": exc.message})

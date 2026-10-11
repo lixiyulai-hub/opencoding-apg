@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "program_id": "opencoding-agent-native-delivery-v2-20260909",
-  "status": "synthetic-delivery-verified-source-regression-fixed",
+  "status": "audit-remediation-wave-1-verified-followups-open",
   "supersedes": {
     "path": "docs/product/DELIVERY_PLAN_V1.json",
     "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
@@ -31,23 +31,42 @@
     "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the complete AI coding governance workflow and its staged agent-host acceptance."
   },
   "immediate_transaction": {
-    "id": "record-docker-boundary-fix-and-synthetic-delivery",
-    "purpose": "修复 Docker 网络拒绝判定漏项，完成真实隔离边界实测，并零新 AI 请求接续保存候选。",
-    "status": "completed_pending_independent_review_and_host_config_audit",
+    "id": "audit-remediation-wave-1-20261011",
+    "purpose": "修复确认类型、会话归属、授权与累计预算并发、AI计划预览应用一致性；独立复核后全量回归。",
+    "status": "implemented_regression_verified_pending_user_acceptance",
     "paths": [
-      "opencoding/docker_provider.py",
-      "tests/test_docker_provider.py",
-      "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json"
+      "opencoding/workbench.py",
+      "opencoding/grants.py",
+      "opencoding/generic_run.py",
+      "opencoding/service.py",
+      "opencoding/advisor.py"
     ],
-    "run_id": "gen-c3d2fd34fd5e",
-    "transaction_id": "tx-20261008T152805680134Z-69ef875ca980"
+    "evidence": "docs/product/COMPREHENSIVE_FIRST_PRINCIPLES_ADVERSARIAL_REVIEW_20261011.md",
+    "verification": {
+      "full_suite": {
+        "tests": 633,
+        "passed": 630,
+        "skipped": 3,
+        "seconds": 595.66,
+        "log": "artifacts/audit-remediation-20261011/unittest.log",
+        "scope_note": "在最终确认锁错误映射和旧库只读兼容增量前运行；后续变更另有定向验证"
+      },
+      "final_plan_source_tests": 16,
+      "final_grant_tests": 37,
+      "independent_review": "cross-reviewed; final legacy-read follow-up pending",
+      "final_budget_tests": 21,
+      "source_manifest": "artifacts/audit-remediation-20261011/source-sha256.json"
+    }
   },
-  "following_stage": "按 AI_CODING_GOVERNANCE_WORKFLOW_V1.md 推进 G0-G7：先统一工作流契约与 Agent Adapter，再做通用生成、独立审核、恢复和首个真实项目验收；历史 W4/W5 记录保留为证据来源。",
+  "following_stage": "继续完整 AI Coding 治理工作流修复：先收口生产调用授权与评估预算，再贯通 G2/G3 Host 任务波次和 G4 独立审核，随后完成 G5/G6/G7。",
   "ordered_successors": [
-    "独立复核本次源码、测试、Docker 入口恢复和合成事务证据",
-    "将合成便签交付与真实产品源码接入分开规划并取得产品范围",
-    "推进 W4 Host/Connector 集成（另行明确范围）",
-    "推进 W5 平台与用户验收及发布（另行明确范围）"
+    "修复首批反例并通过独立代码复核及全量回归",
+    "收口正式入口计划绑定、评估/连接测试预算和凭据消费输入摘要核验",
+    "统一 Host Adapter 能力、任务波次、运行身份和状态契约，验证首个真实 Host",
+    "实现候选与测试摘要绑定的独立 Reviewer Gate，blocker/unavailable 禁止交付",
+    "完善有界修复、取消、超时/迟到响应与断点恢复",
+    "真实用途项目 G6 端到端验收，再进行 G7 新手旅程验收",
+    "依据已验收能力准备宣传材料；真实外部操作与公开发布按具体范围确认"
   ],
   "retained_delivery_evidence": [
     {
@@ -90,10 +109,10 @@
   ],
   "gates": {
     "immediate_human_gate": null,
-    "automatic_gate_coverage": "source regression, Docker boundary probe, frozen main/restart checks passed; independent review and host config audit pending",
-    "later": "合成事务已交付；真实产品源码、生产部署、公开发布、W4/W5 仍在范围外。"
+    "automatic_gate_coverage": "首批全量633 tests OK skipped3；最终计划16项、授权37项和累计预算21项增量通过；diff检查与compileall通过。",
+    "later": "首批本地修复不等于 G2/G4/G6/G7 通过；Agent 为执行引擎，Docker GUI 不是产品 Gate；真实外部动作与公开发布需具体授权。"
   },
-  "updated_at": "2026-10-08",
+  "updated_at": "2026-10-11",
   "prior_immediate_transaction": {
     "id": "agent-native-docs-r2",
     "purpose": "Correct the documented conflict branch, make installed-package API guidance self-contained, and retain the complete accepted W2-C evidence split.",
@@ -613,5 +632,22 @@
       "status": "needs_independent_host_runtime_review",
       "action": "未修改 Codex 配置；项目交付证据不把配置未变作为已证实事实。"
     }
+  },
+  "remediation_baseline_transaction": {
+    "id": "record-docker-boundary-fix-and-synthetic-delivery",
+    "purpose": "修复 Docker 网络拒绝判定漏项，完成真实隔离边界实测，并零新 AI 请求接续保存候选。",
+    "status": "completed_pending_independent_review_and_host_config_audit",
+    "paths": [
+      "opencoding/docker_provider.py",
+      "tests/test_docker_provider.py",
+      "docs/product/DELIVERY_PLAN_AGENT_NATIVE_V2.json"
+    ],
+    "run_id": "gen-c3d2fd34fd5e",
+    "transaction_id": "tx-20261008T152805680134Z-69ef875ca980"
+  },
+  "environment_blocker": {
+    "code": "ai_configuration_lost_by_audit_probe",
+    "effect": "真实Provider验证暂停；本地修复不受阻",
+    "recovery": "测试占位配置及同次探测状态已隔离；无可信原配置备份，需接入向导恢复；不在聊天/日志记录密钥"
   }
 }

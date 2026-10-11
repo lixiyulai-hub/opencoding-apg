@@ -1,0 +1,19 @@
+......................................................s..s......s......................................................................................................................错误：运行 run-sec-cli 绑定的批次授权已失效（grant_revoked）；不会自动换发新授权。请显式新开批次（更换 --run-id）后重新确认范围与预算。
+.................错误：运行 run-sec-cli-unbound 已存在但绑定不可用：账本存在但未登记批次授权。
+不会自动换发新授权，也不会要求你改名绕过。
+核实路径：C:\Users\Administrator\AppData\Local\Temp\tmpx4fyaxvb\.opencoding\autoruns\run-sec-cli-unbound.json
+处置方式：确认该运行的状态与未提交内容后，修复账本；或显式新开批次（更换 --run-id）并重新确认范围与预算。
+错误：运行 run-sec-cli-corrupt 已存在但绑定不可用：账本不可读（ledger_invalid）。
+不会自动换发新授权，也不会要求你改名绕过。
+核实路径：C:\Users\Administrator\AppData\Local\Temp\tmpecw5fjkc\.opencoding\autoruns\run-sec-cli-corrupt.json
+处置方式：确认该运行的状态与未提交内容后，修复账本；或显式新开批次（更换 --run-id）并重新确认范围与预算。
+............................................................................................................................................................................retained packaging workspace: C:\Users\ADMINI~1\AppData\Local\Temp\opencoding-packaging-source-62jtxb4o
+.retained packaging workspace: C:\Users\ADMINI~1\AppData\Local\Temp\opencoding-packaging-hardlink-uwmycml2
+.retained packaging workspace: C:\Users\ADMINI~1\AppData\Local\Temp\opencoding-packaging-links-2a_mbfda
+.retained packaging workspace: C:\Users\ADMINI~1\AppData\Local\Temp\opencoding-packaging-archive-boundaries-arsfbfxt
+.retained packaging workspace: C:\Users\ADMINI~1\AppData\Local\Temp\opencoding-packaging-canonical-target-k9iuioyc
+.................................................................................................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 633 tests in 595.660s
+
+OK (skipped=3)

@@ -1,0 +1,12 @@
+{
+  "opencoding/advisor.py": "1c6856f9bd56e195746d99bd879be21c74377a4afaf253899217a58847116dea",
+  "opencoding/generic_run.py": "6ec73adebe32110eacb879665d4b5afd24538e454953f261684ca75b6347123f",
+  "opencoding/grants.py": "964db9781e8a374142d0282031acdf56fab0416e246bf483a40846265ba04b5f",
+  "opencoding/service.py": "28ddb7830393151da35efb427fa1c77ba65f724e3712240bab48515cf1ab0ee0",
+  "opencoding/workbench.py": "14c0c4c46e17f061df3286ab71031da8be21a59a2832c63295f153e725a5b7e7",
+  "tests/test_product_plan_source.py": "ee4b647d7c9cdc65784f2dab4562e70a38abb73d62c726fd6abd41eb8d6c8fe4",
+  "tests/test_product_task_budget.py": "4152480f83490a3a0d57c9d874a37ca56795f6106947e555dcd38ff8fbf43ad8",
+  "tests/test_product_budget_concurrency.py": "4aa4d4afb76ca664e8625e8f094ce01e3a12ebda25bd63f8cf4e9b4274145411",
+  "tests/test_product_grants_concurrency.py": "6bc91f33754ddfda42d8680f4a07f51a6ee04cbec85a8f4291a8b0116a2ae81f",
+  "tests/test_product_workbench_security.py": "e158287210c38958461cb4857d442b050d6a6d072b51416f9e8bf6126c640e95"
+}

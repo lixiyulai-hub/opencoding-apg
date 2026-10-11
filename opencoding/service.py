@@ -866,7 +866,9 @@ def apply_approved(root: str | Path, approval: Mapping[str, Any]) -> dict[str, A
             current = read_session_snapshot(project_root, approval["session_id"])
             if current["revision"] != approval["revision"]:
                 return {"status": "stale", "reason_codes": ["session_revision_stale"], "revision": current["revision"]}
-            recommendation, task_plan, documents, _consideration = _graph(current, list_facts(project_root, current["id"]))
+            recommendation, task_plan, documents, _consideration = _graph(
+                current, list_facts(project_root, current["id"]),
+                recommendation_override=_plan_override_from_adoption(project_root, current["id"]))
             current_plan = preview_changes(project_root, documents)
             current_bundle = _service_bundle(project_root, current, recommendation, task_plan, documents, current_plan)
             if (

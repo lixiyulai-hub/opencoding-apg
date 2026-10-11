@@ -11,6 +11,7 @@ recommendation / task_plan / plan_digest / executor_mapping / 会话展示 / 漂
 import json
 import os
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -18,6 +19,7 @@ from unittest import mock
 from opencoding import aiconfig, advisor, plansource, service
 from opencoding.aiadapter import AIRequestError  # noqa: F401 - 保证替身通道可用
 from opencoding.facts import add_fact
+from opencoding.sessions import session_write_lock
 from opencoding.workbench import Workbench, WorkbenchError
 
 from tests.test_product_full_chain_v5 import FakeAdapter, GOOD_CONTRACT, eval_response
@@ -51,16 +53,136 @@ class PlanSourceTests(unittest.TestCase):
     def tearDown(self):
         self._tmp.cleanup()
 
-    def _evaluate_then_confirm(self, choice):
+    def _evaluate(self, choice):
         adapter = FakeAdapter([eval_payload(choice)])
         with mock.patch.dict(os.environ, {"LOCALAPPDATA": str(self.workspace / "appdata")}):
             aiconfig.save_config({"provider": "openai_compatible", "base_url": "https://x/v1",
                                   "api_key": "k", "model": "m"})
             record = advisor.run_ai_evaluation(self.project, self.sid, adapter, run_id="t")
+        return record
+
+    def _evaluate_then_confirm(self, choice):
+        record = self._evaluate(choice)
         revision = service.session_view(self.project, self.sid)["session"]["revision"]
         advisor.confirm_evaluation(self.project, self.sid, record["evaluation_id"],
                                    expected_revision=revision, accepted=True)
         return record
+
+    def test_adopted_ai_preview_applies_the_same_documents(self):
+        self._evaluate_then_confirm("cli")
+        advisor.adopt_confirmed_evaluation(self.project, self.sid)
+        preview = service.preview_session(self.project, self.sid)
+        self.assertEqual(preview["recommendation"]["platforms"]["primary"], "cli")
+        result = service.apply_approved(self.project, service.approve_preview(preview))
+        self.assertEqual(result["status"], "applied", result)
+        for relative, content in preview["documents"].items():
+            self.assertEqual((self.project / relative).read_text(encoding="utf-8"), content)
+
+    def test_ai_approval_still_rejects_changed_file_preimage(self):
+        self._evaluate_then_confirm("cli")
+        advisor.adopt_confirmed_evaluation(self.project, self.sid)
+        preview = service.preview_session(self.project, self.sid)
+        approval = service.approve_preview(preview)
+        target = self.project / preview["targets"][0]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("用户新修改", encoding="utf-8")
+        result = service.apply_approved(self.project, approval)
+        self.assertEqual(result["status"], "stale")
+        self.assertEqual(result["reason_codes"], ["business_or_file_plan_drift"])
+        self.assertEqual(target.read_text(encoding="utf-8"), "用户新修改")
+
+    def test_ai_approval_still_rejects_changed_revision(self):
+        self._evaluate_then_confirm("cli")
+        advisor.adopt_confirmed_evaluation(self.project, self.sid)
+        preview = service.preview_session(self.project, self.sid)
+        approval = service.approve_preview(preview)
+        service.submit_answer(self.project, self.sid, preview["session"]["revision"],
+                              "outcome", "登记借用归还并生成统计")
+        result = service.apply_approved(self.project, approval)
+        self.assertEqual(result["status"], "stale")
+        self.assertEqual(result["reason_codes"], ["session_revision_stale"])
+        self.assertFalse(any((self.project / path).exists() for path in preview["targets"]))
+
+    def test_confirmation_rejects_bad_types_and_stale_expected_revision_without_write(self):
+        record = self._evaluate("cli")
+        eid = record["evaluation_id"]
+        path = self.project / ".opencoding" / "evaluations" / (eid + ".json")
+        before = path.read_bytes()
+        revision = service.session_view(self.project, self.sid)["session"]["revision"]
+        cases = [(revision, value) for value in ("false", "true", 0, 1, None, [], {})]
+        cases += [(value, True) for value in (str(revision), True, float(revision), -1, None,
+                                              revision - 1, revision + 1)]
+        for expected, accepted in cases:
+            with self.subTest(expected=expected, accepted=accepted):
+                with self.assertRaises(ValueError):
+                    advisor.confirm_evaluation(self.project, self.sid, eid,
+                                               expected_revision=expected, accepted=accepted)
+                self.assertEqual(path.read_bytes(), before)
+        rejected = advisor.confirm_evaluation(self.project, self.sid, eid,
+                                              expected_revision=revision, accepted=False)
+        self.assertEqual(rejected["status"], "rejected")
+        self.assertIs(advisor.get_evaluation(self.project, eid)["confirmation"]["accepted"], False)
+
+    def test_confirmation_rejects_evaluation_from_old_revision_without_write(self):
+        record = self._evaluate("cli")
+        eid = record["evaluation_id"]
+        before = advisor.get_evaluation(self.project, eid)
+        view = service.session_view(self.project, self.sid)
+        changed = service.submit_answer(self.project, self.sid, view["session"]["revision"],
+                                         "outcome", "登记借用归还并生成统计")
+        with self.assertRaisesRegex(ValueError, "评估已过期"):
+            advisor.confirm_evaluation(self.project, self.sid, eid,
+                                       expected_revision=changed["session"]["revision"], accepted=True)
+        self.assertEqual(advisor.get_evaluation(self.project, eid), before)
+
+    def test_confirmation_prevents_session_write_between_check_and_commit(self):
+        record = self._evaluate("cli")
+        revision = service.session_view(self.project, self.sid)["session"]["revision"]
+        ready, release = threading.Event(), threading.Event()
+        results, errors = [], []
+        original_write = advisor._atomic_write
+
+        def paused_write(path, doc):
+            ready.set()
+            if not release.wait(10):
+                raise RuntimeError("confirmation checkpoint timed out")
+            original_write(path, doc)
+
+        def confirm():
+            try:
+                results.append(advisor.confirm_evaluation(
+                    self.project, self.sid, record["evaluation_id"],
+                    expected_revision=revision, accepted=True))
+            except BaseException as exc:
+                errors.append(exc)
+
+        with mock.patch.object(advisor, "_atomic_write", side_effect=paused_write):
+            worker = threading.Thread(target=confirm)
+            worker.start()
+            try:
+                self.assertTrue(ready.wait(10))
+                changed = service.submit_answer(self.project, self.sid, revision,
+                                                 "outcome", "并发修改")
+                self.assertEqual(changed["status"], "busy", changed)
+            finally:
+                release.set()
+                worker.join(10)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(results[0]["status"], "confirmed")
+        self.assertEqual(service.session_view(self.project, self.sid)["session"]["revision"], revision)
+
+    def test_confirmation_lock_contention_is_an_expected_service_error(self):
+        record = self._evaluate("cli")
+        eid = record["evaluation_id"]
+        before = advisor.get_evaluation(self.project, eid)
+        revision = service.session_view(self.project, self.sid)["session"]["revision"]
+        with session_write_lock(self.project):
+            with self.assertRaises(service.ServiceError) as caught:
+                advisor.confirm_evaluation(self.project, self.sid, eid,
+                                           expected_revision=revision, accepted=True)
+        self.assertEqual(caught.exception.code, "session_lock_busy")
+        self.assertEqual(advisor.get_evaluation(self.project, eid), before)
 
     def test_ai_choice_produces_different_official_plan(self):
         """AI 首选(cli)与规则首选(网页)不同时,正式计划与文档必须真的不同。"""

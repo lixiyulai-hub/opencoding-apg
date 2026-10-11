@@ -1413,18 +1413,19 @@ def open_task_ledger(project: Path, task_id: str, session_id: str, *, ceiling: i
     继承**剩余额度**。风险确认不续期、不扩额;追加额度必须由
     :func:`extend_task_budget` 产生一条明确的授权记录。
     """
-    path = _ledger_path(project, task_id, session_id)
-    doc = _require_readable_ledger(project, task_id, session_id)
-    ledger = _normalize_ledger(doc)
-    ledger["task_id"] = task_id
-    ledger["session_id"] = session_id
-    if not doc:
-        ledger["ceiling"] = max(0, int(ceiling))
-        ledger["created_at"] = _now()
-    entry = ledger["runs"].setdefault(run_id, {"grant_id": None, "dispatched": 0})
-    entry.setdefault("started_at", _now())
-    _write_ledger(path, ledger)
-    return ledger
+    with grants._grant_store_lock(project):
+        path = _ledger_path(project, task_id, session_id)
+        doc = _require_readable_ledger(project, task_id, session_id)
+        ledger = _normalize_ledger(doc)
+        ledger["task_id"] = task_id
+        ledger["session_id"] = session_id
+        if not doc:
+            ledger["ceiling"] = max(0, int(ceiling))
+            ledger["created_at"] = _now()
+        entry = ledger["runs"].setdefault(run_id, {"grant_id": None, "dispatched": 0})
+        entry.setdefault("started_at", _now())
+        _write_ledger(path, ledger)
+        return ledger
 
 
 def record_dispatch(project: Path, task_id: str, session_id: str, run_id: str, *,
@@ -1433,17 +1434,21 @@ def record_dispatch(project: Path, task_id: str, session_id: str, run_id: str, *
 
     C6-03:账本损坏时保守失败(在派发记账前拒绝),不带病记账、不静默重建。
     """
-    path = _ledger_path(project, task_id, session_id)
-    ledger = _normalize_ledger(_require_readable_ledger(project, task_id, session_id))
-    ledger["task_id"] = task_id
-    ledger["session_id"] = session_id
-    entry = ledger["runs"].setdefault(run_id, {"grant_id": grant_id, "dispatched": 0})
-    entry["dispatched"] = max(int(entry.get("dispatched", 0) or 0), max(0, int(dispatched)))
-    if grant_id:
-        entry["grant_id"] = grant_id
-    ledger["updated_at"] = _now()
-    _write_ledger(path, ledger)
-    return ledger
+    with grants._grant_store_lock(project):
+        path = _ledger_path(project, task_id, session_id)
+        ledger = _normalize_ledger(_require_readable_ledger(project, task_id, session_id))
+        ledger["task_id"] = task_id
+        ledger["session_id"] = session_id
+        entry = ledger["runs"].setdefault(run_id, {"grant_id": grant_id, "dispatched": 0})
+        entry["dispatched"] = max(int(entry.get("dispatched", 0) or 0), max(0, int(dispatched)))
+        if sum(item["dispatched"] for item in ledger["runs"].values()) > ledger["ceiling"]:
+            raise GenericRunError(
+                "task_budget_exhausted", "累计请求额度已用尽；拒绝派发且不改写账本")
+        if grant_id:
+            entry["grant_id"] = grant_id
+        ledger["updated_at"] = _now()
+        _write_ledger(path, ledger)
+        return ledger
 
 
 def _ledger_identity_mismatch(doc: Mapping[str, Any], task_id: str,
@@ -1495,22 +1500,23 @@ def extend_task_budget(root: str | Path, task_id: str, session_id: str, *,
     if len(why) < 4:
         raise GenericRunError("task_budget_reason_required", "追加额度必须写明理由(≥4 字)")
     project = Path(root)
-    path = _ledger_path(project, task_id, session_id)
-    # C6-03:账本损坏时拒绝扩额——不知道真实已消费量,就不允许在任何基数上累加。
-    ledger = _normalize_ledger(_require_readable_ledger(project, task_id, session_id))
-    ledger["task_id"] = task_id
-    ledger["session_id"] = session_id
-    if not ledger.get("created_at"):
-        ledger["created_at"] = _now()
-    ledger.setdefault("runs", {})
-    ledger["ceiling"] = int(ledger.get("ceiling", 0) or 0) + amount
-    ledger["extensions"].append({
-        "amount": amount, "reason": why[:300],
-        "issued_by": sanitize_text(str(issued_by))[:120], "at": _now(),
-    })
-    ledger["updated_at"] = _now()
-    _write_ledger(path, ledger)
-    return task_budget_state(project, task_id, session_id)
+    with grants._grant_store_lock(project):
+        path = _ledger_path(project, task_id, session_id)
+        # C6-03:账本损坏时拒绝扩额——不知道真实已消费量,就不允许在任何基数上累加。
+        ledger = _normalize_ledger(_require_readable_ledger(project, task_id, session_id))
+        ledger["task_id"] = task_id
+        ledger["session_id"] = session_id
+        if not ledger.get("created_at"):
+            ledger["created_at"] = _now()
+        ledger.setdefault("runs", {})
+        ledger["ceiling"] = int(ledger.get("ceiling", 0) or 0) + amount
+        ledger["extensions"].append({
+            "amount": amount, "reason": why[:300],
+            "issued_by": sanitize_text(str(issued_by))[:120], "at": _now(),
+        })
+        ledger["updated_at"] = _now()
+        _write_ledger(path, ledger)
+        return task_budget_state(project, task_id, session_id)
 
 
 def _persist_received_material(project: Path, run_id: str, attempt: int, request_id: str,
@@ -2810,15 +2816,17 @@ def _run_inner(project: Path, goal: str, adapter: Any, contract: dict[str, Any],
                                  remaining_budget=remaining)
             # CP2-03:派发前把请求身份可靠落盘(磁盘先于网络;保存失败则不发送)
             receipt["attempts"].append(attempt_record)
-            receipt["ai_requests_dispatched"] = receipt.get("ai_requests_dispatched", 0) + 1
+            next_dispatched = receipt.get("ai_requests_dispatched", 0) + 1
+            receipt["current_request"] = {"request_id": request_id, "nonce_prefix": nonce[:14],
+                                          "kind": kind, "attempt": attempt,
+                                          "effect": "not_dispatched"}
             if session_id:
                 # 累计账本按真实派发次数递增(新 run 不再自带全额新额度)
                 record_dispatch(project, TASK_ID, session_id, run_id,
-                                dispatched=int(receipt["ai_requests_dispatched"]),
+                                dispatched=next_dispatched,
                                 grant_id=grant["grant_id"])
-            receipt["current_request"] = {"request_id": request_id, "nonce_prefix": nonce[:14],
-                                          "kind": kind, "attempt": attempt,
-                                          "effect": "dispatching"}
+            receipt["ai_requests_dispatched"] = next_dispatched
+            receipt["current_request"]["effect"] = "dispatching"
             _write_receipt(project, receipt)
             # 预算消耗(失败/超时同样计入真实账本)
             _consume_ai_budget(project, grant, attempt, "")

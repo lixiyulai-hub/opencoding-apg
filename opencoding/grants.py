@@ -3,21 +3,33 @@
 批次授权由用户在自主模式开始时一次性确认，绑定项目根、业务目标、允许
 路径、动作类别与预算；每一步真正执行前，由程序核对批次授权并签发短期
 凭据。凭据一次性使用、绑定任务与尝试编号、过期即拒绝；撤销与预算状态
-持久化，重启不复活、不重置。模型或子任务不能自行签发、续期或改写。
+持久化，重启不复活、不重置。调用方负责核实用户授权；本模块提供协作进程
+间的一致性，不隔离同权限恶意代码，指纹也不是不可伪造的授权证明。
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from contextlib import contextmanager
+from functools import wraps
+import errno
 import json
 import os
 from pathlib import Path
 import re
+import stat
+import threading
+import time
 import unicodedata
 import uuid
 from typing import Any, Mapping
 
-from .safety import _relative_parts, _root_path, canonical_json, sanitize_text, sha256_bytes
+from .safety import _is_reparse, _relative_parts, _root_path, canonical_json, sanitize_text, sha256_bytes
+
+if os.name == "nt":
+    import msvcrt
+else:
+    import fcntl
 
 
 GRANT_SCHEMA_VERSION = "1.0"
@@ -110,6 +122,116 @@ def _grants_dir(root: Path) -> Path:
     return root / ".opencoding" / "grants"
 
 
+_STORE_LOCK_TIMEOUT_SECONDS = 10.0
+_STORE_LOCKS_HELD = threading.local()
+
+
+@contextmanager
+def _grant_store_lock(root: str | Path, *, create: bool = True):
+    """串行化一个项目的授权状态；嵌套调用复用本线程已持有的 OS 锁。
+
+    锁文件永久保留，不能在释放时 unlink，否则等待旧 inode 的进程与新锁
+    会形成两个临界区。进程退出由 OS 释放锁，不靠时间猜测或删除活锁。
+    只覆盖短小的状态 I/O，不在锁内执行候选、调用 Provider 或等待用户。
+    """
+    project_root = _root_path(root)
+    key = (os.getpid(), os.path.normcase(str(project_root)))
+    held = getattr(_STORE_LOCKS_HELD, "roots", None)
+    if held is None:
+        held = _STORE_LOCKS_HELD.roots = set()
+    if key in held:
+        yield
+        return
+    store = _grants_dir(project_root)
+    lock = store / ".state.lock"
+
+    def check_path():
+        for path in (project_root / ".opencoding", store, lock):
+            if path.is_symlink() or _is_reparse(path):
+                raise GrantError("grant_store_unsafe", "授权存储或锁路径是链接")
+            if path.exists():
+                info = path.stat()
+                if path == lock:
+                    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                        raise GrantError("grant_store_unsafe", "授权锁必须是独立普通文件")
+                elif not stat.S_ISDIR(info.st_mode):
+                    raise GrantError("grant_store_unsafe", "授权存储必须是普通目录")
+
+    check_path()
+    # 兼容尚无永久锁的旧库：纯读不迁移、不创建任何控制文件。
+    # 所有协作写者必须先创建锁；若读取中途出现锁，本次快照不能证明一致。
+    if not create and not lock.exists():
+        yield
+        check_path()
+        if lock.exists():
+            raise GrantError("grant_store_busy", "授权存储刚开始更新，请重新读取")
+        return
+    try:
+        if create:
+            store.mkdir(parents=True, exist_ok=True)
+        check_path()
+        fd = os.open(lock, (os.O_CREAT if create else 0) | os.O_RDWR | getattr(os, "O_BINARY", 0)
+                     | getattr(os, "O_NOFOLLOW", 0), 0o600)
+    except OSError as exc:
+        raise GrantError("grant_store_unavailable", "无法打开授权状态锁") from exc
+    acquired = False
+    try:
+        opened = os.fstat(fd)
+        check_path()
+        current = lock.stat()
+        if (opened.st_dev, opened.st_ino) != (current.st_dev, current.st_ino):
+            raise GrantError("grant_store_unsafe", "授权锁在打开时已被替换")
+        deadline = time.monotonic() + _STORE_LOCK_TIMEOUT_SECONDS
+        while True:
+            try:
+                os.lseek(fd, 0, os.SEEK_SET)
+                if os.name == "nt":
+                    msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                else:
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                acquired = True
+                break
+            except OSError as exc:
+                if exc.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):
+                    raise GrantError("grant_store_unavailable", "授权状态锁不可用") from exc
+                if time.monotonic() >= deadline:
+                    raise GrantError("grant_store_busy", "授权状态正在更新，请稍后重试") from exc
+                time.sleep(0.01)
+        check_path()
+        current = lock.stat()
+        if (opened.st_dev, opened.st_ino) != (current.st_dev, current.st_ino):
+            raise GrantError("grant_store_unsafe", "等待中的授权锁已被替换")
+        if create and os.fstat(fd).st_size == 0:
+            os.write(fd, b"0")
+            os.fsync(fd)
+        held.add(key)
+        try:
+            yield
+        finally:
+            held.remove(key)
+    finally:
+        try:
+            if acquired:
+                os.lseek(fd, 0, os.SEEK_SET)
+                if os.name == "nt":
+                    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+                else:
+                    fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
+
+
+def _serialized_store(*, create: bool = False, write_flag: str | None = None):
+    def decorate(function):
+        @wraps(function)
+        def serialized(root, *args, **kwargs):
+            mutating = create if write_flag is None else bool(kwargs.get(write_flag, True))
+            with _grant_store_lock(root, create=mutating):
+                return function(root, *args, **kwargs)
+        return serialized
+    return decorate
+
+
 def _atomic_write_json(path: Path, value: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp-{uuid.uuid4().hex}")
@@ -170,6 +292,8 @@ def _validate_credential(value: Mapping[str, Any]) -> dict[str, Any]:
         raise GrantError("credential_version_unsupported", "凭据版本不受支持")
     if not isinstance(value["credential_id"], str) or not _CREDENTIAL_ID.fullmatch(value["credential_id"]):
         raise GrantError("credential_identity_invalid", "凭据编号无效")
+    if not isinstance(value["grant_id"], str) or not _GRANT_ID.fullmatch(value["grant_id"]):
+        raise GrantError("grant_identity_invalid", "凭据所属批次编号无效")
     _parse_time(value["issued_at"])
     _parse_time(value["expires_at"])
     if not isinstance(value["used"], bool):
@@ -179,6 +303,7 @@ def _validate_credential(value: Mapping[str, Any]) -> dict[str, Any]:
     return dict(value)
 
 
+@_serialized_store(create=True)
 def issue_batch_grant(
     root: str | Path,
     *,
@@ -191,7 +316,7 @@ def issue_batch_grant(
     budget: Mapping[str, int] | None = None,
     ttl_seconds: int = DEFAULT_GRANT_TTL_SECONDS,
 ) -> dict[str, Any]:
-    """登记一次有限、有期、可撤销的批次授权；只有程序可调用。"""
+    """登记已由调用方确认的批次授权；issued_by 是来源记录，不是认证令牌。"""
 
     project_root = _root_path(root)
     if not isinstance(goal, str) or not goal.strip():
@@ -244,6 +369,7 @@ def issue_batch_grant(
     return dict(grant)
 
 
+@_serialized_store()
 def load_grant(root: str | Path, grant_id: str) -> dict[str, Any]:
     project_root = _root_path(root)
     if not isinstance(grant_id, str) or not _GRANT_ID.fullmatch(grant_id):
@@ -252,21 +378,19 @@ def load_grant(root: str | Path, grant_id: str) -> dict[str, Any]:
     if not path.exists():
         raise GrantError("grant_unknown", "批次授权不存在")
     grant = _validate_grant(_read_json(path))
+    if grant["grant_id"] != grant_id:
+        raise GrantError("grant_identity_mismatch", "批次授权内部编号与请求文件名不一致")
     # F05/R10：授权与项目根强绑定；原字节复制到其他根目录一律拒绝。
     if grant["root"] != str(project_root):
         raise GrantError("grant_root_mismatch", "批次授权绑定于其他项目根，拒绝在本根使用")
     # W0：撤销流水已生效但授权文件还没改写(撤销写入被打断)——按失败关闭判定为
-    # 已撤销，并尽力补写授权文件，绝不允许"流水已撤销、文件仍可用"的分裂状态。
+    # 已撤销。只读加载仅投影有效状态，不补写文件或初始化旧库的永久锁。
     if not grant["revoked"]:
         pending = _pending_revocation(project_root, grant["grant_id"])
         if pending is not None:
             grant["revoked"] = True
             grant["revoked_at"] = str(pending.get("at") or _now())
             grant["revoke_reason"] = sanitize_text(str(pending.get("reason") or ""))
-            try:
-                _save_grant(project_root, grant)
-            except OSError:
-                pass
     _check_budget_against_journal(project_root, grant)
     return grant
 
@@ -291,20 +415,22 @@ def _journal_entries(root: Path, grant_id: str) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     entries: list[dict[str, Any]] = []
-    with open(path, "r", encoding="utf-8") as handle:
-        for line in handle:
-            line = line.strip()
-            if not line:
-                continue
-            try:
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
                 item = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if isinstance(item, dict):
+                if not isinstance(item, dict):
+                    raise ValueError("journal entry is not an object")
                 entries.append(item)
+    except (OSError, ValueError) as exc:
+        raise GrantError("grant_journal_invalid", "授权消费流水损坏或不可读，拒绝继续") from exc
     return entries
 
 
+@_serialized_store()
 def grant_consumption_journal(root: str | Path, grant_id: str) -> list[dict[str, Any]]:
     """读取授权消费日志（追加型）；用于核对使用标记与预算未被静默重置。"""
     project_root = _root_path(root)
@@ -368,6 +494,7 @@ def _revocation_epoch_path(root: Path) -> Path:
     return _grants_dir(root) / "revocations" / "revocation-epoch.json"
 
 
+@_serialized_store()
 def revocation_entries(root: str | Path) -> list[dict[str, Any]]:
     """读取追加型撤销流水(原始顺序)；用于核对撤销与提交的先后。"""
     project_root = _root_path(root)
@@ -381,17 +508,16 @@ def revocation_entries(root: str | Path) -> list[dict[str, Any]]:
                 line = line.strip()
                 if not line:
                     continue
-                try:
-                    item = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                if isinstance(item, dict):
-                    entries.append(item)
-    except OSError:
-        return entries
+                item = json.loads(line)
+                if not isinstance(item, dict):
+                    raise ValueError("revocation entry is not an object")
+                entries.append(item)
+    except (OSError, ValueError) as exc:
+        raise GrantError("grant_revocation_journal_invalid", "撤销流水损坏或不可读，拒绝继续") from exc
     return entries
 
 
+@_serialized_store()
 def revocation_epoch(root: str | Path) -> int:
     """当前撤销计数：每次正式撤销单调 +1，写盘先于授权文件改写。"""
 
@@ -400,12 +526,14 @@ def revocation_epoch(root: str | Path) -> int:
         value = _read_json(_revocation_epoch_path(project_root))
         epoch = value.get("epoch")
         if isinstance(epoch, int) and not isinstance(epoch, bool) and epoch >= 0:
-            return epoch
+            # 流水已持久化、计数缓存尚未落盘时也不能返回旧 epoch。
+            return max(epoch, len(revocation_entries(project_root)))
     except GrantError:
         pass
     return len(revocation_entries(project_root))
 
 
+@_serialized_store(create=True)
 def _append_revocation(root: Path, grant_id: str, reason: str) -> int:
     """先立撤销点(流水 + 计数写盘)，返回撤销后的计数。"""
 
@@ -429,6 +557,7 @@ def _pending_revocation(root: Path, grant_id: str) -> dict[str, Any] | None:
     return found
 
 
+@_serialized_store(create=True)
 def revoke_batch_grant(root: str | Path, grant_id: str, *, reason: str) -> dict[str, Any]:
     """撤销批次授权；撤销状态持久化，不删除任何记录。
 
@@ -489,6 +618,7 @@ def _credential_path(root: Path, credential_id: str) -> Path:
     return _grants_dir(root) / "credentials" / f"{credential_id}.json"
 
 
+@_serialized_store(create=True)
 def issue_step_credential(
     root: str | Path,
     grant_id: str,
@@ -565,9 +695,13 @@ def _load_credential(root: Path, credential_id: str) -> dict[str, Any]:
     path = _credential_path(root, credential_id)
     if not path.exists():
         raise GrantError("credential_unknown", "凭据不存在")
-    return _validate_credential(_read_json(path))
+    credential = _validate_credential(_read_json(path))
+    if credential["credential_id"] != credential_id:
+        raise GrantError("credential_identity_mismatch", "凭据内部编号与请求文件名不一致")
+    return credential
 
 
+@_serialized_store(write_flag="consume")
 def check_step_credential(
     root: str | Path,
     credential_id: str,
@@ -614,6 +748,7 @@ def check_step_credential(
     return {"credential": credential, "grant": grant}
 
 
+@_serialized_store(create=True)
 def consume_budget_counter(root: str | Path, grant_id: str, *, counter: str, amount: int = 1) -> dict[str, Any]:
     """登记修复或无进展预算消耗；超出上限返回 budget_exhausted 异常。"""
 

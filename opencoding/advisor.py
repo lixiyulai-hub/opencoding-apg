@@ -5,8 +5,8 @@
 - 输入:会话(12 题中文答案)、事实簿、规则推荐与硬约束、真实能力视图、上次评估(重评时)。
 - 输出:AIAdapter/WorkBuddyGatewayAdapter 的 evaluate 结构化响应(含扩展 recommendation 字段),
   经既有绑定/nonce/敏感校验后落盘 `.opencoding/evaluations/<id>.json`。
-- AI 判断不自动生效:必须由用户确认;确认后若平台选择变化,通过 service.submit_answer
-  写入会话(带 revision 乐观并发),从而真实改变任务计划与执行绑定。
+- AI 判断不自动生效:必须由用户确认；确认保留原始回答，后续采用步骤
+  按已确认评估生成正式计划与执行绑定。
 - 密钥/网关凭据只存在于适配器请求头,本模块不记录、不回显。
 """
 
@@ -28,6 +28,7 @@ from .decisions import (  # 私有符号:硬约束守门与技术栈随平台重
     _CONSTRAINT_EFFECTS, _stack, build_recommendation, derive_fact_constraints)
 from .facts import list_facts
 from .safety import sanitize_text, sha256_bytes
+from .sessions import SessionLockError, session_write_lock
 
 EVALUATIONS_SCHEMA_VERSION = 1
 EVALUATION_STATUSES = ("pending_confirmation", "confirmed", "superseded", "rejected")
@@ -465,7 +466,24 @@ def confirm_evaluation(
     expected_revision: int,
     accepted: bool,
 ) -> dict[str, Any]:
-    """用户确认/拒绝 AI 评估。确认且平台选择变化时,真实更新会话答案。"""
+    """在同一会话版本下确认或拒绝评估，保留用户原始平台回答。"""
+    if type(expected_revision) is not int or expected_revision < 0:
+        raise ValueError("expected_revision 必须是非负整数")
+    if type(accepted) is not bool:
+        raise ValueError("accepted 必须是 JSON 布尔值")
+    # 与会话写入共用跨进程锁，版本检查至确认落盘之间不能改变会话。
+    try:
+        with session_write_lock(Path(root)):
+            return _confirm_evaluation_locked(root, session_id, evaluation_id,
+                                              expected_revision=expected_revision, accepted=accepted)
+    except SessionLockError as exc:
+        raise ServiceError(exc.code, "会话正在更新，请稍后重新确认") from exc
+
+
+def _confirm_evaluation_locked(
+    root: str | Path, session_id: str, evaluation_id: str, *,
+    expected_revision: int, accepted: bool,
+) -> dict[str, Any]:
     record = get_evaluation(root, evaluation_id)
     if record is None:
         raise ValueError("评估记录不存在")
@@ -476,16 +494,18 @@ def confirm_evaluation(
     # 过期评估拒绝:评估时的会话修订与当前修订不一致 → 要求重新评估
     view = service.session_view(root, session_id)
     current_revision = (view["session"] if "session" in view else view).get("revision")
+    if expected_revision != current_revision:
+        raise ValueError("确认版本已过期:预期 r%s,当前 r%s;请刷新后确认"
+                         % (expected_revision, current_revision))
     if record.get("session_revision_at_eval") != current_revision:
         raise ValueError(
             "评估已过期:评估时会话版本 r%s,当前 r%d;请在当前版本下重新评估"
             % (record.get("session_revision_at_eval"), current_revision))
     record["confirmation"] = {
-        "accepted": bool(accepted),
+        "accepted": accepted,
         "at": _now(),
         "session_revision_before": expected_revision,
     }
-    applied_platform_change = None
     if accepted:
         record["status"] = "confirmed"
         # R17-C05:AI 首选不得覆盖用户原始回答。仅记录差异;

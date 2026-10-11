@@ -79,6 +79,26 @@ class _Base(unittest.TestCase):
 
 
 class TaskBudgetTests(_Base):
+    def test_atomic_budget_rejection_does_not_record_a_dispatch(self):
+        binding = self._adopt_binding()
+        adapter = self._timeout_adapter()
+        original = generic_run.record_dispatch
+
+        def reject_request(*args, **kwargs):
+            if kwargs.get("dispatched", 0) > 0:
+                raise generic_run.GenericRunError("task_budget_exhausted", "competing request won")
+            return original(*args, **kwargs)
+
+        with mock.patch.object(generic_run, "record_dispatch", side_effect=reject_request):
+            receipt = self._dispatch_once(adapter, "gen-000000000b00", binding)
+        self.assertEqual(receipt["status"], "failed")
+        self.assertEqual(adapter.calls, 0)
+        self.assertEqual(receipt["ai_requests_dispatched"], 0)
+        self.assertEqual(receipt["current_request"]["effect"], "not_dispatched")
+        self.assertEqual(receipt["current_request"]["request_id"], receipt["attempts"][0]["request_id"])
+        self.assertEqual(generic_run.task_budget_state(
+            self.project, generic_run.TASK_ID, self.sid)["dispatched"], 0)
+
     def test_cumulative_limit_blocks_fifth_dispatch(self):
         """T04 原反例:四次用尽后第五次必须拒绝,不再签发新额度。"""
         binding = self._adopt_binding()
