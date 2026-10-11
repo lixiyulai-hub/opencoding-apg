@@ -53,10 +53,11 @@
       },
       "final_plan_source_tests": 16,
       "final_grant_tests": 37,
-      "independent_review": "cross-reviewed; final legacy-read follow-up pending",
+      "independent_review": "cross-reviewed; legacy read P2 resolved and independently reviewed at b010cccbcdc14dbebd94f7ad4d95507e09c767bb",
       "final_budget_tests": 21,
       "source_manifest": "artifacts/audit-remediation-20261011/source-sha256.json"
-    }
+    },
+    "source_commit": "b010cccbcdc14dbebd94f7ad4d95507e09c767bb"
   },
   "following_stage": "继续完整 AI Coding 治理工作流修复：先收口生产调用授权与评估预算，再贯通 G2/G3 Host 任务波次和 G4 独立审核，随后完成 G5/G6/G7。",
   "ordered_successors": [
