@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
   "program_id": "opencoding-agent-native-delivery-v2-20260909",
-  "status": "audit-remediation-wave-2-verified-host-contract-next",
+  "status": "r3-g7-replay-verified-r4-live-review-next",
   "supersedes": {
     "path": "docs/product/DELIVERY_PLAN_V1.json",
     "effect": "Supersedes only the W3 browser-workbench requirement and stale progress fields. Historical V1 planning and evidence remain preserved."
@@ -31,29 +31,37 @@
     "reason": "A scope-correct source-bound acceptance ledger has not yet reconciled the retained evidence with the complete AI coding governance workflow and its staged agent-host acceptance."
   },
   "immediate_transaction": {
-    "id": "host-contract-and-task-wave-execution-r3",
+    "id": "r4-live-independent-review-gate",
     "status": "ready_for_local_implementation",
-    "purpose": "复用现有任务图与SQLite调度状态，定义统一Host协议与能力登记，再以逐任务执行包接入Codex。",
+    "purpose": "对已完成的真实项目隔离回放候选执行独立 Reviewer live 验证；模拟 Reviewer 结果不得开写入或发布 Gate。",
     "ordered_work": [
-      "定义Host请求、结果、能力及运行身份；绑定root/session/plan/task/run/outputs，默认拒绝未验证能力",
-      "以替身完成协议一致性测试：幂等、取消、超时、重复/迟到结果；明确这些测试不证明真实接入",
-      "将TaskPlan波次连接到逐任务执行包，保留依赖、预算、候选、验证及回滚证据",
-      "实现并独立验证首个Codex Host适配；需要真实接入配置时通知用户在本地设置",
-      "进入候选与验收摘要绑定的独立Reviewer，再完成真实项目和新手旅程"
+      "保留 G7 正式入口回放、任务波次、10 个运行回执、候选摘要和 SHA-256 证据绑定",
+      "在不重复付费请求的前提下，准备可脱敏的 live Host/Reviewer 本地配置检查",
+      "live 验证通过后生成一次性受控采用授权；否则保持 pending_live_validation_review",
+      "真实项目写入和公开发布继续按具体范围单独确认"
     ],
-    "reuse": [
-      "opencoding/planning.py",
-      "opencoding/scheduler.py"
-    ],
-    "current_gap": "aiadapter.complete是模型调用接口；generic_run仍以generate-app-v3执行整应用，尚不能宣称Codex Host生命周期和逐任务波次已接通。",
-    "api_requirement": "协议及替身测试无需真实API；真实Provider验证受用户级配置未恢复影响，届时通过本地接入向导恢复，不索取聊天密钥。",
-    "not_required": [
-      "Docker Desktop GUI",
-      "单独安装MCP",
-      "更换为特定IDE"
-    ]
+    "evidence": ".opencoding-dev-runs/g7-20261013/g7-formal-replay.json",
+    "diagnostics_repair": {
+      "status": "implemented_and_targeted_verified",
+      "behavior": "CodexCLIHost stores coarse non-secret last_diagnostics on the adapter instance while preserving the strict Host result envelope",
+      "codes": [
+        "succeeded",
+        "cancelled",
+        "timed_out",
+        "output_limit_exceeded",
+        "invalid_response",
+        "process_failed",
+        "cli_unavailable",
+        "process_launch_failed",
+        "secret_in_request",
+        "process_stop_failed"
+      ],
+      "test": "tests.test_product_codex_host:17 passed"
+    },
+    "current_gap": "live provider validation remains pending; previous real request failed before diagnostics repair and must not be re-run until a valid local provider configuration is available.",
+    "diagnostics_evidence": ".opencoding-dev-runs/g7-20261013/codex-host-diagnostics-repair.json"
   },
-  "following_stage": "R3：统一 Host 能力、任务波次、运行身份和状态契约，再验证首个真实 Host；继续 R4 独立 Reviewer，随后 R5 真实项目及新手验收。",
+  "following_stage": "R4：将 G7 候选摘要绑定到独立 Reviewer 的 live 验证；通过后才讨论受控采用，仍不自动发布。",
   "ordered_successors": [
     "统一 Host Adapter 能力、任务波次、运行身份和状态契约，验证首个真实 Host",
     "实现候选与测试摘要绑定的独立 Reviewer Gate，blocker/unavailable 禁止交付",
@@ -714,6 +722,58 @@
       "workbench_javascript_syntax": "pass",
       "independent_review": "pass_cross_review_and_final_18_production_binding_tests",
       "real_api_calls": 0
+    }
+  },
+  "g6_real_project": {
+    "project": "E:/线稿讲解视频",
+    "episode": "episodes/20261006-libai-catpaw",
+    "mode": "read_only_experiment",
+    "project_code_modified": false,
+    "media_baseline": ".opencoding-dev-runs/g6-20261012/media-baseline.json",
+    "source_snapshot": ".opencoding-dev-runs/g6-20261012/project-readonly-proof.json",
+    "host_result": ".opencoding-dev-runs/g6-20261012/host-result-summary.json",
+    "host_status": "failed",
+    "candidate_written": false,
+    "isolated_experiment": ".opencoding-dev-runs/g6-20261012/v008-experiment-report.json",
+    "isolated_output": ".opencoding-dev-runs/g6-20261012/isolated-episode-v008/render/v008-g6/libai-opening-32s-v006.mp4",
+    "technical_verification": "passed",
+    "g6_status": "accepted_isolated_representative_segment",
+    "status": "g6_accepted_next_round_opencoding_landing",
+    "next_gate": "r4_live_independent_reviewer",
+    "user_acceptance": "accepted_for_next_round",
+    "known_project_limits": [
+      "整片与配音仍pending-user",
+      "v006/v007局部视觉验收不等于整片验收",
+      "已登记TTS漏字待修复"
+    ],
+    "failure_analysis": ".opencoding-dev-runs/g6-20261012/host-failure-analysis.json",
+    "optimization_plan": ".opencoding-dev-runs/g6-20261012/readonly-optimization-plan.md",
+    "paid_retry": "not_repeated",
+    "user_feedback": "整体画面非常不错；口播仍少读了“个”字，未接受为正式版本",
+    "repair_experiment": ".opencoding-dev-runs/g6-20261012/v013-r2-03-repair-report.json",
+    "repair_output": ".opencoding-dev-runs/g6-20261012/isolated-episode-v013/render/v013-g6/libai-opening-33s-v013.mp4",
+    "asr_self_check": "passed",
+    "acceptance_evidence": ".opencoding-dev-runs/g6-20261012/v013-r2-03-repair-report.json",
+    "next_round_plan": ".opencoding-dev-runs/g6-20261012/next-round-opencoding-landing.md",
+    "g7_replay": ".opencoding-dev-runs/g7-20261013/g7-formal-replay.json",
+    "g7_replay_summary": ".opencoding-dev-runs/g7-20261013/g7-formal-replay.md",
+    "g7_status": "g7_replay_completed_pending_live_validation_review",
+    "g7_candidate_preview": {
+      "status": "preview_ready",
+      "delivery_gate": "pending_independent_review",
+      "verification": [
+        "simulated"
+      ],
+      "candidate_digest": "fde5bc2bd92fb45299f31d6c268e40503e4a393d56f61698e175015c914c0871",
+      "run_receipt_count": 10,
+      "file_plan_digest": "a4f82411f2d9f8cb99435c2b32a404572325b63eb7745f422bab69f681544213"
+    },
+    "g7_review": {
+      "status": "reviewed_simulated",
+      "delivery_gate": "pending_live_validation_review",
+      "verification": "simulated",
+      "grant_issued": false,
+      "reason": null
     }
   }
 }

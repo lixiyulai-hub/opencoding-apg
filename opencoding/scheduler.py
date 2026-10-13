@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-from .executor import Executor, action_digest
+from .executor import Executor, action_digest as executor_action_digest
 from .safety import SCHEMA_VERSION, _root_path, canonical_json, inspect_sensitive, sanitize_text, sha256_bytes
 from .scheduler_migrations import MIGRATION_VERSION, database_path, migrate
 
@@ -22,6 +22,14 @@ TASK_STATES = {"queued", "running", "succeeded", "failed", "frozen", "cancelled"
 _TASK_FIELDS = {"task_id", "input", "action", "depends_on", "max_attempts", "timeout_seconds", "idempotency_key"}
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
 MAX_TIMEOUT_SECONDS = 30.0
+
+
+def action_digest(action):
+    if isinstance(action, Mapping) and action.get("type") == "host_task":
+        from .task_execution import validate_host_action
+        validate_host_action(action)
+        return sha256_bytes(canonical_json(action))
+    return executor_action_digest(action)
 _SQLITE_SHARED_LOCK = 0x40000002
 _SNAPSHOT_TASK_COLUMNS = {
     "task_id", "idempotency_key", "input_json", "action_json", "depends_json",
@@ -274,7 +282,8 @@ def _validate_task(task: Mapping[str, Any]) -> dict[str, Any]:
         raise ValueError("task cannot depend on itself")
     if type(value["max_attempts"]) is not int or not 1 <= value["max_attempts"] <= 100:
         raise ValueError("max_attempts is outside the local limit")
-    if not isinstance(value["timeout_seconds"], (int, float)) or isinstance(value["timeout_seconds"], bool) or not 0 < value["timeout_seconds"] <= MAX_TIMEOUT_SECONDS:
+    timeout_limit = 3600.0 if isinstance(value["action"], Mapping) and value["action"].get("type") == "host_task" else MAX_TIMEOUT_SECONDS
+    if not isinstance(value["timeout_seconds"], (int, float)) or isinstance(value["timeout_seconds"], bool) or not 0 < value["timeout_seconds"] <= timeout_limit:
         raise ValueError("timeout_seconds is outside the local limit")
     if not isinstance(value["action"], Mapping):
         raise ValueError("action is invalid")
@@ -485,8 +494,9 @@ def _process_alive(pid: int | None) -> bool:
 
 
 class Scheduler:
-    def __init__(self, root: str | os.PathLike[str] | Path) -> None:
+    def __init__(self, root: str | os.PathLike[str] | Path, *, host_registry=None) -> None:
         self.root = _explicit_root(root)
+        self.host_registry = host_registry
         self._cancel_events: dict[str, threading.Event] = {}
         self.recover()
 
@@ -522,7 +532,7 @@ class Scheduler:
             connection.commit()
             return {"status": "enqueued", "task": _task_dict(row)}
 
-    def run_next(self, task_id: str | None = None) -> dict[str, Any]:
+    def _claim_next(self, task_id: str | None = None, *, binding_locked=False) -> dict[str, Any]:
         with _connect(self.root) as connection:
             connection.execute("BEGIN IMMEDIATE")
             query = "SELECT * FROM tasks WHERE state = 'queued' ORDER BY created_at, task_id"
@@ -531,6 +541,24 @@ class Scheduler:
             if selected is None:
                 connection.commit()
                 return {"status": "idle", "reason": "no_ready_task"}
+            selected_action = _load(selected["action_json"])
+            if selected_action.get("type") == "host_task":
+                from .task_execution import check_dispatch
+                reason = check_dispatch(connection, selected, self.host_registry)
+                if reason:
+                    connection.commit()
+                    return {"status": "blocked", "reason": reason, "task_id": selected["task_id"]}
+            selected_input = _load(selected["input_json"])
+            if selected_action.get("type") == "host_task" and isinstance(selected_input, dict) and "production_binding" in selected_input:
+                if not binding_locked:
+                    connection.commit()
+                    return {"status": "binding_lock_required"}
+                try:
+                    from .host_workflow import verify_binding
+                    verify_binding(self.root, selected_input["production_binding"])
+                except (ValueError, OSError):
+                    connection.commit()
+                    return {"status": "blocked", "reason": "host_binding_drift", "task_id": selected["task_id"]}
             attempt = int(selected["attempt"]) + 1
             run_id = f"run-{uuid.uuid4().hex}"
             started = _now()
@@ -542,6 +570,21 @@ class Scheduler:
             task = _task_dict(selected)
             task["attempt"] = attempt
             task["last_run_id"] = run_id
+
+        return {"status": "claimed", "task": task, "run_id": run_id}
+
+    def run_next(self, task_id: str | None = None) -> dict[str, Any]:
+        claim = self._claim_next(task_id)
+        if claim["status"] == "binding_lock_required":
+            from .sessions import session_write_lock, SessionLockError
+            try:
+                with session_write_lock(self.root):
+                    claim = self._claim_next(task_id, binding_locked=True)
+            except SessionLockError:
+                return {"status": "blocked", "reason": "session_lock_busy"}
+        if claim["status"] != "claimed":
+            return claim
+        task, run_id = claim["task"], claim["run_id"]
 
         cancel_event = threading.Event()
         self._cancel_events[task["task_id"]] = cancel_event
@@ -558,8 +601,12 @@ class Scheduler:
         watcher = threading.Thread(target=monitor, daemon=True)
         watcher.start()
         try:
-            context = {"schema_version": SCHEMA_VERSION, "root": str(self.root), "action_digest": action_digest(task["action"]), "targets": [task["action"]["path"]] if task["action"]["type"] == "write_text" else [], "external": False, "cost_limit": 0, "data_scope": "synthetic-local", "irreversible": False}
-            result = Executor(self.root).execute(task["action"], context, run_id=run_id, timeout_seconds=task["timeout_seconds"], cancel_event=cancel_event, input_payload=task["input"])
+            if task["action"]["type"] == "host_task":
+                from .task_execution import execute_host_task
+                result = execute_host_task(self, task, run_id, cancel_event)
+            else:
+                context = {"schema_version": SCHEMA_VERSION, "root": str(self.root), "action_digest": action_digest(task["action"]), "targets": [task["action"]["path"]] if task["action"]["type"] == "write_text" else [], "external": False, "cost_limit": 0, "data_scope": "synthetic-local", "irreversible": False}
+                result = Executor(self.root).execute(task["action"], context, run_id=run_id, timeout_seconds=task["timeout_seconds"], cancel_event=cancel_event, input_payload=task["input"])
         except Exception as error:
             result = {"schema_version": SCHEMA_VERSION, "run_id": run_id, "status": "failed", "exit_code": None, "timed_out": False, "cancelled": False, "duration_ms": 0, "action_digest": action_digest(task["action"]), "stdout_summary": "", "stderr_summary": sanitize_text(str(error)), "artifacts": [], "reason": "executor_error", "live_verified": False}
         finally:
@@ -568,10 +615,37 @@ class Scheduler:
             self._cancel_events.pop(task["task_id"], None)
         return self._finish(task, result, run_id)
 
-    def _finish(self, task: Mapping[str, Any], result: Mapping[str, Any], run_id: str) -> dict[str, Any]:
+    def _finish(self, task: Mapping[str, Any], result: Mapping[str, Any], run_id: str,
+                *, _binding_locked=False, _binding_unavailable=False) -> dict[str, Any]:
+        bound = task["action"]["type"] == "host_task" and isinstance(task["input"], dict) and "production_binding" in task["input"]
+        if bound and not _binding_locked:
+            from .sessions import session_write_lock, SessionLockError
+            try:
+                with session_write_lock(self.root):
+                    return self._finish(task, result, run_id, _binding_locked=True)
+            except SessionLockError:
+                return self._finish(task, result, run_id, _binding_locked=True, _binding_unavailable=True)
         with _connect(self.root) as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute("SELECT * FROM tasks WHERE task_id = ?", (task["task_id"],)).fetchone()
+            existing_run = connection.execute("SELECT * FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+            if (row is None or existing_run is None or existing_run["task_id"] != task["task_id"]
+                    or row["last_run_id"] != run_id or row["state"] != "running"
+                    or existing_run["finished_at"] is not None):
+                connection.commit()
+                return {"status": "ignored", "reason": "stale_or_duplicate_result", "run_id": run_id}
+            binding_rejected = _binding_unavailable
+            if bound and not binding_rejected:
+                try:
+                    from .host_workflow import verify_binding
+                    current_input = _load(row["input_json"])
+                    if current_input != task["input"]:
+                        raise ValueError("host task changed during dispatch")
+                    verify_binding(self.root, current_input["production_binding"])
+                except (ValueError, OSError):
+                    binding_rejected = True
+            if binding_rejected:
+                result = dict(result, status="failed", reason="host_binding_drift", host_result=None)
             status = result["status"]
             if status not in {"succeeded", "failed", "cancelled", "timed_out"}:
                 status = "failed"
@@ -579,7 +653,7 @@ class Scheduler:
                 status = "cancelled"
             timed_out = status == "timed_out"
             cancelled = status == "cancelled"
-            if status == "failed" and int(row["attempt"]) < int(row["max_attempts"]):
+            if status == "failed" and not binding_rejected and int(row["attempt"]) < int(row["max_attempts"]):
                 final_task_state = "queued"
                 reason = "retry_available"
             else:
@@ -601,6 +675,16 @@ class Scheduler:
                 "artifacts": result.get("artifacts", []),
                 "reason": sanitize_text(str(reason)) if reason else None,
             }
+            if task["action"]["type"] == "host_task":
+                receipt.update({"host_result": result.get("host_result"),
+                                "execution_mode": "production" if bound else "internal_test",
+                                "validation": result.get("validation", {"status": "pending"}),
+                                "rollback": result.get("rollback", {"status": "not_applied"}),
+                                "delivery_gate": "pending_independent_review"})
+                if bound:
+                    receipt["production_binding"] = task["input"]["production_binding"]
+                if status != "succeeded" and receipt["host_result"]:
+                    receipt["host_result"] = dict(receipt["host_result"], status=status, candidate=None)
             receipt = _finalize_receipt(receipt)
             receipt_digest = receipt["receipt_digest"]
             finished = _now()
