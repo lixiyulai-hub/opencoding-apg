@@ -250,3 +250,8 @@ G6 后续自动工作已完成只读失败分析与优化方案，证据位于 `
 ### Codex Host 失败诊断修复（2026-10-13）
 
 `CodexCLIHost` 现在在适配器实例上保存粗粒度、无秘密的 `last_diagnostics`，包括 `process_failed`、`timed_out`、`invalid_response` 和 `cli_unavailable` 等代码；严格 Host 结果信封保持不变，不把 stderr、凭据或 provider 响应写入候选结果。目标是为下一次真实 Host 验证保留可用的本地失败定位。17 项 `tests.test_product_codex_host` 已通过；证据：`.opencoding-dev-runs/g7-20261013/codex-host-diagnostics-repair.json`。
+
+
+### G7 live Host 最小探针（2026-10-13）
+
+针对真实项目 `E:/线稿讲解视频` 只发起了两次有界单文件候选探针，输出目标为隔离目录中的 `optimization-proposal.md`。第 1 次为 `process_launch_failed`，第 2 次已进入执行但在 60 秒达到 `timed_out`；两次请求摘要和身份均匹配，没有生成候选，也没有写入真实项目。证据：`.opencoding-dev-runs/g7-20261013/live-host-probe-history.json`。本轮停止自动重试；下一次 live 验证需要明确可用的 Codex CLI/provider 执行路径和超时/费用边界。

@@ -58,8 +58,9 @@
       ],
       "test": "tests.test_product_codex_host:17 passed"
     },
-    "current_gap": "live provider validation remains pending; previous real request failed before diagnostics repair and must not be re-run until a valid local provider configuration is available.",
-    "diagnostics_evidence": ".opencoding-dev-runs/g7-20261013/codex-host-diagnostics-repair.json"
+    "current_gap": "live Host probe is bounded and blocked: attempt 1 process_launch_failed, attempt 2 timed_out; no candidate was generated. Do not retry automatically. A viable Codex CLI/provider execution path and an agreed timeout/cost boundary are required before the next live attempt.",
+    "diagnostics_evidence": ".opencoding-dev-runs/g7-20261013/codex-host-diagnostics-repair.json",
+    "live_probe_evidence": ".opencoding-dev-runs/g7-20261013/live-host-probe-history.json"
   },
   "following_stage": "R4：将 G7 候选摘要绑定到独立 Reviewer 的 live 验证；通过后才讨论受控采用，仍不自动发布。",
   "ordered_successors": [
@@ -774,6 +775,8 @@
       "verification": "simulated",
       "grant_issued": false,
       "reason": null
-    }
+    },
+    "live_host_probe": ".opencoding-dev-runs/g7-20261013/live-host-probe-history.json",
+    "live_host_status": "blocked_process_launch_then_timeout"
   }
 }

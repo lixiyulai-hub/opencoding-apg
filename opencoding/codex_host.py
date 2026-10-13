@@ -320,8 +320,15 @@ class CodexCLIHost:
             self.last_diagnostics = {'code': 'cli_unavailable'}
             result['status'] = 'failed'
             result['files'] = {}
-        except (OSError, subprocess.SubprocessError):
-            self.last_diagnostics = {'code': 'process_launch_failed'}
+        except OSError as error:
+            self.last_diagnostics = {'code': 'process_launch_failed',
+                                     'exception_type': type(error).__name__,
+                                     'errno': error.errno}
+            result['status'] = 'failed'
+            result['files'] = {}
+        except subprocess.SubprocessError:
+            self.last_diagnostics = {'code': 'process_launch_failed',
+                                     'exception_type': 'SubprocessError'}
             result['status'] = 'failed'
             result['files'] = {}
         except (ValueError, TypeError):
