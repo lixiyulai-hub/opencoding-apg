@@ -2,6 +2,7 @@ include pyproject.toml
 include MANIFEST.in
 include docs/product/OFFLINE_INSTALLATION.md
 include opencoding/*.py
+recursive-include skills/opencoding *
 
 prune apps
 prune artifacts

@@ -35,12 +35,26 @@ python -X utf8 -m unittest
 
 本地安装说明见 [`OFFLINE_INSTALLATION.md`](docs/product/OFFLINE_INSTALLATION.md)。这里的离线安装说明不表示 OpenCoding 产品只支持离线治理。
 
+### Agent skill entry
+
+GitHub users can install the single `skills/opencoding/` entry and use OpenCoding as the product-facing project-planning and governance workflow. The skill prefers the repository's `python -m opencoding` runtime; `adaptive-project-governance` remains the compatibility controller name.
+
+On Windows PowerShell, copy the skill into the target Agent's user skill directory:
+
+```powershell
+$repo = (Get-Location).Path
+Copy-Item "$repo\skills\opencoding" "$env:USERPROFILE\.workbuddy\skills\opencoding" -Recurse
+```
+
+The same `skills/opencoding/SKILL.md` works for Codex, Claude, Cursor, WorkBuddy, CodeBuddy, and Trae. For explicit `/opencoding` commands in Claude or Cursor, also copy `skills/opencoding/commands/opencoding.md` into the host's `commands` directory. Host command syntax may differ; the skill entry and governance boundaries stay the same.
+
 ### 仓库入口
 
 - [`README_CN.md`](README_CN.md)：中文快速介绍。
 - [`docs/product/`](docs/product/)：产品契约、架构、使用边界与执行路线。
 - [`docs/apg/`](docs/apg/)：历史 APG 治理契约、Gate、验收和回滚参考。
 - `opencoding/` 与 `tests/`：当前实现和自动化测试。
+- `skills/opencoding/`：面向各 Agent 的统一 OpenCoding 技能入口。
 
 ## English
 

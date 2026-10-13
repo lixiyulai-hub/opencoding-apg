@@ -1,0 +1,4 @@
+interface:
+  display_name: OpenCoding
+  short_description: Audit-first project planning and governed execution
+  default_prompt: Use OpenCoding to turn this project idea or existing project into an auditable, previewable, executable workflow.

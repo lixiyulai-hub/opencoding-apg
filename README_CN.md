@@ -30,6 +30,19 @@ python -m opencoding.workbench --workspace <projects-root> --port 0
 
 安装说明见 [`OFFLINE_INSTALLATION.md`](docs/product/OFFLINE_INSTALLATION.md)；这里的文件名指本地安装方式，不限定产品只能离线运行。
 
+## Agent 技能入口
+
+GitHub 用户可以只安装仓库中的 `skills/opencoding/` 技能入口，把 OpenCoding 作为统一的项目规划与治理入口。技能内部优先使用仓库的 `python -m opencoding` 运行时；`adaptive-project-governance` 仅作为兼容控制器名称保留。
+
+在 Windows PowerShell 中，把技能复制到对应 Agent 的用户技能目录：
+
+```powershell
+$repo = (Get-Location).Path
+Copy-Item "$repo\skills\opencoding" "$env:USERPROFILE\.workbuddy\skills\opencoding" -Recurse
+```
+
+Codex、Claude、Cursor、WorkBuddy、CodeBuddy 和 Trae 都使用同一个 `skills/opencoding/SKILL.md`。Claude 和 Cursor 需要显式 `/opencoding` 命令时，再把 `skills/opencoding/commands/opencoding.md` 复制到各自的 `commands` 目录。不同宿主的命令语法可能不同；技能入口和治理边界保持一致。
+
 ## 项目标识
 
 品牌名为 OpenCoding，GitHub 仓库名为 `opencoding-apg`。APG（Adaptive Project Governance）继续作为历史脚本、测试、治理台账和证据格式中的兼容标识。

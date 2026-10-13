@@ -2,6 +2,18 @@
 
 OpenCoding 的运行时没有第三方依赖。离线使用时，先在一台具备构建条件的机器上生成本地 wheel，再把该 wheel 复制到目标机器安装。
 
+## 安装统一 Agent 技能入口
+
+如果只需要让 Agent 识别 OpenCoding，可以从 GitHub 仓库复制 `skills/opencoding/`；这不会把用户项目、密钥或 Provider 配置复制到 Agent 目录。
+
+```powershell
+git clone https://github.com/lixiyulai-hub/opencoding-apg.git
+Set-Location .\opencoding-apg
+Copy-Item .\skills\opencoding "$env:USERPROFILE\.workbuddy\skills\opencoding" -Recurse
+```
+
+将目标路径替换为对应宿主的用户技能目录即可。Codex、Claude、Cursor、WorkBuddy、CodeBuddy 和 Trae 使用同一个 `SKILL.md`；Claude 或 Cursor 需要显式 `/opencoding` 命令时，再复制 `skills/opencoding/commands/opencoding.md` 到宿主的 `commands` 目录。技能入口会优先使用仓库的 `python -m opencoding` 运行时；涉及审计、采用、变更计划和 Gate 的底层控制器仍使用 `adaptive-project-governance` 兼容实现。
+
 ## 安装本地 wheel
 
 在目标机器上创建或选择 Python 3.11 及以上版本的虚拟环境，然后仅从本地 wheel 安装：
