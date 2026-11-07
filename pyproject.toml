@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "opencoding-local-entry"
-version = "0.2.7"
+version = "0.2.8"
 description = "OpenCoding 本地工作台:小白友好的自适应项目规划与执行助手(本地可视化入口+真实AI评估+受控执行)"
 requires-python = ">=3.11"
 dependencies = []
@@ -17,3 +17,6 @@ opencoding = "opencoding.cli:main"
 [tool.setuptools]
 packages = ["opencoding"]
 include-package-data = false
+
+[tool.setuptools.package-data]
+opencoding = ["installation_manifest.json"]

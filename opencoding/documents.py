@@ -10,6 +10,7 @@ SCHEMA_VERSION = "1.1"
 _RECOMMENDATION_KEYS = {"schema_version", "session_id", "revision", "status", "project", "platforms", "stack", "capabilities", "assumptions", "unresolved", "acceptance"}
 _PROJECT_KEYS = {"goal", "audience", "outcome", "scenarios"}
 _SCENARIO_KEYS = {"id", "title", "actor", "action", "result", "source"}
+_SCENARIO_OPTIONAL_KEYS = {"input", "failure", "acceptance"}
 _PLATFORM_KEYS = {"requested", "primary", "reason", "confidence", "unresolved"}
 _STACK_KEYS = {"client", "backend", "database", "runtime"}
 _STACK_ENTRY_KEYS = {"technology", "reason", "alternatives", "version_basis", "maintenance", "cost_note"}
@@ -38,7 +39,7 @@ def _validate_scenarios(value: Any) -> None:
         raise ValueError("project.scenarios must be a list")
     seen: set[str] = set()
     for scenario in value:
-        if not isinstance(scenario, Mapping) or set(scenario) != _SCENARIO_KEYS:
+        if not isinstance(scenario, Mapping) or not _SCENARIO_KEYS.issubset(scenario) or set(scenario) - _SCENARIO_KEYS - _SCENARIO_OPTIONAL_KEYS:
             raise ValueError("scenario entries must use the shared schema")
         scenario_id = scenario["id"]
         if not isinstance(scenario_id, str) or not _SCENARIO_ID.fullmatch(scenario_id):
@@ -48,6 +49,13 @@ def _validate_scenarios(value: Any) -> None:
         seen.add(scenario_id)
         for field in _SCENARIO_KEYS - {"id"}:
             _non_empty(scenario[field], f"scenario.{field}")
+        for field in ("input", "failure"):
+            if field in scenario:
+                _non_empty(scenario[field], f"scenario.{field}")
+        if "acceptance" in scenario:
+            _string_list(scenario["acceptance"], "scenario.acceptance")
+            if not scenario["acceptance"] or any(not item.strip() for item in scenario["acceptance"]):
+                raise ValueError("scenario.acceptance must contain observable results")
 
 
 def validate_recommendation(recommendation: Mapping[str, Any]) -> None:
@@ -182,13 +190,14 @@ def _business_context(recommendation: Mapping[str, Any]) -> list[str]:
     return lines
 
 
-def render_documents(recommendation: dict, task_plan: Mapping[str, Any] | None = None) -> dict[str, str]:
+def render_documents(recommendation: dict, task_plan: Mapping[str, Any] | None = None,
+                     document_paths: Mapping[str, str] | None = None) -> dict[str, str]:
     """返回不写盘的中文文档；可传同源 TaskPlan 注入 plan.md 的图摘要。"""
     validate_recommendation(recommendation)
     if task_plan is None:
         from .planning import build_task_plan
 
-        task_plan = build_task_plan(recommendation)
+        task_plan = build_task_plan(recommendation, document_paths)
     else:
         from .planning import validate_task_plan
 
@@ -201,7 +210,7 @@ def render_documents(recommendation: dict, task_plan: Mapping[str, Any] | None =
             raise ValueError("task_plan source session or revision does not match recommendation")
         from .planning import build_task_plan
 
-        expected_plan = build_task_plan(recommendation)
+        expected_plan = build_task_plan(recommendation, document_paths)
         if task_plan.get("tasks") != expected_plan.get("tasks") or task_plan.get("waves") != expected_plan.get("waves"):
             raise ValueError("task_plan graph does not match recommendation content")
     capabilities = capability_map(recommendation)
@@ -237,7 +246,7 @@ def render_documents(recommendation: dict, task_plan: Mapping[str, Any] | None =
         docs["notifications.md"] = "\n".join(["# 通知边界", "", f"通知需求：{_need(capabilities, 'notifications')}。", "", "这里只描述收件人、触发条件和退出方式，不联系通知服务。"])
     if any(_need(capabilities, item) != "not_needed" for item in ("server", "storage", "api", "payment", "notifications")):
         docs["deployment.md"] = "\n".join(["# 部署边界", "", "部署是后续事务，不由文档渲染执行。", "", "- 在目标、数据范围、凭据、费用和回滚条件确认前不得激活。", "- 本地规划结果不是部署或发布证据。"])
-    return docs
+    return {document_paths.get(name, name): content for name, content in docs.items()} if document_paths else docs
 
 
 __all__ = ["SCHEMA_VERSION", "render_documents", "validate_recommendation", "capability_map", "document_names"]

@@ -1,0 +1,159 @@
+{
+  "source": "local installed APG 0.3.0",
+  "source_root": "C:/Users/Administrator/.codex/skills/adaptive-project-governance",
+  "candidate": "bounded-output-contract",
+  "files": [
+    {
+      "sha256": "d915cc95d6ca8f47ae297713ed46d4e5c5d99ddd29fc3c61e263bdf305f2b5b0",
+      "path": "VERSION"
+    },
+    {
+      "sha256": "cfce076aa30e5b4705aad09d02d47d6904f1bae15c34be604ad53d7c7ac52e9b",
+      "path": "project_governance/__init__.py"
+    },
+    {
+      "sha256": "0f7d54f3fbb1f79a85eb8110f11793db99da6f3c61ee979de5abe9a1b5f3fdb3",
+      "path": "project_governance/__main__.py"
+    },
+    {
+      "sha256": "901b20a29a85880b3ccdc887480b16fb65f5a27e3968196bcd3e7f80a224a3ed",
+      "path": "project_governance/adapters.py"
+    },
+    {
+      "sha256": "a9dc6946e3f1f349053a429795f81d8a19021d05e69adf0b634b469edab5dd97",
+      "path": "project_governance/affected_gate_plan.py"
+    },
+    {
+      "sha256": "8a0f6407b4794649d95cd74e59ee449aa7da60ce46bce1fd2f881c45214472ae",
+      "path": "project_governance/architecture_graph.py"
+    },
+    {
+      "sha256": "d6b897db7a16e851dd0bd12ef347175aeb106980762d8c72d1e561dee1e66301",
+      "path": "project_governance/audit_contract.py"
+    },
+    {
+      "sha256": "75c7cea4ad0922d2f34c8c8656acee2dcb09b6e9bca71b29bd7b2e5efbff96e1",
+      "path": "project_governance/baseline.py"
+    },
+    {
+      "sha256": "1fd18ae305b4a196b2419960f5fceba2bd5b917acc01242929ff397946b14d25",
+      "path": "project_governance/cli.py"
+    },
+    {
+      "sha256": "d93d177b07b738947c00b7c86dc59fc510abebdbc8d96c7613b7c544d404aae1",
+      "path": "project_governance/consistency_manifest.py"
+    },
+    {
+      "sha256": "860321ab499161409223b33de7900cdced3dd69805304b4389f263c520b3d97a",
+      "path": "project_governance/discovery.py"
+    },
+    {
+      "sha256": "e600e66d06432e20ea18c294adbca0ee942ec97d57ef238da3290e5f1da55fd2",
+      "path": "project_governance/domain_pack.py"
+    },
+    {
+      "sha256": "6be336a70de8ae1259c9c0afa490ad648c846103811ab954da50032c10d67605",
+      "path": "project_governance/feedback_loops.py"
+    },
+    {
+      "sha256": "dfe5691ce30b69ea2b17049204051e18a6fbc070a24e2e5e6457d71a6d9b0699",
+      "path": "project_governance/gate_execution_evidence.py"
+    },
+    {
+      "sha256": "9a5042704d080e4238e9f0c16bd2603c5883a0b464270eb8a8d72218c86a4fdd",
+      "path": "project_governance/gates.py"
+    },
+    {
+      "sha256": "49bb9488aed3b98b8faf51ae8446c5637e3702ea1d55f424ffadece1c97cb403",
+      "path": "project_governance/intake_routing.py"
+    },
+    {
+      "sha256": "b4756f686e9d5750ad5d06d80ee030969e64109ced00d1bacaaed4be925fb7c1",
+      "path": "project_governance/intake_ux.py"
+    },
+    {
+      "sha256": "d887cfa85cc26acdccd14553568778dede15dc1df20aad20fd7825df364a0245",
+      "path": "project_governance/intake.py"
+    },
+    {
+      "sha256": "a8577484d9662fe3431809901e7e05eccb8244e91a1e967c1ef9dd89a2cbc066",
+      "path": "project_governance/langchain_control.py"
+    },
+    {
+      "sha256": "84b01bf3e4c0fab3ffa7fd2a7f51b38974801e76c1f491a8c2008e170fb16feb",
+      "path": "project_governance/model.py"
+    },
+    {
+      "sha256": "72027c66e1ddbde33de31cd4b78ab7b8848b962697d956444a8a43b2b3d97865",
+      "path": "project_governance/path_guard.py"
+    },
+    {
+      "sha256": "fadcf2aad759dbcbd3a020141da0df6b92597e0b23e1aa9491f823ac652580f5",
+      "path": "project_governance/plan_bound_execution.py"
+    },
+    {
+      "sha256": "b3c4406dd070f23111f4af71fb69b2dc6087a45ba9b40465ea6bec633ca3c287",
+      "path": "project_governance/policy.py"
+    },
+    {
+      "sha256": "386bcfdf6a2ac1b19a85e7cf9f7bc91d0db8089bea0718fef46fef6c6bc67c7f",
+      "path": "project_governance/receipts.py"
+    },
+    {
+      "sha256": "fa0739c4db9f189c476d15bdd66446094d598fc222780bd5d5a690ed9c96a7fe",
+      "path": "project_governance/regression_identity.py"
+    },
+    {
+      "sha256": "8c2e0ef82d966192fa2d100933a4672454dff5d6f482c294712ebf1836b21f51",
+      "path": "project_governance/regression_ledger.py"
+    },
+    {
+      "sha256": "aafb428b355e4cfa845f6a2cb4d3939f41821016fd924719bf03802f4a64c2c9",
+      "path": "project_governance/stack_decision.py"
+    },
+    {
+      "sha256": "989ea6dd0e94f3d032a191521cca295a0771759bbf7d54a9c68f204c7d03f3d0",
+      "path": "project_governance/storage.py"
+    },
+    {
+      "sha256": "275a91487930536bdd948916f60f9d1d83c592a8fcf0596c93812449478c9a8d",
+      "path": "project_governance/templates.py"
+    },
+    {
+      "sha256": "981358df0f06811d17a5cc8e150344c1b53a4b7d54df1a25698c68426cacedf0",
+      "path": "project_governance/version.py"
+    },
+    {
+      "sha256": "639f9356e9381ff5e514c237a92356a90590005a45cb528b71a08d8168762c80",
+      "path": "project_governance/commands/__init__.py"
+    },
+    {
+      "sha256": "7b7e6f9d39340f15574d2f87e0a450e448c94ba0d27db24b712b65ad308922ed",
+      "path": "project_governance/commands/adopt.py"
+    },
+    {
+      "sha256": "58e2c5987a4dd0cb655e9fed63d4f545360f016d62979e6d7b87e58ba2ef1499",
+      "path": "project_governance/commands/audit.py"
+    },
+    {
+      "sha256": "ed3c308fc39f3542ccf803b4b1387c3aa3729c6395ee67e600f0e1d00aa753be",
+      "path": "project_governance/commands/check.py"
+    },
+    {
+      "sha256": "7f5a4adacab3557561483bf46e240754b666f6fb73dabc745df9bdb66e81b6df",
+      "path": "project_governance/commands/doctor.py"
+    },
+    {
+      "sha256": "290bc7b93c106e086a3ba3e18abe18487b480c6266d18fe7d3bd1e2422ef0cdb",
+      "path": "project_governance/commands/git_safety.py"
+    },
+    {
+      "sha256": "a78bca6be49d2c52f74def0d7fd14ccbeab8ac0d78292dca705779dfea587985",
+      "path": "project_governance/commands/init_project.py"
+    },
+    {
+      "sha256": "729a7c5cc880e8e05c502f9ef4e45bbcbbd19b24908d43d4622bf3708433a954",
+      "path": "project_governance/commands/plan_change.py"
+    }
+  ]
+}

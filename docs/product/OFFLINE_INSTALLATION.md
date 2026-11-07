@@ -1,4 +1,4 @@
-# 安装与本地使用（0.2.7）
+# 安装与本地使用（0.2.8 候选）
 
 OpenCoding 的运行时没有第三方依赖。离线使用时，先在一台具备构建条件的机器上生成本地 wheel，再把该 wheel 复制到目标机器安装。
 
@@ -14,6 +14,8 @@ Copy-Item .\skills\opencoding "$env:USERPROFILE\.workbuddy\skills\opencoding" -R
 
 将目标路径替换为对应宿主的用户技能目录即可。Codex、Claude、Cursor、WorkBuddy、CodeBuddy 和 Trae 使用同一个 `SKILL.md`；Claude 或 Cursor 需要显式 `/opencoding` 命令时，再复制 `skills/opencoding/commands/opencoding.md` 到宿主的 `commands` 目录。技能入口会优先使用仓库的 `python -m opencoding` 运行时；涉及审计、采用、变更计划和 Gate 的底层控制器仍使用 `adaptive-project-governance` 兼容实现。
 
+复制技能不会安装 Python 运行时。若要从其他新项目调用同一份可信源码，可在已安装的 `opencoding/` 内建立仅供本机使用的 `runtime.local.json`，填写 `runtime_root`（OpenCoding 源码根目录）、`python`（解释器绝对路径）和可选 `apg_root`（已安装 APG 目录）。该文件不要提交到 GitHub。Agent 应从运行时目录执行模块命令，并通过绝对 `--root` 指向你的新项目；两者不能混用。没有本机定位文件时，使用明确指定的源码目录或已安装的运行时，缺失时如实报告。
+
 ## 安装本地 wheel
 
 在目标机器上创建或选择 Python 3.11 及以上版本的虚拟环境，然后仅从本地 wheel 安装：
@@ -21,7 +23,7 @@ Copy-Item .\skills\opencoding "$env:USERPROFILE\.workbuddy\skills\opencoding" -R
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install --no-index --no-deps .\opencoding_local_entry-0.2.7-py3-none-any.whl
+python -m pip install --no-index --no-deps .\opencoding_local_entry-0.2.8-py3-none-any.whl
 ```
 
 安装后可使用模块入口或命令入口。`--status` 是只读查询；尚未初始化时会返回 `not_initialized`，不会创建项目状态。
@@ -32,6 +34,40 @@ opencoding --root C:\path\to\local-project --status --json
 ```
 
 `--root` 必须是已经存在的项目目录。上面的虚拟环境激活命令适用于 Windows PowerShell；其他系统使用对应的虚拟环境 Python。不要把仓库测试通过等同于所有平台已验收。
+
+## 安装来源诊断与阶段报告
+
+0.2.8 候选新增离线 preflight。源码目录中可运行以下独立脚本；它不导入发现的运行时、不安装依赖、不改项目、不调用模型：
+
+```powershell
+python -B scripts/opencoding_preflight.py --runtime-root . --skill skills/opencoding/SKILL.md
+```
+
+需要同时检查 APG 时，追加 `--apg-root <实际的adaptive-project-governance目录>`。安装包中可用 `python -m opencoding.preflight`；若怀疑同名包遮蔽，使用可信源码目录中的独立脚本。报告包含实际解释器、import origin、文件摘要、skill 内容差异及 `native-only`、`native+apg`、`apg-only`、`unavailable` 路由。APG 文件存在不代表组合兼容验收通过；诊断不完整或不匹配时退出 2。manifest 的 `source_base_commit` 是构建基线，未提交候选由文件摘要识别。修改运行时代码或入口后须先运行 `python -B scripts/build_installation_manifest.py`，再构建分发包。
+
+按会话查看阶段证据：
+
+```powershell
+python -m opencoding --root C:\path\to\authorized-project --stage-report SESSION_ID
+```
+
+此报告只读，分别列出计划采用、当前文档预览、项目执行记录、Gate 回执和文档事务。项目级回执可能属于其他会话；报告不把它们累计为当前会话验收，不从执行成功推断真实 Host 或独立审核，也不把用户开发授权当作用户验收。
+
+## 确认独立业务场景
+
+已有会话可以接收用户确认的场景 JSON 数组，每项必填 `id`、`title`、`actor`、`action`、`result`、`source`，可选 `input`、`failure` 和非空字符串数组 `acceptance`。例如：
+
+```json
+[{"id":"knowledge-search","title":"知识搜索","actor":"访客","action":"搜索验证码问题","result":"显示关联指南","source":"confirmed-project-requirements","input":"收不到验证码","failure":"无结果时显示明确提示","acceptance":["相关指南可打开","空结果有提示"]}]
+```
+
+用户确认这些场景后运行：
+
+```powershell
+python -m opencoding --root C:\path\to\authorized-project --confirm-scenarios SESSION_ID C:\path\to\scenarios.json
+```
+
+此命令写入会话事实簿；每个场景进入实现和验证任务，并绑定当时的需求摘要。场景变更会使旧计划绑定失效，需求变更后需重新确认场景。它提供显式确认入口，尚不代表任意自然语言需求已经能自动拆成完整业务旅程。
 
 ## 可选的本地工作台
 

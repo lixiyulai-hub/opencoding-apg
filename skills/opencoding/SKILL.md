@@ -1,8 +1,8 @@
 ---
 name: opencoding
-description: Unified OpenCoding entry for turning a plain-language software idea or existing project into an audit-first, previewable, executable, verified workflow.
+description: Plan software projects, clarify requirements, and govern execution with OpenCoding.
 metadata:
-  version: "0.1.0"
+  version: "0.1.1"
   display_name: "OpenCoding"
 ---
 
@@ -22,6 +22,12 @@ OpenCoding is the user-facing name. `adaptive-project-governance` (APG) remains 
 6. Preserve user changes, unmanaged files, receipts, rollback evidence, and human Gates.
 
 ## Runtime resolution
+
+Resolve the runtime independently of the user's project. First read an optional `runtime.local.json` next to this installed `SKILL.md`: `runtime_root` identifies a trusted existing OpenCoding checkout, `python` identifies its interpreter, and `apg_root` identifies the installed compatibility controller. Check that the files exist. This local locator is not shipped in the public skill and does not authorize writes to either root. If absent, use an explicitly identified OpenCoding checkout or an already installed native package; do not search or guess unrelated project paths.
+
+For a source checkout, run its absolute `scripts/opencoding_preflight.py` path with `--runtime-root <runtime_root> --skill <installed-SKILL.md>` and, if available, `--apg-root <apg_root>`. Use the selected interpreter. Run subsequent `python -m opencoding` commands with the working directory set to `runtime_root`, always passing the user's distinct authorized project as absolute `--root`. Never initialize the runtime checkout as the user's new project. For an installed package, use `python -m opencoding.preflight --skill <installed-SKILL.md>` with its interpreter; if it is unavailable, explain the missing runtime and use only explicitly identified APG capabilities.
+
+Preflight reports import origin, source hashes, entry version and `native+apg`, `native-only`, `apg-only`, or `unavailable`. A missing package, changed entry, or unverified APG combination is not proof of native execution. Do not install or update global skills automatically. The distribution's `opencoding/installation_manifest.json` records the expected build; source changes require regenerating it. The isolated controller under `compat/apg-output-contract/` is opt-in and must not silently replace the installed APG.
 
 When this skill is installed from the `opencoding-apg` repository, prefer the repository's own entry point:
 

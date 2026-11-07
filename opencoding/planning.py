@@ -325,7 +325,7 @@ def validate_task_plan(plan: Any) -> dict[str, Any]:
     return {"valid": not errors, "status": "valid" if not errors else "invalid", "errors": sorted(set(errors)), "waves": computed_waves}
 
 
-def build_task_plan(recommendation: dict) -> dict:
+def build_task_plan(recommendation: dict, document_paths: Mapping[str, str] | None = None) -> dict:
     """从 Recommendation 1.1 构造业务任务图，不执行任何任务。"""
     validate_recommendation(recommendation)
     capabilities = capability_map(recommendation)
@@ -368,6 +368,23 @@ def build_task_plan(recommendation: dict) -> dict:
             tasks.append(_task(implement_id, f"实现业务场景：{scenario['title']}", f"待执行：在 {scenario_platform} 上实现“{scenario['action']}”，使结果达到“{scenario['result']}”。", design_dependencies, ["product.md", "architecture.md"], [source_path], {"type": "implement_feature", "scenario_id": scenario_id, "platform": scenario_platform}, [f"待执行实现应支持业务结果：{scenario['result']}。", "本任务只是计划，不代表源码已经存在。"]))
             tasks.append(_task(verify_id, f"验证业务场景：{scenario['title']}", f"待执行：验证“{scenario['action']}”完成后能得到“{scenario['result']}”。", [implement_id], [source_path], [test_path], {"type": "verify_feature", "scenario_id": scenario_id, "platform": scenario_platform}, [f"待执行测试应验证业务结果：{scenario['result']}。", "本任务只是计划，不代表测试已通过。"]))
     tasks.append(_task("delivery-plan", "汇总可逆交付计划", "从已生成的任务图汇总规则、顺序、验收和回滚。", [task["id"] for task in tasks], sorted(available_docs), ["AGENTS.md", "plan.md"], {"type": "plan_delivery"}, ["核心文档职责清楚。", "plan.md 与任务图波次一致。", "未解决问题和激活门槛可见。"]))
+    scenarios = {scenario["id"]: scenario for scenario in recommendation["project"]["scenarios"]}
+    for task in tasks:
+        scenario = scenarios.get(task["action"].get("scenario_id"))
+        if scenario:
+            task["acceptance"].extend(scenario.get("acceptance", []))
+            if scenario.get("input"):
+                task["description"] += " 输入：" + scenario["input"]
+            if scenario.get("failure"):
+                task["acceptance"].append("失败分支：" + scenario["failure"])
+    if document_paths is not None:
+        if set(document_paths) != set(available_docs):
+            raise ValueError("document mapping must cover the generated documents")
+        for task in tasks:
+            for field in ("inputs", "outputs"):
+                task[field] = [document_paths.get(path, path) for path in task[field]]
+            if "document" in task["action"]:
+                task["action"]["document"] = document_paths[task["action"]["document"]]
     waves = _compute_waves(tasks)
     plan = {"schema_version": SCHEMA_VERSION, "session_id": recommendation["session_id"], "revision": recommendation["revision"], "tasks": tasks, "waves": waves, "unresolved": plan_unresolved}
     result = validate_task_plan(plan)

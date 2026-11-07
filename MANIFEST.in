@@ -2,7 +2,10 @@ include pyproject.toml
 include MANIFEST.in
 include docs/product/OFFLINE_INSTALLATION.md
 include opencoding/*.py
-recursive-include skills/opencoding *
+include opencoding/installation_manifest.json
+include skills/opencoding/SKILL.md
+include skills/opencoding/agents/openai.yaml
+include skills/opencoding/commands/opencoding.md
 
 prune apps
 prune artifacts
@@ -11,6 +14,9 @@ prune scripts
 prune services
 prune tests
 prune .governance
+
+include scripts/opencoding_preflight.py
+include scripts/build_installation_manifest.py
 
 exclude AGENTS.md
 exclude ARCHITECTURE.md

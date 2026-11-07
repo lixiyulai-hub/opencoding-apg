@@ -1,0 +1,55 @@
+{
+  "apg": {
+    "bundled": false,
+    "compatibility": "unverified"
+  },
+  "runtime": {
+    "files": {
+      "__init__.py": "cedbe207f5722d76a5c596df25bd012b3eba1a6169fd96d82204f43d4f82636f",
+      "__main__.py": "0f7d54f3fbb1f79a85eb8110f11793db99da6f3c61ee979de5abe9a1b5f3fdb3",
+      "advisor.py": "415b55c5193ce62bf3280b6ebd58378d81b02a73f1175f9eba06ca66ff899e9d",
+      "aiadapter.py": "cf6cbf28ff3260394046f906b5d60fdede4f89c992befd140f0b249b4c697c9f",
+      "aiconfig.py": "8a387629939a7e6f0f1f7a81957dd4afd600c937e2c4d0c484d2d25990ae5156",
+      "autorun.py": "abf59c5712c2ec2b5cc18d25aadb0567c73f20ebde296f283eca7b55ac7af0b2",
+      "business_scenarios.py": "65a5f4a7aecdd65401a8a95a8453d9472863de71bb3d608308198929a0567e0d",
+      "cli.py": "fc218fa7a517324a0df878c7a1b14b98889c4f97d1216a50118f00fb1e91df31",
+      "codex_host.py": "5015eea504114d7abcc1f3aaea5ba16cc24eecc7fd817620d27d4b0011906076",
+      "decisions.py": "3c42d3c2aa363f371b800ac73d4c4bfbcf2cda1524601f3e63778c6b09e43f1d",
+      "docker_provider.py": "f067eae6aef8f1d78875a7a8381ce051b65690e5335eda876c99ff019f4778a2",
+      "document_paths.py": "ec3f024a224a85b390eec02de7b696c271c6234d7ea37624cb582b446e478ef8",
+      "documents.py": "e717789d3e3132cd36664e1c16283dfa4dd921d766803ae42fb6c69f6c77add8",
+      "executor.py": "e3e4cd686ebc7cb75c1ce28dfe76fcd8c28563dc106e04955cf67d4355cb7e8e",
+      "facts.py": "cb08b1a0d6c84465eff25ca7189f2da807c1f80bb4112e74c3dc31124fa6670c",
+      "generic_run.py": "83bbf0337cbd9d3d568d593ed73404f4d934ffa3126582adacc5c490e484bc8d",
+      "grants.py": "75ba5a38d566b8cf0e4b34250fd00adb007ce57f3aed1f90441c65a1af761ae4",
+      "host.py": "163d26efd7f1f4ee0c5ed4f0ee0beae77df956c91618c911d75e05854d11faa6",
+      "host_candidates.py": "b5301c311c6e31183e5e737131bdc7be59dd3581155dce94816c9bf3584e4776",
+      "host_review.py": "f242c9bf3e3ea76f18f515108ffe4c6dd8b0fafb7d753988a73b48ccc19edf03",
+      "host_workflow.py": "ee57f6e8ac32db1b5ceaeee4d23e853bc9872cf36fa1dd9e69fed5b92d5b0ba6",
+      "intake.py": "d55b97ad4222c68e988e2f6a45c7d7c9fd0627b0ca0d865624d95b8dee992b23",
+      "planning.py": "7c51e581987ec8be763fb5e25f601579756b17b3e2b74fe90076b8db8074c6a6",
+      "plansource.py": "5a481cef0f30013e89adebeaa47b0405406aac25811243b5d173482d29b74639",
+      "preflight.py": "3adf7956374588a04849d5206e637d78125e3db87361271850bc7f8c7b272301",
+      "request_budget.py": "388db321095dd2b428b9655c5b682c1762537ff27faf11aae8ba89dca9a601ff",
+      "safety.py": "b9b7b7cd8f376549fd0d727e5aa517917bd0d1f4f55bb58895cacb3f67f96fdc",
+      "sandbox.py": "2b043f3ad3c40512628930a4d98603a25543b951017c2061545ee86e56a1894c",
+      "scheduler.py": "d9a7f51f926b9c44be918a865a2f9830c7199ac1218c6702a749e94cc43ec259",
+      "scheduler_migrations.py": "eeaac5f860aa2a4ae827c00e6bd23b3e98519b032bc70181d580a89b434c6ce6",
+      "service.py": "0c4ac21e5e756f7af8b907e4a166c8f5ced7ccc828a7fa540502ad5f07a14062",
+      "sessions.py": "dfda44bf9813f63b07ede20cb608d83f59636829b32bd1443c58c4618da1232d",
+      "stage_report.py": "9fbbb47e36147eb00bef639e0a422ff30619b3b342840ec6081c30b2864d44a3",
+      "task_execution.py": "ee05bc7c9e177ac0224cae92c57972ece5248c2a597035628527075884e91c68",
+      "transactions.py": "f036f577e617c84c4b45bd1400620061c8460e2bb234fbf1d4f3227f6681fbe8",
+      "uxtext.py": "db01192e9938c8c6ef2780d8c48e949b1a2a60e1ffab853a1d93480957dbe8c5",
+      "workbench.py": "375ac2eb5e057c62fb77f9e8cec3e9a216edea1560b746f93874f401476d9c63"
+    },
+    "version": "0.2.8"
+  },
+  "schema_version": "1.0",
+  "skill": {
+    "sha256": "983860e35e9e85f032fd587dcf40d7285d0e3128a5c1b42f14d7791c09f6932f",
+    "version": "0.1.1"
+  },
+  "source_base_commit": "c13918dfc3027f97ef9faeb72a942fbb9f885fc5",
+  "source_hash_mode": "sha256-crlf-normalized-to-lf"
+}

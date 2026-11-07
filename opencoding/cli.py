@@ -66,6 +66,8 @@ def _parser() -> argparse.ArgumentParser:
     mode.add_argument("--change", nargs=3, metavar=("SESSION_ID", "QUESTION_ID", "ANSWER"), help="修改已有会话答案并显示新方案差异")
     mode.add_argument("--rollback", metavar="TRANSACTION_ID", help="回滚指定的本地文档事务")
     mode.add_argument("--status", action="store_true", help="只读显示本地任务与运行状态")
+    mode.add_argument("--stage-report", metavar="SESSION_ID", help="只读汇总计划、文档、执行和治理证据；不推断验收")
+    mode.add_argument("--confirm-scenarios", nargs=2, metavar=("SESSION_ID", "JSON_FILE"), help="登记用户已确认的结构化业务场景；使旧计划绑定失效")
     mode.add_argument("--autorun", metavar="SCENARIO", help="自主工作模式：在有限批次授权内连续执行（当前支持 lendreg 合成借还示例）")
     mode.add_argument("--cancel-run", metavar="RUN_ID", help="取消指定自主运行")
     mode.add_argument("--query-run", metavar="RUN_ID", help="只核验本地已保存响应；不新增请求")
@@ -494,6 +496,17 @@ def main(argv: list[str] | None = None, *, input_fn: Callable[[str], str] = inpu
     if (args.mock_ai or args.run_id is not None or args.grant_ttl != 8 or args.plan_digest is not None) and not args.autorun:
         parser.error("--mock-ai / --run-id / --grant-ttl / --plan-digest 只能与 --autorun 一起使用")
     try:
+        if args.stage_report:
+            from .stage_report import stage_report
+            print(as_json(stage_report(args.root, args.stage_report)))
+            return 0
+        if args.confirm_scenarios:
+            import json
+            from .business_scenarios import confirm_scenarios
+            session_id, filename = args.confirm_scenarios
+            scenarios = json.loads(Path(filename).read_text(encoding="utf-8"))
+            print(as_json(confirm_scenarios(args.root, session_id, scenarios)))
+            return 0
         if args.autorun:
             return _autorun_mode(args)
         if args.cancel_run:

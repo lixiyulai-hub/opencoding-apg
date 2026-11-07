@@ -26,8 +26,10 @@ from opencoding.safety import safe_target
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_FILES = tuple(sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / "opencoding").glob("*.py")))
-FIXTURE_FILES = ("pyproject.toml", "MANIFEST.in", "docs/product/OFFLINE_INSTALLATION.md", *PACKAGE_FILES)
+PACKAGE_FILES = tuple(sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / "opencoding").glob("*.py"))) + ("opencoding/installation_manifest.json",)
+PUBLIC_ENTRY_FILES = ("scripts/opencoding_preflight.py", "scripts/build_installation_manifest.py",
+                      "skills/opencoding/SKILL.md", "skills/opencoding/agents/openai.yaml", "skills/opencoding/commands/opencoding.md")
+FIXTURE_FILES = ("pyproject.toml", "MANIFEST.in", "docs/product/OFFLINE_INSTALLATION.md", *PACKAGE_FILES, *PUBLIC_ENTRY_FILES)
 DIST_INFO_FILES = {"METADATA", "RECORD", "WHEEL", "entry_points.txt", "top_level.txt"}
 SDIST_EGG_INFO_FILES = {"PKG-INFO", "SOURCES.txt", "dependency_links.txt", "entry_points.txt", "top_level.txt"}
 PRIVATE_FILENAMES = ("AUTHORS_PRIVATE.txt", "AUTHORS", "COPYING", "LICENSE", "LICENSE.txt", "NOTICE", "NOTICE.txt")
@@ -359,7 +361,8 @@ class ProductPackagingTests(unittest.TestCase):
             {"file": "docs/product/OFFLINE_INSTALLATION.md", "content-type": "text/markdown"},
         )
         self.assertEqual(configuration["project"]["license-files"], [])
-        self.assertEqual(configuration["tool"]["setuptools"], {"packages": ["opencoding"], "include-package-data": False})
+        self.assertEqual(configuration["tool"]["setuptools"], {"packages": ["opencoding"], "include-package-data": False,
+                         "package-data": {"opencoding": ["installation_manifest.json"]}})
 
         with zipfile.ZipFile(self.wheel) as archive:
             members = set(archive.namelist())
@@ -382,9 +385,10 @@ class ProductPackagingTests(unittest.TestCase):
             f"{prefix}/docs/product/OFFLINE_INSTALLATION.md",
         }
         expected.update(f"{prefix}/{name}" for name in PACKAGE_FILES)
+        expected.update(f"{prefix}/{name}" for name in PUBLIC_ENTRY_FILES)
         expected.update(f"{prefix}/opencoding_local_entry.egg-info/{name}" for name in SDIST_EGG_INFO_FILES)
         self.assertEqual(files, expected)
-        prohibited = (*PRIVATE_FILENAMES, "private-sentinel", "tests/", "apps/", "artifacts/", "scripts/", "services/", ".governance/", "README")
+        prohibited = (*PRIVATE_FILENAMES, "private-sentinel", "tests/", "apps/", "artifacts/", "services/", ".governance/", "README", "compat/")
         self.assertFalse(any(fragment in member for member in files | members for fragment in prohibited))
 
     def test_fixture_rejects_leaf_hardlink_before_any_copy(self):

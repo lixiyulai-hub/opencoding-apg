@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .decisions import build_recommendation, derive_fact_constraints, evaluate_fact_constraints
-from .documents import render_documents, validate_recommendation
+from .documents import document_names, render_documents, validate_recommendation
+from .document_paths import merge_documents, resolve_document_paths
 from .facts import FactError, build_decision_record, list_facts
 from .intake import QUESTION_DEFINITIONS, answer_question, new_session
 from . import plansource  # CP5 §4.2：唯一的 AI 派生计划来源
@@ -270,7 +271,8 @@ def derive_frontier(session: Mapping[str, Any]) -> list[dict[str, Any]]:
 
 
 def _graph(session: dict[str, Any], facts: list[Mapping[str, Any]] | None = None,
-           recommendation_override: Mapping[str, Any] | None = None) -> tuple[dict[str, Any], dict[str, Any], dict[str, str], list[dict[str, Any]]]:
+           recommendation_override: Mapping[str, Any] | None = None,
+           root: Path | None = None, document_preimages: dict | None = None) -> tuple[dict[str, Any], dict[str, Any], dict[str, str], list[dict[str, Any]]]:
     """F02：事实先于判断参与图生成；返回方案、任务图、文档与事实处置痕迹。
 
     CP5 §4.2：``recommendation_override`` 传入**已确认 AI 决策**时，它与单纯规则判断
@@ -282,9 +284,16 @@ def _graph(session: dict[str, Any], facts: list[Mapping[str, Any]] | None = None
     rule_recommendation = build_recommendation(session, constraints=constraints)
     recommendation = dict(recommendation_override) if recommendation_override is not None \
         else rule_recommendation
-    task_plan = build_task_plan(recommendation)
-    documents = render_documents(recommendation, task_plan)
+    from .business_scenarios import apply_scenario_facts
+    recommendation, scenario_trace = apply_scenario_facts(recommendation, session, facts)
+    paths = resolve_document_paths(root, document_names(recommendation)) if root is not None else None
+    task_plan = build_task_plan(recommendation, paths)
+    documents = render_documents(recommendation, task_plan, paths)
+    if root is not None:
+        documents = merge_documents(root, documents, document_preimages)
     _platform, consideration = evaluate_fact_constraints(session, constraints)
+    consideration = [row for row in consideration if row.get("fact_id") not in {item["fact_id"] for item in scenario_trace}]
+    consideration.extend(scenario_trace)
     return recommendation, task_plan, documents, consideration
 
 
@@ -336,10 +345,13 @@ def _view(root: Path, session: dict[str, Any], *, include_preview: bool,
 
     if recommendation_override is None:
         recommendation_override = _plan_override_from_adoption(root, session["id"])
+    document_preimages = {}
     recommendation, task_plan, documents, _consideration = _graph(
         session, list_facts(root, session["id"]),
-        recommendation_override=recommendation_override)
+        recommendation_override=recommendation_override, root=root, document_preimages=document_preimages)
     file_plan = preview_changes(root, documents) if include_preview else None
+    if file_plan and any(entry["before_sha256"] != document_preimages[entry["path"]] for entry in file_plan["entries"]):
+        raise ServiceError("document_merge_drift", "文档在合并读取后发生变化，请重新预览")
     bundle = _service_bundle(root, session, recommendation, task_plan, documents, file_plan or {})
     result: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -429,7 +441,7 @@ def evaluate_session(root: str | Path, session_id: str, *,
         session = read_session_snapshot(project_root, session_id)
         facts = list_facts(project_root, session_id)
         recommendation, task_plan, _documents, consideration = _graph(
-            session, facts, recommendation_override=override)
+            session, facts, recommendation_override=override, root=project_root)
         decision = build_decision_record(recommendation, facts, consideration)
         plan_result = validate_task_plan(task_plan)
         if not plan_result["valid"]:
@@ -883,10 +895,14 @@ def apply_approved(root: str | Path, approval: Mapping[str, Any]) -> dict[str, A
             current = read_session_snapshot(project_root, approval["session_id"])
             if current["revision"] != approval["revision"]:
                 return {"status": "stale", "reason_codes": ["session_revision_stale"], "revision": current["revision"]}
+            document_preimages = {}
             recommendation, task_plan, documents, _consideration = _graph(
                 current, list_facts(project_root, current["id"]),
-                recommendation_override=_plan_override_from_adoption(project_root, current["id"]))
+                recommendation_override=_plan_override_from_adoption(project_root, current["id"]), root=project_root,
+                document_preimages=document_preimages)
             current_plan = preview_changes(project_root, documents)
+            if any(entry["before_sha256"] != document_preimages[entry["path"]] for entry in current_plan["entries"]):
+                return {"status": "stale", "reason_codes": ["document_merge_drift"]}
             current_bundle = _service_bundle(project_root, current, recommendation, task_plan, documents, current_plan)
             if (
                 recommendation != approval["recommendation"]
